@@ -4,7 +4,7 @@ import './globals.css';
 import { cn } from '@/lib/utils';
 
 export const metadata: Metadata = {
-  title: 'Poot Quest: The Land of Never-Ending Asses',
+  title: 'Poor Quest: The Land of Never-Ending Asses',
   description: 'An interactive fart epic, built with AI.',
 };
 
