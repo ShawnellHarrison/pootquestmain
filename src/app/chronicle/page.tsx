@@ -2,7 +2,10 @@ import { GameContainer } from "@/components/game/GameContainer";
 import { Header } from "@/components/game/Header";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { Lock, BookOpen } from "lucide-react";
+import { Lock, BookOpen, ArrowLeft } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import Link from "next/link";
+
 
 const RunCard = ({ title, details, isLocked }: { title: string, details: { [key: string]: string }, isLocked?: boolean }) => (
     <Card>
@@ -65,6 +68,14 @@ export default function ChroniclePage() {
       <Header />
       <main className="py-12">
         <GameContainer>
+            <div className="mb-4">
+                <Button asChild variant="outline">
+                    <Link href="/">
+                        <ArrowLeft className="mr-2 h-4 w-4"/>
+                        Back to Main Menu
+                    </Link>
+                </Button>
+            </div>
             <Card className="max-w-4xl mx-auto border-primary/20 shadow-lg shadow-primary/10">
                 <CardHeader className="text-center">
                     <CardTitle className="font-headline text-4xl text-glow flex items-center justify-center gap-2">
