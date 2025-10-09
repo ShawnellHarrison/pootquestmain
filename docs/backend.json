@@ -1,0 +1,414 @@
+{
+  "entities": {
+    "User": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "User",
+      "type": "object",
+      "description": "Represents a user of the Boot Quest game.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the user."
+        },
+        "username": {
+          "type": "string",
+          "description": "User's display name."
+        },
+        "email": {
+          "type": "string",
+          "description": "User's email address.",
+          "format": "email"
+        },
+        "creationDate": {
+          "type": "string",
+          "description": "Date and time the user account was created.",
+          "format": "date-time"
+        },
+        "lastLogin": {
+          "type": "string",
+          "description": "Date and time of the user's last login.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "username",
+        "email",
+        "creationDate"
+      ]
+    },
+    "Character": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Character",
+      "type": "object",
+      "description": "Represents a playable character in the Boot Quest game.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the character."
+        },
+        "userId": {
+          "type": "string",
+          "description": "Reference to User. (Relationship: User 1:N Character)"
+        },
+        "class": {
+          "type": "string",
+          "description": "The character's class (e.g., Rogue, Paladin)."
+        },
+        "level": {
+          "type": "number",
+          "description": "The character's current level."
+        },
+        "experience": {
+          "type": "number",
+          "description": "The character's current experience points."
+        },
+        "health": {
+          "type": "number",
+          "description": "The character's current health points."
+        },
+        "mana": {
+          "type": "number",
+          "description": "The character's current mana points."
+        },
+        "attackPower": {
+          "type": "number",
+          "description": "The character's attack power."
+        },
+        "defense": {
+          "type": "number",
+          "description": "The character's defense."
+        },
+        "speed": {
+          "type": "number",
+          "description": "The character's speed."
+        }
+      },
+      "required": [
+        "id",
+        "userId",
+        "class",
+        "level",
+        "experience",
+        "health",
+        "mana"
+      ]
+    },
+    "Card": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Card",
+      "type": "object",
+      "description": "Represents a card in the Boot Quest game.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the card."
+        },
+        "name": {
+          "type": "string",
+          "description": "The name of the card."
+        },
+        "description": {
+          "type": "string",
+          "description": "Description of what the card does."
+        },
+        "class": {
+          "type": "string",
+          "description": "The character class the card belongs to."
+        },
+        "manaCost": {
+          "type": "number",
+          "description": "The mana cost to play the card."
+        },
+        "attack": {
+          "type": "number",
+          "description": "The attack power of the card, if applicable."
+        },
+        "defense": {
+          "type": "number",
+          "description": "The defense value of the card, if applicable."
+        },
+        "healing": {
+          "type": "number",
+          "description": "The healing value of the card, if applicable."
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "description",
+        "class",
+        "manaCost"
+      ]
+    },
+    "Deck": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Deck",
+      "type": "object",
+      "description": "Represents a deck of cards owned by a character.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the deck."
+        },
+        "characterId": {
+          "type": "string",
+          "description": "Reference to Character. (Relationship: Character 1:N Deck)"
+        },
+        "cardIds": {
+          "type": "array",
+          "description": "References to Cards. (Relationship: Card N:N Deck)",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "id",
+        "characterId",
+        "cardIds"
+      ]
+    },
+    "NarrativeContext": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "NarrativeContext",
+      "type": "object",
+      "description": "Stores the narrative context of the game for AI-driven story generation.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the narrative context."
+        },
+        "characterId": {
+          "type": "string",
+          "description": "Reference to Character. (Relationship: Character 1:N NarrativeContext)"
+        },
+        "location": {
+          "type": "string",
+          "description": "The current location of the character in the game world."
+        },
+        "storyArc": {
+          "type": "string",
+          "description": "The current story arc the character is following."
+        },
+        "playerChoices": {
+          "type": "array",
+          "description": "An array of choices the player has made.",
+          "items": {
+            "type": "string"
+          }
+        },
+        "reputationStealth": {
+          "type": "number",
+          "description": "Player's stealth reputation score."
+        },
+        "reputationCombat": {
+          "type": "number",
+          "description": "Player's combat reputation score."
+        },
+        "reputationDiplomacy": {
+          "type": "number",
+          "description": "Player's diplomacy reputation score."
+        },
+        "unlockedPaths": {
+          "type": "array",
+          "description": "Unlocked narrative paths",
+          "items": {
+            "type": "string"
+          }
+        },
+        "questFlags": {
+          "type": "string",
+          "description": "Quest flags."
+        }
+      },
+      "required": [
+        "id",
+        "characterId",
+        "location",
+        "storyArc"
+      ]
+    },
+    "RunChronicle": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "RunChronicle",
+      "type": "object",
+      "description": "Represents a single run of the game, storing information for the chronicle system.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the run chronicle."
+        },
+        "userId": {
+          "type": "string",
+          "description": "Reference to User. (Relationship: User 1:N RunChronicle)"
+        },
+        "characterClass": {
+          "type": "string",
+          "description": "The character class used during the run."
+        },
+        "moralAlignment": {
+          "type": "string",
+          "description": "The moral alignment of the character during the run."
+        },
+        "enemiesSpared": {
+          "type": "number",
+          "description": "The number of enemies spared during the run."
+        },
+        "enemiesKilled": {
+          "type": "number",
+          "description": "The number of enemies killed during the run."
+        },
+        "secretRoomsFound": {
+          "type": "number",
+          "description": "The number of secret rooms found during the run."
+        },
+        "ending": {
+          "type": "string",
+          "description": "The ending the player achieved during the run."
+        },
+        "uniqueDiscovery": {
+          "type": "string",
+          "description": "Any unique discoveries made during the run."
+        }
+      },
+      "required": [
+        "id",
+        "userId",
+        "characterClass",
+        "moralAlignment"
+      ]
+    }
+  },
+  "auth": {
+    "providers": [
+      "password",
+      "anonymous"
+    ]
+  },
+  "firestore": {
+    "structure": [
+      {
+        "path": "/users/{userId}",
+        "definition": {
+          "entityName": "User",
+          "schema": {
+            "$ref": "#/backend/entities/User"
+          },
+          "description": "Stores user account information.  Path-based ownership ensures only the user can access their own document.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier of the user, matching their Firebase Auth UID."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/characters/{characterId}",
+        "definition": {
+          "entityName": "Character",
+          "schema": {
+            "$ref": "#/backend/entities/Character"
+          },
+          "description": "Stores character data owned by a specific user.  Path-based ownership ensures only the owning user can access the character data. Contains 'userId' for explicit ownership.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier of the user who owns the character."
+            },
+            {
+              "name": "characterId",
+              "description": "The unique identifier of the character."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/characters/{characterId}/decks/{deckId}",
+        "definition": {
+          "entityName": "Deck",
+          "schema": {
+            "$ref": "#/backend/entities/Deck"
+          },
+          "description": "Stores decks of cards associated with a character. Path-based ownership ensures only the owning user can access the deck data. Contains 'characterId' to link to the parent character.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier of the user who owns the character."
+            },
+            {
+              "name": "characterId",
+              "description": "The unique identifier of the character that owns the deck."
+            },
+            {
+              "name": "deckId",
+              "description": "The unique identifier of the deck."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/characters/{characterId}/narrativeContexts/{narrativeContextId}",
+        "definition": {
+          "entityName": "NarrativeContext",
+          "schema": {
+            "$ref": "#/backend/entities/NarrativeContext"
+          },
+          "description": "Stores narrative context data for a character, used for AI-driven story generation. Path-based ownership ensures only the owning user can access this data. Contains 'characterId' to link to the parent character.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier of the user who owns the character."
+            },
+            {
+              "name": "characterId",
+              "description": "The unique identifier of the character."
+            },
+            {
+              "name": "narrativeContextId",
+              "description": "The unique identifier of the narrative context."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/runChronicles/{runChronicleId}",
+        "definition": {
+          "entityName": "RunChronicle",
+          "schema": {
+            "$ref": "#/backend/entities/RunChronicle"
+          },
+          "description": "Stores game run chronicles for a user. Path-based ownership ensures only the owning user can access their run history. Contains 'userId' for explicit ownership.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier of the user."
+            },
+            {
+              "name": "runChronicleId",
+              "description": "The unique identifier of the run chronicle."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/cards/{cardId}",
+        "definition": {
+          "entityName": "Card",
+          "schema": {
+            "$ref": "#/backend/entities/Card"
+          },
+          "description": "Stores global card data.  This collection is publicly readable, but only admin writeable.",
+          "params": [
+            {
+              "name": "cardId",
+              "description": "The unique identifier of the card."
+            }
+          ]
+        }
+      }
+    ],
+    "reasoning": "The Firestore structure is designed to securely manage user data, character information, card collections, narrative contexts, and game run chronicles for the 'Boot Quest' game. Prioritizing authorization independence, data clarity, and structural segregation, the design eliminates hierarchical authorization dependencies (`get()`) and ensures robust security rules.\n\nAuthorization Independence is achieved through structural denormalization. For example, access to `characters` is governed by ownership; `/users/{userId}/characters/{characterId}` allows direct, secure access without needing to check parent (`/users/{userId}`) data. This same approach is applied to the other collections, creating a consistent and secure data access pattern.\n\nQAPs (Rules are not Filters) is supported by segregating data based on ownership (path-based authorization), and by avoiding mixing data with different access needs within the same collection. The consistent use of path-based ownership enables efficient and secure `list` operations, as rules can directly enforce access based on the `userId` parameter.\n\nThe design explicitly models a single, dedicated `status` field for entities, enabling clear state management and enhancing debuggability. Predictable schemas are enforced by avoiding dynamic keys and using arrays of objects with static keys instead."
+  }
+}
