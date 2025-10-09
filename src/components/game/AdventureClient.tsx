@@ -19,17 +19,23 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import Link from "next/link";
 import { Separator } from "@/components/ui/separator";
 import { useDoc, useFirebase, useMemoFirebase } from "@/firebase";
-import { doc, arrayUnion } from "firebase/firestore";
+import { doc, arrayUnion, writeBatch } from "firebase/firestore";
 import { updateDocumentNonBlocking } from "@/firebase/non-blocking-updates";
 import { CLASSES } from "@/lib/game-data";
+import { generateEncounter } from "@/ai/flows/generate-encounter-flow";
+import { useRouter } from "next/navigation";
 
 interface AdventureClientProps {
   characterId: string;
 }
 
+type GameState = "intro" | "choices" | "loading" | "generating_scenario" | "generating_encounter";
+
+
 export function AdventureClient({ characterId }: AdventureClientProps) {
   const { firestore, user } = useFirebase();
-  const [localGameState, setLocalGameState] = useState<"intro" | "choices" | "encounter" | "loading" | "generating_scenario">("loading");
+  const router = useRouter();
+  const [localGameState, setLocalGameState] = useState<GameState>("loading");
   const [error, setError] = useState<string | null>(null);
 
   const narrativeContextRef = useMemoFirebase(() => {
@@ -78,21 +84,36 @@ export function AdventureClient({ characterId }: AdventureClientProps) {
       }
     } catch (e: any) {
       setError(e.message || "An unknown error occurred while generating the scenario.");
-      setLocalGameState("loading"); // a better state would be 'error'
+      setLocalGameState("loading");
     }
   };
 
-  const handleChoice = (choice: { id: string; text: string }) => {
-    if (!narrativeContextRef) return;
-    
-    updateDocumentNonBlocking(narrativeContextRef, {
-        playerChoices: arrayUnion({ id: choice.id, text: choice.text, timestamp: new Date() }),
-        currentScenario: null // Clear scenario to transition
-    });
+  const handleChoice = async (choice: { id: string; text: string }) => {
+    if (!narrativeContextRef || !firestore || !user || !characterClassData || !character) return;
+    setLocalGameState("generating_encounter");
 
-    // In a real game, you'd check choice tags to see what happens.
-    // For now, any choice leads to a battle.
-    setLocalGameState("encounter");
+    try {
+        const encounterResult = await generateEncounter({
+            playerClass: characterClassData.name,
+            playerLevel: character.level,
+            location: narrativeContext.location,
+        });
+
+        const batch = writeBatch(firestore);
+        
+        batch.update(narrativeContextRef, {
+            playerChoices: arrayUnion({ id: choice.id, text: choice.text, timestamp: new Date() }),
+            currentScenario: null, // Clear scenario to transition
+            currentEncounter: encounterResult,
+        });
+        
+        await batch.commit();
+        router.push('/battle');
+
+    } catch (e: any) {
+        setError(e.message || "An unknown error occurred while generating the encounter.");
+        setLocalGameState("loading");
+    }
   };
   
   const isLoading = isContextLoading || isCharacterLoading;
@@ -128,18 +149,18 @@ export function AdventureClient({ characterId }: AdventureClientProps) {
       );
     }
 
-    if (localGameState === 'generating_scenario') {
+    if (localGameState === 'generating_scenario' || localGameState === 'generating_encounter') {
          return (
           <div className="flex flex-col items-center justify-center text-center">
             <Loader2 className="h-16 w-16 animate-spin text-primary mb-4" />
             <p className="text-xl text-muted-foreground">
-              The story unfolds...
+              {localGameState === 'generating_scenario' ? 'The story unfolds...' : 'A new challenge appears...'}
             </p>
           </div>
         );
     }
 
-    if (currentScenario && localGameState !== 'encounter') {
+    if (currentScenario) {
       return (
         <div className="space-y-4">
           <p className="text-center text-lg leading-relaxed whitespace-pre-wrap mb-6">
@@ -162,24 +183,6 @@ export function AdventureClient({ characterId }: AdventureClientProps) {
       );
     }
     
-    if (localGameState === 'encounter') {
-        return (
-          <div className="text-center space-y-4">
-            <Separator className="my-4" />
-            <p className="text-lg text-amber-400 italic">
-              You burst through the tavern door into the alley. Three Sewer
-              Goblins block your path, noses twitching. &apos;Fresh meat!&apos;
-              they cackle. Roll for initiative!
-            </p>
-            <Button asChild size="lg">
-              <Link href="/battle">
-                <Swords className="mr-2 h-4 w-4" /> To Battle!
-              </Link>
-            </Button>
-          </div>
-        );
-    }
-
     // Default Intro State
     return (
       <div className="space-y-6 text-center">

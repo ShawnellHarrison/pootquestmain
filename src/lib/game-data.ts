@@ -1,4 +1,34 @@
 
+export type CardData = {
+    name: string;
+    manaCost: number;
+    attack: number;
+};
+
+export const CARD_DATA: { [key: string]: CardData } = {
+    "Backstab": { name: "Backstab", manaCost: 2, attack: 10 },
+    "Silent But Deadly": { name: "Silent But Deadly", manaCost: 3, attack: 5 },
+    "Smoke Bomb": { name: "Smoke Bomb", manaCost: 1, attack: 0 },
+    "Basic Attack": { name: "Basic Attack", manaCost: 1, attack: 3 },
+    "Smell the Truth": { name: "Smell the Truth", manaCost: 3, attack: 2 },
+    "Holy Shield": { name: "Holy Shield", manaCost: 2, attack: 0 },
+    "Purify": { name: "Purify", manaCost: 2, attack: 0 },
+    "Gas Cloud": { name: "Gas Cloud", manaCost: 4, attack: 8 },
+    "Chain Lightning Farts": { name: "Chain Lightning Farts", manaCost: 5, attack: 12 },
+    "Arcane Missile": { name: "Arcane Missile", manaCost: 2, attack: 5 },
+    "Bean Rage": { name: "Bean Rage", manaCost: 3, attack: 15 },
+    "Mighty Cleave": { name: "Mighty Cleave", manaCost: 2, attack: 7 },
+    "Unstoppable Charge": { name: "Unstoppable Charge", manaCost: 4, attack: 10 },
+    "Aroma Heal": { name: "Aroma Heal", manaCost: 3, attack: 0 },
+    "Blessing of Freshness": { name: "Blessing of Freshness", manaCost: 2, attack: 0 },
+    "Resurrection": { name: "Resurrection", manaCost: 8, attack: 0 },
+    "Basic Smite": { name: "Basic Smite", manaCost: 1, attack: 2 },
+    "Hostile Takeover": { name: "Hostile Takeover", manaCost: 4, attack: 5 },
+    "Corporate Merger": { name: "Corporate Merger", manaCost: 5, attack: 0 },
+    "Invest": { name: "Invest", manaCost: 1, attack: 0 },
+};
+
+
 export type CharacterClass = {
   id: string;
   name: string;

@@ -9,7 +9,7 @@ import { ArrowLeft, CheckCircle, Swords, AlertTriangle, FolderOpen, Sparkles } f
 import Link from "next/link";
 import Image from "next/image";
 import { useFirebase } from "@/firebase";
-import { collection, addDoc, serverTimestamp, doc, setDoc } from "firebase/firestore";
+import { collection, serverTimestamp, doc, writeBatch } from "firebase/firestore";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Loader2 } from "lucide-react";
@@ -35,29 +35,32 @@ export function ConfirmationScreen({ character }: ConfirmationScreenProps) {
         if (!firestore || !user) return;
         setIsCreating(true);
         try {
-            // 1. Generate initial narration and story arc
             const narrationResult = await generateClassNarration({ playerClass: character.name });
             if (!narrationResult) {
                 throw new Error("Failed to generate initial story from AI.");
             }
 
-            // 2. Create Character document
-            const charactersRef = collection(firestore, `users/${user.uid}/characters`);
-            const characterDocRef = await addDoc(charactersRef, {
+            const batch = writeBatch(firestore);
+
+            // 1. Create Character document
+            const newCharacterRef = doc(collection(firestore, `users/${user.uid}/characters`));
+            batch.set(newCharacterRef, {
                 userId: user.uid,
                 class: character.id,
                 imageUrl: character.image,
                 level: 1,
                 experience: 0,
-                health: 100, // Example starting value
-                mana: 50, // Example starting value
+                health: 60,
+                maxHealth: 60,
+                mana: 10,
+                maxMana: 10,
                 createdAt: serverTimestamp(),
             });
 
-            // 3. Create initial NarrativeContext document
-            const narrativeContextRef = doc(firestore, `users/${user.uid}/characters/${characterDocRef.id}/narrativeContexts`, "main");
-            const narrativeData = {
-                characterId: characterDocRef.id,
+            // 2. Create initial NarrativeContext document
+            const narrativeContextRef = doc(firestore, `users/${user.uid}/characters/${newCharacterRef.id}/narrativeContexts`, "main");
+            batch.set(narrativeContextRef, {
+                characterId: newCharacterRef.id,
                 location: "Tavern of Broken Wind",
                 storyArc: narrationResult.storyArc,
                 playerChoices: [],
@@ -68,16 +71,22 @@ export function ConfirmationScreen({ character }: ConfirmationScreenProps) {
                 questFlags: {},
                 lastNarration: narrationResult.openingNarration,
                 currentScenario: null,
-            };
-            
-            await setDoc(narrativeContextRef, narrativeData);
+                currentEncounter: null,
+            });
 
-            // 4. Navigate to the adventure page with the new character ID
-            router.push(`/adventure/${characterDocRef.id}`);
+            // 3. Create initial Deck document
+            const deckRef = doc(firestore, `users/${user.uid}/characters/${newCharacterRef.id}/decks`, "main");
+            batch.set(deckRef, {
+                characterId: newCharacterRef.id,
+                cards: character.starterDeck.flatMap(c => Array(c.count).fill(c.name)),
+            });
+
+            await batch.commit();
+
+            router.push(`/adventure/${newCharacterRef.id}`);
 
         } catch (error) {
             console.error("Failed to create character:", error);
-            // Optionally: show an error toast to the user
             setIsCreating(false);
         }
     };

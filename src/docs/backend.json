@@ -72,21 +72,17 @@
           "type": "number",
           "description": "The character's current health points."
         },
+        "maxHealth": {
+          "type": "number",
+          "description": "The character's maximum health points."
+        },
         "mana": {
           "type": "number",
           "description": "The character's current mana points."
         },
-        "attackPower": {
+        "maxMana": {
           "type": "number",
-          "description": "The character's attack power."
-        },
-        "defense": {
-          "type": "number",
-          "description": "The character's defense."
-        },
-        "speed": {
-          "type": "number",
-          "description": "The character's speed."
+          "description": "The character's maximum mana points."
         }
       },
       "required": [
@@ -96,8 +92,36 @@
         "level",
         "experience",
         "health",
-        "mana"
+        "maxHealth",
+        "mana",
+        "maxMana"
       ]
+    },
+    "Item": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Item",
+      "type": "object",
+      "description": "Represents an item that a character can possess in their inventory.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the item."
+        },
+        "name": {
+          "type": "string",
+          "description": "The name of the item."
+        },
+        "description": {
+          "type": "string",
+          "description": "A description of the item."
+        },
+        "type": {
+          "type": "string",
+          "enum": ["weapon", "armor", "potion", "scroll", "misc"],
+          "description": "The type of the item."
+        }
+      },
+      "required": ["id", "name", "description", "type"]
     },
     "Card": {
       "$schema": "http://json-schema.org/draft-07/schema#",
@@ -160,9 +184,9 @@
           "type": "string",
           "description": "Reference to Character. (Relationship: Character 1:N Deck)"
         },
-        "cardIds": {
+        "cards": {
           "type": "array",
-          "description": "References to Cards. (Relationship: Card N:N Deck)",
+          "description": "List of card names in the deck.",
           "items": {
             "type": "string"
           }
@@ -171,8 +195,47 @@
       "required": [
         "id",
         "characterId",
-        "cardIds"
+        "cards"
       ]
+    },
+    "Encounter": {
+       "$schema": "http://json-schema.org/draft-07/schema#",
+       "title": "Encounter",
+       "type": "object",
+       "description": "Stores the details for a specific combat encounter.",
+       "properties": {
+          "enemies": {
+            "type": "array",
+            "description": "List of enemies in the encounter.",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": { "type": "string" },
+                "name": { "type": "string" },
+                "hp": { "type": "number" },
+                "maxHp": { "type": "number" },
+                "imageUrl": { "type": "string" },
+                "attack": { "type": "number" }
+              },
+              "required": ["id", "name", "hp", "maxHp", "imageUrl", "attack"]
+            }
+          },
+          "loot": {
+            "type": "object",
+            "description": "Loot to be awarded upon winning the encounter.",
+            "properties": {
+                "name": { "type": "string" },
+                "description": { "type": "string" },
+                "type": { "type": "string", "enum": ["weapon", "armor", "potion", "scroll", "misc"] }
+            },
+            "required": ["name", "description", "type"]
+          },
+          "introText": {
+            "type": "string",
+            "description": "Introductory text for the encounter."
+          }
+       },
+       "required": ["enemies", "loot", "introText"]
     },
     "NarrativeContext": {
       "$schema": "http://json-schema.org/draft-07/schema#",
@@ -200,6 +263,12 @@
           "type": "object",
           "description": "The current AI-generated scenario, including text and choices.",
            "nullable": true
+        },
+        "currentEncounter": {
+          "type": "object",
+          "description": "The current AI-generated combat encounter.",
+          "$ref": "#/backend/entities/Encounter",
+          "nullable": true
         },
         "playerChoices": {
           "type": "array",
@@ -353,7 +422,31 @@
             },
             {
               "name": "deckId",
-              "description": "The unique identifier of the deck."
+              "description": "The unique identifier of the deck. Should typically be 'main'."
+            }
+          ]
+        }
+      },
+       {
+        "path": "/users/{userId}/characters/{characterId}/inventory/{itemId}",
+        "definition": {
+          "entityName": "Item",
+          "schema": {
+            "$ref": "#/backend/entities/Item"
+          },
+          "description": "Stores items in a character's inventory.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier of the user."
+            },
+            {
+              "name": "characterId",
+              "description": "The unique identifier of the character."
+            },
+            {
+              "name": "itemId",
+              "description": "The unique identifier of the item."
             }
           ]
         }
@@ -409,7 +502,7 @@
           "schema": {
             "$ref": "#/backend/entities/Card"
           },
-          "description": "Stores global card data.  This collection is publicly readable, but only admin writeable.",
+          "description": "Stores global card data. This collection is publicly readable, but only admin writeable.",
           "params": [
             {
               "name": "cardId",
