@@ -4,8 +4,10 @@ import { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Loader2, User } from "lucide-react";
 import placeholderData from "@/lib/placeholder-images.json";
+import { useUser, useAuth } from "@/firebase";
+import { initiateAnonymousSignIn } from "@/firebase/non-blocking-login";
 
 const throneImage = placeholderData.placeholderImages.find(p => p.id === "splash-throne");
 
@@ -32,11 +34,41 @@ const Bubble = ({ id }: { id: number }) => {
 
 export function SplashScreen() {
   const [bubbles, setBubbles] = useState<number[]>([]);
+  const { user, isUserLoading } = useUser();
+  const auth = useAuth();
 
   useEffect(() => {
     const numBubbles = 20;
     setBubbles(Array.from({ length: numBubbles }, (_, i) => i));
   }, []);
+
+  const handleAnonymousSignIn = () => {
+    if (auth) {
+      initiateAnonymousSignIn(auth);
+    }
+  };
+
+  const renderContent = () => {
+    if (isUserLoading) {
+      return <Loader2 className="h-12 w-12 animate-spin text-primary" />;
+    }
+
+    if (user) {
+      return (
+        <Button asChild size="lg" className="animate-pulse">
+          <Link href="/character-creation">
+            Begin Your Journey <ArrowRight className="ml-2" />
+          </Link>
+        </Button>
+      );
+    }
+
+    return (
+      <Button onClick={handleAnonymousSignIn} size="lg">
+        <User className="mr-2" /> Sign In Anonymously
+      </Button>
+    );
+  };
 
   return (
     <div className="relative flex flex-col items-center justify-center min-h-screen text-center overflow-hidden p-4">
@@ -63,14 +95,10 @@ export function SplashScreen() {
         <p className="font-headline text-xl md:text-2xl text-primary mb-8">
           The Land of Never-Ending Asses
         </p>
-        <Button asChild size="lg" className="animate-pulse">
-          <Link href="/character-creation">
-            Begin Your Journey <ArrowRight className="ml-2" />
-          </Link>
-        </Button>
+        <div className="h-11">
+          {renderContent()}
+        </div>
       </div>
     </div>
   );
 }
-
-    
