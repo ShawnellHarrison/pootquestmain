@@ -14,7 +14,6 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Loader2 } from "lucide-react";
 import { generateClassNarration } from "@/ai/flows/class-specific-ai-narration";
-import { addDocumentNonBlocking } from "@/firebase/non-blocking-updates";
 
 interface ConfirmationScreenProps {
     character: CharacterClass;
@@ -68,11 +67,10 @@ export function ConfirmationScreen({ character }: ConfirmationScreenProps) {
                 unlockedPaths: [],
                 questFlags: {},
                 lastNarration: narrationResult.openingNarration,
-                currentScenario: null, // No scenario yet
+                currentScenario: null,
             };
             
-            // Use non-blocking set for faster UI feedback
-            setDoc(narrativeContextRef, narrativeData);
+            await setDoc(narrativeContextRef, narrativeData);
 
             // 4. Navigate to the adventure page with the new character ID
             router.push(`/adventure/${characterDocRef.id}`);

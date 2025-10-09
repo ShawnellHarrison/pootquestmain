@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import {
   generateNextScenario,
   NarrativeOutput,
@@ -19,7 +19,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import Link from "next/link";
 import { Separator } from "@/components/ui/separator";
 import { useDoc, useFirebase, useMemoFirebase } from "@/firebase";
-import { doc, updateDoc, arrayUnion } from "firebase/firestore";
+import { doc, arrayUnion } from "firebase/firestore";
 import { updateDocumentNonBlocking } from "@/firebase/non-blocking-updates";
 import { CLASSES } from "@/lib/game-data";
 
@@ -27,11 +27,9 @@ interface AdventureClientProps {
   characterId: string;
 }
 
-type GameState = "loading" | "intro" | "generating_scenario" | "choices" | "encounter" | "error";
-
 export function AdventureClient({ characterId }: AdventureClientProps) {
   const { firestore, user } = useFirebase();
-  const [localGameState, setLocalGameState] = useState<"intro" | "choices" | "encounter" | "loading">("loading");
+  const [localGameState, setLocalGameState] = useState<"intro" | "choices" | "encounter" | "loading" | "generating_scenario">("loading");
   const [error, setError] = useState<string | null>(null);
 
   const narrativeContextRef = useMemoFirebase(() => {
@@ -41,25 +39,26 @@ export function AdventureClient({ characterId }: AdventureClientProps) {
 
   const { data: narrativeContext, isLoading: isContextLoading } = useDoc(narrativeContextRef);
 
-  const characterClassData = useMemoFirebase(() => {
-    if (!narrativeContext) return null;
-    // We need to get the character class from the parent document, which we don't have here.
-    // For now, let's assume we can derive it or we need to change data model.
-    // This is a placeholder. In a real app you might fetch the character doc too.
-    // Let's assume the class is stored on narrativeContext for now (which it isn't)
-    // A better way is to fetch the character doc.
-    // For now, let's just find any class. This will be wrong.
-    return CLASSES[0];
-  }, [narrativeContext]);
+  const characterDocRef = useMemoFirebase(() => {
+    if (!firestore || !user) return null;
+    return doc(firestore, `users/${user.uid}/characters/${characterId}`);
+  }, [firestore, user, characterId]);
+
+  const { data: character, isLoading: isCharacterLoading } = useDoc(characterDocRef);
+
+  const characterClassData = useMemo(() => {
+    if (!character) return null;
+    return CLASSES.find(c => c.id === character.class);
+  }, [character]);
 
   const handleStart = async () => {
-    if (!narrativeContext || !firestore || !user || !characterClassData) return;
+    if (!narrativeContext || !firestore || !user || !characterClassData || !character) return;
 
     try {
-      setLocalGameState("loading");
+      setLocalGameState("generating_scenario");
       const result = await generateNextScenario({
-        playerClass: characterClassData.name, // This needs to come from character doc
-        level: 1, // This needs to come from character doc
+        playerClass: characterClassData.name,
+        level: character.level,
         location: narrativeContext.location,
         choices: narrativeContext.playerChoices,
         reputation: {
@@ -86,17 +85,21 @@ export function AdventureClient({ characterId }: AdventureClientProps) {
   const handleChoice = (choice: { id: string; text: string }) => {
     if (!narrativeContextRef) return;
     
-    // Non-blocking update for faster UI response
     updateDocumentNonBlocking(narrativeContextRef, {
         playerChoices: arrayUnion({ id: choice.id, text: choice.text, timestamp: new Date() }),
-        currentScenario: null // Clear scenario to transition to encounter
+        currentScenario: null // Clear scenario to transition
     });
 
+    // In a real game, you'd check choice tags to see what happens.
+    // For now, any choice leads to a battle.
     setLocalGameState("encounter");
   };
+  
+  const isLoading = isContextLoading || isCharacterLoading;
+  const currentScenario = narrativeContext?.currentScenario as NarrativeOutput | undefined;
 
   const renderContent = () => {
-    if (isContextLoading) {
+    if (isLoading) {
       return (
         <div className="flex flex-col items-center justify-center text-center">
           <Loader2 className="h-16 w-16 animate-spin text-primary mb-4" />
@@ -114,7 +117,7 @@ export function AdventureClient({ characterId }: AdventureClientProps) {
         );
     }
     
-    if (!narrativeContext) {
+    if (!narrativeContext || !character) {
       return (
         <div className="text-center">
           <p className="text-lg text-destructive">Could not find your character's story. It might be lost in the ether...</p>
@@ -125,9 +128,7 @@ export function AdventureClient({ characterId }: AdventureClientProps) {
       );
     }
 
-    const scenario = narrativeContext.currentScenario as NarrativeOutput | null;
-
-    if (localGameState === 'loading' && !scenario) {
+    if (localGameState === 'generating_scenario') {
          return (
           <div className="flex flex-col items-center justify-center text-center">
             <Loader2 className="h-16 w-16 animate-spin text-primary mb-4" />
@@ -138,15 +139,15 @@ export function AdventureClient({ characterId }: AdventureClientProps) {
         );
     }
 
-    if (scenario) {
+    if (currentScenario && localGameState !== 'encounter') {
       return (
         <div className="space-y-4">
           <p className="text-center text-lg leading-relaxed whitespace-pre-wrap mb-6">
-            {scenario.scenarioText}
+            {currentScenario.scenarioText}
           </p>
           <Separator />
           <p className="text-center text-lg font-bold pt-4">What do you do next?</p>
-          {scenario.choices.map((choice) => (
+          {currentScenario.choices.map((choice) => (
             <Button
               key={choice.id}
               onClick={() => handleChoice(choice)}
@@ -193,7 +194,7 @@ export function AdventureClient({ characterId }: AdventureClientProps) {
         <p className="text-lg leading-relaxed whitespace-pre-wrap">
           {narrativeContext.lastNarration}
         </p>
-        <Button onClick={handleStart} size="lg">
+        <Button onClick={handleStart} size="lg" disabled={localGameState === 'generating_scenario'}>
           What do you do? <Forward className="ml-2 h-4 w-4" />
         </Button>
       </div>

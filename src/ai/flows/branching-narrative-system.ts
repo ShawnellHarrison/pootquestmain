@@ -67,7 +67,7 @@ const branchingNarrativePrompt = ai.definePrompt({
 
   Here's an example of the output format you should follow:
   {
-    "scenarioText": "You enter the throne room. The Goblin Chief sees you and... lowers his weapon. \'You spared my scout. Why?\' His eyes gleam with cunning. This could go many ways...",
+    "scenarioText": "You enter the throne room. The Goblin Chief sees you and... lowers his weapon. \\'You spared my scout. Why?\\' His eyes gleam with cunning. This could go many ways...",
     "choices": [
       {
         "id": "A",
