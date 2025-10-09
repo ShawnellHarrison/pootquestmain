@@ -56,6 +56,10 @@
           "type": "string",
           "description": "The character's class (e.g., Rogue, Paladin)."
         },
+        "imageUrl": {
+          "type": "string",
+          "description": "URL of the character's portrait image."
+        },
         "level": {
           "type": "number",
           "description": "The character's current level."

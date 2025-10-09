@@ -47,6 +47,7 @@ export function ConfirmationScreen({ character }: ConfirmationScreenProps) {
             const characterDocRef = await addDoc(charactersRef, {
                 userId: user.uid,
                 class: character.id,
+                imageUrl: character.image,
                 level: 1,
                 experience: 0,
                 health: 100, // Example starting value
