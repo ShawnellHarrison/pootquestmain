@@ -2,9 +2,10 @@ import type { Metadata } from 'next';
 import { Toaster } from "@/components/ui/toaster";
 import './globals.css';
 import { cn } from '@/lib/utils';
+import { FirebaseClientProvider } from '@/firebase';
 
 export const metadata: Metadata = {
-  title: 'Poor Quest: The Land of Never-Ending Asses',
+  title: 'Poot Quest: The Land of Never-Ending Asses',
   description: 'An interactive fart epic, built with AI.',
 };
 
@@ -25,9 +26,13 @@ export default function RootLayout({
       <body className={cn(
         "min-h-screen bg-background font-body antialiased",
       )}>
-        {children}
+        <FirebaseClientProvider>
+          {children}
+        </FirebaseClientProvider>
         <Toaster />
       </body>
     </html>
   );
 }
+
+    

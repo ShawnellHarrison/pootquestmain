@@ -58,7 +58,7 @@ export function SplashScreen() {
             )}
         </div>
         <h1 className="font-headline text-5xl md:text-7xl lg:text-8xl font-bold text-glow mb-2">
-          Poor Quest
+          Poot Quest
         </h1>
         <p className="font-headline text-xl md:text-2xl text-primary mb-8">
           The Land of Never-Ending Asses
@@ -72,3 +72,5 @@ export function SplashScreen() {
     </div>
   );
 }
+
+    

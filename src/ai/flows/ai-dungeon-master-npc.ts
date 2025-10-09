@@ -48,7 +48,7 @@ const generateNpcPrompt = ai.definePrompt({
   name: 'generateNpcPrompt',
   input: {schema: NpcInputSchema},
   output: {schema: NpcOutputSchema},
-  prompt: `You are the AI Dungeon Master for the Poor Quest game. Generate a non-player character (NPC) for the player to interact with.
+  prompt: `You are the AI Dungeon Master for the Poot Quest game. Generate a non-player character (NPC) for the player to interact with.
 
   The NPC should be relevant to the player's current location: {{{location}}}.
   The player is playing as a {{{playerClass}}} and their current context is: {{{playerContext}}}.
@@ -75,3 +75,5 @@ const generateNpcFlow = ai.defineFlow(
     return output!;
   }
 );
+
+    

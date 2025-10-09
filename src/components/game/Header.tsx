@@ -8,7 +8,7 @@ export function Header() {
         <Link href="/" className="flex items-center gap-2">
           <Swords className="text-primary h-8 w-8" />
           <h1 className="text-2xl font-headline font-bold text-glow">
-            Poor Quest
+            Poot Quest
           </h1>
         </Link>
         <nav className="flex items-center gap-4">
@@ -23,3 +23,5 @@ export function Header() {
     </header>
   );
 }
+
+    
