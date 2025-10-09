@@ -1,10 +1,20 @@
+
+'use client';
+
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { CharacterClass } from "@/lib/game-data";
 import StatBar from "@/components/ui/StatBar";
-import { ArrowLeft, CheckCircle, Swords, Shield, Zap, BookOpen, Skull, Sparkles, FolderOpen, AlertTriangle } from "lucide-react";
+import { ArrowLeft, CheckCircle, Swords, AlertTriangle, FolderOpen, Sparkles } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
+import { useFirebase } from "@/firebase";
+import { collection, addDoc, serverTimestamp, doc, setDoc } from "firebase/firestore";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
+import { Loader2 } from "lucide-react";
+import { generateClassNarration } from "@/ai/flows/class-specific-ai-narration";
+import { addDocumentNonBlocking } from "@/firebase/non-blocking-updates";
 
 interface ConfirmationScreenProps {
     character: CharacterClass;
@@ -18,6 +28,62 @@ const SectionHeader = ({ icon: Icon, title }: { icon: React.ElementType, title: 
 );
 
 export function ConfirmationScreen({ character }: ConfirmationScreenProps) {
+    const { firestore, user } = useFirebase();
+    const router = useRouter();
+    const [isCreating, setIsCreating] = useState(false);
+
+    const handleConfirm = async () => {
+        if (!firestore || !user) return;
+        setIsCreating(true);
+        try {
+            // 1. Generate initial narration and story arc
+            const narrationResult = await generateClassNarration({ playerClass: character.name });
+            if (!narrationResult) {
+                throw new Error("Failed to generate initial story from AI.");
+            }
+
+            // 2. Create Character document
+            const charactersRef = collection(firestore, `users/${user.uid}/characters`);
+            const characterDocRef = await addDoc(charactersRef, {
+                userId: user.uid,
+                class: character.id,
+                level: 1,
+                experience: 0,
+                health: 100, // Example starting value
+                mana: 50, // Example starting value
+                createdAt: serverTimestamp(),
+            });
+
+            // 3. Create initial NarrativeContext document
+            const narrativeContextRef = doc(firestore, `users/${user.uid}/characters/${characterDocRef.id}/narrativeContexts`, "main");
+            const narrativeData = {
+                characterId: characterDocRef.id,
+                location: "Tavern of Broken Wind",
+                storyArc: narrationResult.storyArc,
+                playerChoices: [],
+                reputationStealth: 10,
+                reputationCombat: 10,
+                reputationDiplomacy: 10,
+                unlockedPaths: [],
+                questFlags: {},
+                lastNarration: narrationResult.openingNarration,
+                currentScenario: null, // No scenario yet
+            };
+            
+            // Use non-blocking set for faster UI feedback
+            setDoc(narrativeContextRef, narrativeData);
+
+            // 4. Navigate to the adventure page with the new character ID
+            router.push(`/adventure/${characterDocRef.id}`);
+
+        } catch (error) {
+            console.error("Failed to create character:", error);
+            // Optionally: show an error toast to the user
+            setIsCreating(false);
+        }
+    };
+
+
     return (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <div className="lg:col-span-2">
@@ -81,15 +147,22 @@ export function ConfirmationScreen({ character }: ConfirmationScreenProps) {
 
                     </CardContent>
                     <CardFooter className="flex-col sm:flex-row gap-4">
-                         <Button asChild size="lg" className="w-full sm:w-auto" variant="outline">
+                         <Button asChild size="lg" className="w-full sm:w-auto" variant="outline" disabled={isCreating}>
                             <Link href="/character-creation">
                                 <ArrowLeft className="mr-2 h-4 w-4" /> Reselect Class
                             </Link>
                         </Button>
-                        <Button asChild size="lg" className="w-full sm:w-auto flex-grow animate-pulse">
-                            <Link href={`/adventure/${character.id}`}>
-                                <CheckCircle className="mr-2 h-4 w-4" /> Confirm & Start Adventure
-                            </Link>
+                        <Button 
+                            size="lg" 
+                            className="w-full sm:w-auto flex-grow animate-pulse disabled:animate-none"
+                            onClick={handleConfirm}
+                            disabled={isCreating || !user}
+                        >
+                            {isCreating ? (
+                                <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Creating Your Legend...</>
+                            ) : (
+                                <><CheckCircle className="mr-2 h-4 w-4" /> Confirm & Start Adventure</>
+                            )}
                         </Button>
                     </CardFooter>
                 </Card>
