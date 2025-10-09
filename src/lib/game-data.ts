@@ -1,3 +1,4 @@
+
 export type CharacterClass = {
   id: string;
   name: string;
@@ -24,8 +25,8 @@ export const CLASSES: CharacterClass[] = [
   {
     id: "rogue",
     name: "Sneaky Rogue",
-    image: "https://picsum.photos/seed/rogue/600/800",
-    imageHint: "shadow figure",
+    image: "https://storage.googleapis.com/aifire-6e52e.appspot.com/users%2Fw9Iax1D99SMbV6n53s7y2t1a36A2%2Fprojects%2Fstudio-2365687152-9579e%2Ffiles%2F1725568551717_image.png",
+    imageHint: "rogue man",
     attributes: {
       strengths: ["Stealth +90%", "Critical Hit +75%", "Speed +80%"],
       weaknesses: ["Defense -60%", "HP -40%", "Area Damage -70%"],
