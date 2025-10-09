@@ -1,3 +1,46 @@
 {
-  "placeholderImages": []
+  "placeholderImages": [
+    {
+      "id": "splash-throne",
+      "description": "A 3D toilet throne for the splash screen.",
+      "imageUrl": "https://picsum.photos/seed/throne/800/800",
+      "imageHint": "toilet throne"
+    },
+    {
+      "id": "rogue",
+      "description": "Character art for Sneaky Rogue.",
+      "imageUrl": "https://picsum.photos/seed/rogue/600/800",
+      "imageHint": "shadow figure"
+    },
+    {
+      "id": "paladin",
+      "description": "Character art for Paladin of Purity.",
+      "imageUrl": "https://picsum.photos/seed/paladin/600/800",
+      "imageHint": "knight armor"
+    },
+    {
+      "id": "wizard",
+      "description": "Character art for Wizard of Wind.",
+      "imageUrl": "https://picsum.photos/seed/wizard/600/800",
+      "imageHint": "wizard robes"
+    },
+    {
+      "id": "barbarian",
+      "description": "Character art for Barbarian of Beans.",
+      "imageUrl": "https://picsum.photos/seed/barbarian/600/800",
+      "imageHint": "muscular warrior"
+    },
+    {
+      "id": "cleric",
+      "description": "Character art for Cleric of Febreze.",
+      "imageUrl": "https://picsum.photos/seed/cleric/600/800",
+      "imageHint": "healer robes"
+    },
+    {
+      "id": "tycoon",
+      "description": "Character art for Tycoon of Toots.",
+      "imageUrl": "https://picsum.photos/seed/tycoon/600/800",
+      "imageHint": "business suit"
+    }
+  ]
 }

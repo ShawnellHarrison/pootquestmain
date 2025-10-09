@@ -1,0 +1,113 @@
+import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { CharacterClass } from "@/lib/game-data";
+import StatBar from "@/components/ui/StatBar";
+import { ArrowLeft, CheckCircle, Swords, Shield, Zap, BookOpen, Skull, Sparkles, FolderOpen, AlertTriangle } from "lucide-react";
+import Link from "next/link";
+import Image from "next/image";
+
+interface ConfirmationScreenProps {
+    character: CharacterClass;
+}
+
+const SectionHeader = ({ icon: Icon, title }: { icon: React.ElementType, title: string }) => (
+    <div className="flex items-center gap-2 mb-2">
+        <Icon className="h-5 w-5 text-primary" />
+        <h3 className="font-headline text-lg font-bold text-primary/90">{title}</h3>
+    </div>
+);
+
+export function ConfirmationScreen({ character }: ConfirmationScreenProps) {
+    return (
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div className="lg:col-span-2">
+                <Card className="bg-card/80 border-primary/20 shadow-lg shadow-primary/10">
+                    <CardHeader>
+                        <CardTitle className="font-headline text-3xl text-glow">
+                            Your Chosen Warrior: {character.name}
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-6 font-code text-base">
+                        <div>
+                            <SectionHeader icon={Swords} title="Combat Stats" />
+                            <div className="space-y-2 pl-7">
+                                <div className="flex items-center">
+                                    <span className="w-24">Attack Power:</span>
+                                    <StatBar value={character.stats.attack} />
+                                </div>
+                                <div className="flex items-center">
+                                    <span className="w-24">Defense:</span>
+                                    <StatBar value={character.stats.defense} />
+                                </div>
+                                <div className="flex items-center">
+                                    <span className="w-24">Speed:</span>
+                                    <StatBar value={character.stats.speed} />
+                                </div>
+                            </div>
+                        </div>
+
+                        <div>
+                            <SectionHeader icon={Sparkles} title="Special Traits" />
+                            <ul className="list-none space-y-1 pl-7">
+                                {character.specialTraits.map((trait) => (
+                                    <li key={trait} className="flex items-center">
+                                        <span className="text-primary mr-2">◆</span> {trait}
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
+
+                        <div>
+                            <SectionHeader icon={FolderOpen} title="Starter Deck (15 cards)" />
+                            <ul className="list-none space-y-1 pl-7">
+                                {character.starterDeck.map((card) => (
+                                    <li key={card.name} className="flex items-center">
+                                        <span className="text-accent mr-2">▸</span> {card.name} x{card.count}
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
+                        
+                        <div>
+                            <SectionHeader icon={AlertTriangle} title="Weaknesses to Know" />
+                            <ul className="list-none space-y-1 pl-7">
+                                {character.weaknessesToKnow.map((weakness) => (
+                                    <li key={weakness} className="flex items-center text-destructive/80">
+                                        <span className="text-destructive mr-2">⚠️</span> {weakness}
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
+
+                    </CardContent>
+                    <CardFooter className="flex-col sm:flex-row gap-4">
+                         <Button asChild size="lg" className="w-full sm:w-auto" variant="outline">
+                            <Link href="/character-creation">
+                                <ArrowLeft className="mr-2 h-4 w-4" /> Reselect Class
+                            </Link>
+                        </Button>
+                        <Button asChild size="lg" className="w-full sm:w-auto flex-grow animate-pulse">
+                            <Link href={`/adventure/${character.id}`}>
+                                <CheckCircle className="mr-2 h-4 w-4" /> Confirm & Start Adventure
+                            </Link>
+                        </Button>
+                    </CardFooter>
+                </Card>
+            </div>
+            <div className="flex flex-col items-center">
+                <Card className="w-full max-w-sm sticky top-24">
+                    <CardContent className="p-0">
+                        <Image 
+                            src={character.image}
+                            alt={character.name}
+                            width={600}
+                            height={800}
+                            className="rounded-lg object-cover"
+                            data-ai-hint={character.imageHint}
+                        />
+                    </CardContent>
+                </Card>
+            </div>
+        </div>
+    );
+}

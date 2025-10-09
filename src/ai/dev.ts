@@ -1,1 +1,6 @@
-// Flows will be imported for their side effects in this file.
+import { config } from 'dotenv';
+config();
+
+import '@/ai/flows/ai-dungeon-master-npc.ts';
+import '@/ai/flows/branching-narrative-system.ts';
+import '@/ai/flows/class-specific-ai-narration.ts';
