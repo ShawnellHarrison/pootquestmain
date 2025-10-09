@@ -3,8 +3,9 @@ import { Header } from "@/components/game/Header";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import { Heart, Droplets, Shield, Folder, Trash2, ArrowRightCircle } from "lucide-react";
+import { Heart, Droplets, Shield, Folder, Trash2, ArrowRightCircle, Flag } from "lucide-react";
 import Image from "next/image";
+import Link from "next/link";
 
 const Enemy = ({ name, hp, maxHp, image }: { name: string; hp: number; maxHp: number; image: string }) => (
     <div className="flex flex-col items-center gap-2">
@@ -53,7 +54,14 @@ export default function BattlePage() {
                                 <div className="flex items-center gap-1 font-bold text-lg"><Droplets className="h-5 w-5 text-blue-500" /> 5/10</div>
                                 <div className="flex items-center gap-1 font-bold text-lg"><Shield className="h-5 w-5 text-gray-400" /> 0</div>
                             </div>
-                            <Button size="lg">End Turn <ArrowRightCircle className="ml-2 h-4 w-4" /></Button>
+                            <div className="flex items-center gap-2">
+                                <Button asChild variant="destructive" size="lg">
+                                    <Link href="/">
+                                        <Flag className="mr-2 h-4 w-4" /> Flee
+                                    </Link>
+                                </Button>
+                                <Button size="lg">End Turn <ArrowRightCircle className="ml-2 h-4 w-4" /></Button>
+                            </div>
                         </div>
 
                         <div className="flex flex-col items-center gap-4">
