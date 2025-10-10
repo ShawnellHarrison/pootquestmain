@@ -80,6 +80,18 @@
           "type": "number",
           "description": "The character's maximum mana points."
         },
+        "attack": {
+          "type": "number",
+          "description": "The character's attack power."
+        },
+        "defense": {
+          "type": "number",
+          "description": "The character's defense."
+        },
+        "speed": {
+          "type": "number",
+          "description": "The character's speed."
+        },
         "createdAt": {
             "type": "string",
             "format": "date-time",
@@ -294,8 +306,20 @@
         },
         "questFlags": {
           "type": "object",
-          "description": "Quest flags as a map.",
-          "additionalProperties": true
+          "description": "Quest flags as a map, tracking status and step.",
+          "additionalProperties": {
+            "type": "object",
+            "properties": {
+              "status": {
+                "type": "string",
+                "enum": ["started", "completed", "failed"]
+              },
+              "currentStep": {
+                "type": "number"
+              }
+            },
+            "required": ["status", "currentStep"]
+          }
         }
       },
       "required": [
@@ -352,7 +376,6 @@
   },
   "auth": {
     "providers": [
-      "password",
       "anonymous"
     ]
   },
