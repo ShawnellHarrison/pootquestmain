@@ -306,8 +306,20 @@
         },
         "questFlags": {
           "type": "object",
-          "description": "Quest flags as a map.",
-          "additionalProperties": true
+          "description": "Quest flags as a map, tracking status and step.",
+          "additionalProperties": {
+            "type": "object",
+            "properties": {
+              "status": {
+                "type": "string",
+                "enum": ["started", "completed", "failed"]
+              },
+              "currentStep": {
+                "type": "number"
+              }
+            },
+            "required": ["status", "currentStep"]
+          }
         }
       },
       "required": [

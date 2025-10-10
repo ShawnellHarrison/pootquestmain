@@ -145,17 +145,24 @@ export function AdventureClient({ characterId }: AdventureClientProps) {
     }
     
     try {
-        if (choice.tags.includes("QUEST_COMPLETE") && choice.questId) {
-            const questUpdates: Record<string, any> = {};
-            questUpdates[`questFlags.${choice.questId}`] = "completed";
-            questUpdates['lastNarration'] = `Quest Complete: ${choice.questId}!`;
-            batch.update(narrativeContextRef, questUpdates);
+        if (choice.questProgress) {
+            const { questId, nextStep } = choice.questProgress;
+            updates[`questFlags.${questId}.currentStep`] = nextStep;
+            updates['lastNarration'] = `Quest updated: ${questId}.`;
+        }
+
+        if (choice.isQuestCompletion) {
+            const questId = choice.questProgress?.questId; // Assuming the ID would still be here
+            if (questId) {
+                updates[`questFlags.${questId}.status`] = "completed";
+                updates['lastNarration'] = `Quest Complete: ${questId}!`;
+            }
         }
 
         if (choice.tags.includes("COMBAT")) {
             updates.triggerNextScenario = false; // The battle screen will handle the redirect and trigger
             const activeQuestId = Object.keys(narrativeContext.questFlags || {}).find(
-              (key) => (narrativeContext.questFlags || {})[key] === 'started'
+              (key) => (narrativeContext.questFlags || {})[key]?.status === 'started'
             );
 
             const encounterResult = await generateEncounter({
@@ -191,7 +198,7 @@ export function AdventureClient({ characterId }: AdventureClientProps) {
             });
 
             if (npcResult.quest && npcResult.questId) {
-                updates[`questFlags.${npcResult.questId}`] = "started";
+                updates[`questFlags.${npcResult.questId}`] = { status: "started", currentStep: 1 };
             }
             updates.lastNarration = `${npcResult.name} says: "${npcResult.dialogue}" ${npcResult.quest ? `\n\nNew Quest: ${npcResult.quest}`: ''}`;
         }
@@ -322,5 +329,3 @@ export function AdventureClient({ characterId }: AdventureClientProps) {
     </Card>
   );
 }
-
-    

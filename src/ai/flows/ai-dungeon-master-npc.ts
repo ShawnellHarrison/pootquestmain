@@ -1,3 +1,4 @@
+
 'use server';
 /**
  * @fileOverview An AI agent for generating NPCs within the game dungeon.
@@ -25,7 +26,10 @@ const NpcInputSchema = z.object({
       combat: z.number(),
       diplomacy: z.number()
     }).describe('The player reputation scores.'),
-    questFlags: z.record(z.string(), z.any()).describe('Flags indicating the status of various quests.')
+    questFlags: z.record(z.string(), z.object({
+        status: z.string(),
+        currentStep: z.number(),
+    })).describe('Flags indicating the status of various quests.')
   }).describe('The player context, including level, choices, reputation, and quest flags.')
 });
 
@@ -63,7 +67,7 @@ const generateNpcPrompt = ai.definePrompt({
   Create an NPC that is a direct reflection of the world and the player's journey.
   1.  **Personality:** Give them a distinct personality that fits the {{location}}.
   2.  **Reactive Dialogue:** The NPC's dialogue **must** reflect the player's reputation and past actions. They should not be generic. If combat reputation is high, they might be fearful, aggressive, or admiring. If diplomacy is high, they might be trusting or manipulative. They might even mention a specific past deed.
-  3.  **Quest Generation:** The NPC should offer a simple, actionable quest that makes sense for the location, their personality, and the player's class. The quest MUST have a simple, snake_case 'questId'.
+  3.  **Quest Generation:** The NPC should offer a simple, actionable quest that makes sense for the location, their personality, and the player's class. The quest MUST have a simple, snake_case 'questId'. The quest should be a multi-step quest.
 
   **Example (for a player with high Combat reputation who recently cleared a goblin camp):**
   - Name: "Grizelda the Grim"
