@@ -25,7 +25,7 @@ const NarrativeInputSchema = z.object({
     diplomacy: z.number().describe('The player reputation for diplomacy.'),
   }).describe('The player reputation.'),
   unlockedPaths: z.array(z.string()).describe('The paths unlocked by the player.'),
-  questFlags: z.record(z.string(), z.any()).describe('The quest flags.'),
+  questFlags: z.record(z.string(), z.any()).describe('The quest flags, a map of quest IDs to their state (e.g., "started", "completed").'),
 });
 export type NarrativeInput = z.infer<typeof NarrativeInputSchema>;
 
@@ -62,12 +62,12 @@ const branchingNarrativePrompt = ai.definePrompt({
       {{#each choices}}
       - {{this.text}} ({{#each this.tags}}{{@key}}{{#if @last}}{{else}}, {{/if}}{{/each}})
       {{/each}}
-  -   **Known Quests:** {{questFlags}}
+  -   **Active Quests:** {{#each questFlags}} {{this}} {{/each}}
   -   **Unlocked Story Paths:** {{unlockedPaths}}
 
   **Your Task:**
   Analyze all of the above context. Generate the next scenario and three distinct, compelling choices (A, B, C).
-  1.  **Reactive Scenario:** Write a scenario that is a direct consequence of the character's being. If they are a high-combat barbarian, maybe they're ambushed by someone wanting to test their strength. If they are a high-diplomacy paladin who just negotiated peace, perhaps they are greeted as a hero.
+  1.  **Reactive Scenario:** Write a scenario that is a direct consequence of the character's being. If they are on a quest, the scenario should be related to that quest. If they are a high-combat barbarian, maybe they're ambushed by someone wanting to test their strength. If they are a high-diplomacy paladin who just negotiated peace, perhaps they are greeted as a hero.
   2.  **Character-Driven Choices:** The choices you offer must reflect the character's core attributes. There should be at least one choice that aligns perfectly with their class or highest reputation score (e.g., a stealthy option for a Rogue, a diplomatic one for a Paladin).
   3.  **Tag Your Choices:** Each choice must have at least one tag: \`STEALTH\`, \`COMBAT\`, or \`DIPLOMACY\`. You can add more descriptive tags if needed. A choice can have multiple tags, like \`['COMBAT', 'GREED']\`.
 

@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useEffect } from "react";
 import {
   generateNextScenario,
   NarrativeOutput,
@@ -24,6 +24,7 @@ import { updateDocumentNonBlocking } from "@/firebase/non-blocking-updates";
 import { CLASSES } from "@/lib/game-data";
 import { generateEncounter } from "@/ai/flows/generate-encounter-flow";
 import { useRouter } from "next/navigation";
+import { generateNpc, NpcOutput } from "@/ai/flows/ai-dungeon-master-npc";
 
 interface AdventureClientProps {
   characterId: string;
@@ -62,7 +63,6 @@ export function AdventureClient({ characterId }: AdventureClientProps) {
     try {
       setGameState("generating");
 
-      // Sanitize playerChoices to remove non-serializable Firestore Timestamps
       const sanitizedChoices = narrativeContext.playerChoices.map((choice: any) => ({
         id: choice.id,
         text: choice.text,
@@ -116,6 +116,10 @@ export function AdventureClient({ characterId }: AdventureClientProps) {
     setGameState("generating");
 
     const choiceData = { id: choice.id, text: choice.text, tags: choice.tags, timestamp: new Date().toISOString() };
+    let updates: any = {
+        playerChoices: arrayUnion(choiceData),
+        currentScenario: null,
+    };
 
     try {
         if (choice.tags.includes("COMBAT")) {
@@ -125,20 +129,39 @@ export function AdventureClient({ characterId }: AdventureClientProps) {
                 location: narrativeContext.location,
             });
 
-            updateDocumentNonBlocking(narrativeContextRef, {
-                playerChoices: arrayUnion(choiceData),
-                currentScenario: null, // Clear scenario to transition
-                currentEncounter: encounterResult,
-            });
+            updates.currentEncounter = encounterResult;
+            updateDocumentNonBlocking(narrativeContextRef, updates);
             
             router.push('/battle');
-        } else {
-             updateDocumentNonBlocking(narrativeContextRef, {
-                playerChoices: arrayUnion(choiceData),
-                currentScenario: null,
-                triggerNextScenario: true, // Skip battle and go to next scenario
+        } else if (choice.tags.includes("NPC_INTERACTION")) {
+            const sanitizedChoices = narrativeContext.playerChoices.map((c: any) => ({
+              id: c.id, text: c.text, tags: c.tags
+            }));
+
+            const npcResult = await generateNpc({
+                location: narrativeContext.location,
+                playerClass: characterClassData.name,
+                playerContext: {
+                    level: character.level,
+                    choices: sanitizedChoices,
+                    reputation: {
+                        stealth: narrativeContext.reputationStealth,
+                        combat: narrativeContext.reputationCombat,
+                        diplomacy: narrativeContext.reputationDiplomacy,
+                    },
+                    questFlags: narrativeContext.questFlags,
+                }
             });
-            // The useEffect will catch the trigger and generate the next scenario
+
+            if (npcResult.quest && npcResult.questId) {
+                updates[`questFlags.${npcResult.questId}`] = "started";
+            }
+            updates.lastNarration = `${npcResult.name} says: "${npcResult.dialogue}" ${npcResult.quest ? `\n\nNew Quest: ${npcResult.quest}`: ''}`;
+            updates.triggerNextScenario = true; // Go to next story bit
+            updateDocumentNonBlocking(narrativeContextRef, updates);
+        } else {
+             updates.triggerNextScenario = true; // Skip battle and go to next scenario
+             updateDocumentNonBlocking(narrativeContextRef, updates);
         }
 
     } catch (e: any) {
