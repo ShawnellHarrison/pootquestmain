@@ -29,12 +29,12 @@ interface AdventureClientProps {
   characterId: string;
 }
 
-type GameState = "intro" | "choices" | "loading" | "generating_scenario" | "generating_encounter";
+type GameState = "loading" | "generating" | "ready";
 
 export function AdventureClient({ characterId }: AdventureClientProps) {
   const { firestore, user } = useFirebase();
   const router = useRouter();
-  const [localGameState, setLocalGameState] = useState<GameState>("loading");
+  const [gameState, setGameState] = useState<GameState>("loading");
   const [error, setError] = useState<string | null>(null);
 
   const narrativeContextRef = useMemoFirebase(() => {
@@ -42,14 +42,14 @@ export function AdventureClient({ characterId }: AdventureClientProps) {
     return doc(firestore, `users/${user.uid}/characters/${characterId}/narrativeContexts`, "main");
   }, [firestore, user, characterId]);
 
-  const { data: narrativeContext, isLoading: isContextLoading } = useDoc(narrativeContextRef);
+  const { data: narrativeContext, isLoading: isContextLoading } = useDoc<any>(narrativeContextRef);
 
   const characterDocRef = useMemoFirebase(() => {
     if (!firestore || !user) return null;
     return doc(firestore, `users/${user.uid}/characters/${characterId}`);
   }, [firestore, user, characterId]);
 
-  const { data: character, isLoading: isCharacterLoading } = useDoc(characterDocRef);
+  const { data: character, isLoading: isCharacterLoading } = useDoc<any>(characterDocRef);
 
   const characterClassData = useMemo(() => {
     if (!character) return null;
@@ -60,7 +60,7 @@ export function AdventureClient({ characterId }: AdventureClientProps) {
     if (!narrativeContext || !firestore || !user || !characterClassData || !character || !narrativeContextRef) return;
     
     try {
-      setLocalGameState("generating_scenario");
+      setGameState("generating");
       const result = await generateNextScenario({
         playerClass: characterClassData.name,
         level: character.level,
@@ -76,20 +76,17 @@ export function AdventureClient({ characterId }: AdventureClientProps) {
       });
 
       if (result) {
-        const batch = writeBatch(firestore);
-        batch.update(narrativeContextRef, { 
-          currentScenario: result,
-          triggerNextScenario: false // Reset the trigger
+        updateDocumentNonBlocking(narrativeContextRef, {
+            currentScenario: result,
+            triggerNextScenario: false // Reset the trigger
         });
-        await batch.commit();
-
-        setLocalGameState("choices");
+        setGameState("ready");
       } else {
         throw new Error("The AI Dungeon Fartmaster is confused. No scenario received.");
       }
     } catch (e: any) {
       setError(e.message || "An unknown error occurred while generating the scenario.");
-      setLocalGameState("loading");
+      setGameState("loading");
     }
   };
   
@@ -99,7 +96,7 @@ export function AdventureClient({ characterId }: AdventureClientProps) {
       generateAndSaveNextScenario();
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [narrativeContext]);
+  }, [narrativeContext?.triggerNextScenario]);
 
 
   const handleStart = () => {
@@ -108,13 +105,11 @@ export function AdventureClient({ characterId }: AdventureClientProps) {
 
   const handleChoice = async (choice: { id: string; text: string; tags: string[] }) => {
     if (!narrativeContextRef || !firestore || !user || !characterClassData || !character || !narrativeContext) return;
-    setLocalGameState("generating_encounter");
+    setGameState("generating");
 
     const choiceData = { id: choice.id, text: choice.text, tags: choice.tags, timestamp: new Date() };
 
     try {
-        const batch = writeBatch(firestore);
-
         if (choice.tags.includes("COMBAT")) {
             const encounterResult = await generateEncounter({
                 playerClass: characterClassData.name,
@@ -122,27 +117,25 @@ export function AdventureClient({ characterId }: AdventureClientProps) {
                 location: narrativeContext.location,
             });
 
-            batch.update(narrativeContextRef, {
+            updateDocumentNonBlocking(narrativeContextRef, {
                 playerChoices: arrayUnion(choiceData),
                 currentScenario: null, // Clear scenario to transition
                 currentEncounter: encounterResult,
             });
             
-            await batch.commit();
             router.push('/battle');
         } else {
-             batch.update(narrativeContextRef, {
+             updateDocumentNonBlocking(narrativeContextRef, {
                 playerChoices: arrayUnion(choiceData),
                 currentScenario: null,
                 triggerNextScenario: true, // Skip battle and go to next scenario
             });
-            await batch.commit();
             // The useEffect will catch the trigger and generate the next scenario
         }
 
     } catch (e: any) {
         setError(e.message || "An unknown error occurred while processing your choice.");
-        setLocalGameState("loading");
+        setGameState("loading");
     }
   };
   
@@ -179,12 +172,12 @@ export function AdventureClient({ characterId }: AdventureClientProps) {
       );
     }
 
-    if (localGameState === 'generating_scenario' || localGameState === 'generating_encounter') {
+    if (gameState === 'generating') {
          return (
           <div className="flex flex-col items-center justify-center text-center">
             <Loader2 className="h-16 w-16 animate-spin text-primary mb-4" />
             <p className="text-xl text-muted-foreground">
-              {localGameState === 'generating_scenario' ? 'The story unfolds...' : 'Your choice echoes...'}
+              The story unfolds...
             </p>
           </div>
         );
@@ -227,7 +220,7 @@ export function AdventureClient({ characterId }: AdventureClientProps) {
         <p className="text-lg leading-relaxed whitespace-pre-wrap">
           {narrativeContext.lastNarration}
         </p>
-        <Button onClick={handleStart} size="lg" disabled={localGameState === 'generating_scenario'}>
+        <Button onClick={handleStart} size="lg" disabled={gameState === 'generating'}>
           What do you do? <Forward className="ml-2 h-4 w-4" />
         </Button>
       </div>

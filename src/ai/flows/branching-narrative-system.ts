@@ -60,7 +60,7 @@ const branchingNarrativePrompt = ai.definePrompt({
   -   **Reputation:** Stealth: {{reputation.stealth}}, Combat: {{reputation.combat}}, Diplomacy: {{reputation.diplomacy}}
   -   **Past Choices & Actions:**
       {{#each choices}}
-      - {{this.text}} ({{this.tags}})
+      - {{this.text}} ({{#each this.tags}}{{@key}}{{#if @last}}{{else}}, {{/if}}{{/each}})
       {{/each}}
   -   **Known Quests:** {{questFlags}}
   -   **Unlocked Story Paths:** {{unlockedPaths}}

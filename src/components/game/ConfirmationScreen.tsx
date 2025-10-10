@@ -9,7 +9,7 @@ import { ArrowLeft, CheckCircle, Swords, AlertTriangle, FolderOpen, Sparkles } f
 import Link from "next/link";
 import Image from "next/image";
 import { useFirebase } from "@/firebase";
-import { collection, serverTimestamp, doc, writeBatch } from "firebase/firestore";
+import { collection, doc, writeBatch } from "firebase/firestore";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Loader2 } from "lucide-react";
@@ -54,7 +54,7 @@ export function ConfirmationScreen({ character }: ConfirmationScreenProps) {
                 maxHealth: 60,
                 mana: 10,
                 maxMana: 10,
-                createdAt: serverTimestamp(),
+                createdAt: new Date(),
             });
 
             // 2. Create initial NarrativeContext document
@@ -84,7 +84,6 @@ export function ConfirmationScreen({ character }: ConfirmationScreenProps) {
 
             await batch.commit();
 
-            // Store the character ID for the battle page to use
             localStorage.setItem('characterId', newCharacterRef.id);
 
             router.push(`/adventure/${newCharacterRef.id}`);
@@ -196,5 +195,3 @@ export function ConfirmationScreen({ character }: ConfirmationScreenProps) {
         </div>
     );
 }
-
-    

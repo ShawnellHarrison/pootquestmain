@@ -15,14 +15,13 @@ type EnemyData = {
 interface EnemyProps {
     enemy: EnemyData;
     onClick: () => void;
-    isTarget: boolean;
 }
 
-export const Enemy = ({ enemy, onClick, isTarget }: EnemyProps) => (
+export const Enemy = ({ enemy, onClick }: EnemyProps) => (
     <div 
         className={cn(
             "flex flex-col items-center gap-2 cursor-pointer transition-transform duration-200",
-            isTarget && "hover:scale-110 hover:-translate-y-2"
+            "hover:scale-110 hover:-translate-y-2"
         )}
         onClick={onClick}
     >

@@ -3,7 +3,7 @@ import { GameContainer } from "@/components/game/GameContainer";
 import { Header } from "@/components/game/Header";
 
 type Props = {
-  params: { class: string }; // 'class' is now characterId
+  params: { class: string }; // 'class' is the characterId from the URL
 };
 
 export default function AdventurePage({ params }: Props) {

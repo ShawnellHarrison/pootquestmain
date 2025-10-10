@@ -44,10 +44,6 @@
       "type": "object",
       "description": "Represents a playable character in the Poot Quest game.",
       "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the character."
-        },
         "userId": {
           "type": "string",
           "description": "Reference to User. (Relationship: User 1:N Character)"
@@ -83,10 +79,14 @@
         "maxMana": {
           "type": "number",
           "description": "The character's maximum mana points."
+        },
+        "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Timestamp of when the character was created."
         }
       },
       "required": [
-        "id",
         "userId",
         "class",
         "level",
@@ -94,7 +94,8 @@
         "health",
         "maxHealth",
         "mana",
-        "maxMana"
+        "maxMana",
+        "createdAt"
       ]
     },
     "Item": {
@@ -103,10 +104,6 @@
       "type": "object",
       "description": "Represents an item that a character can possess in their inventory.",
       "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the item."
-        },
         "name": {
           "type": "string",
           "description": "The name of the item."
@@ -121,7 +118,7 @@
           "description": "The type of the item."
         }
       },
-      "required": ["id", "name", "description", "type"]
+      "required": ["name", "description", "type"]
     },
     "Card": {
       "$schema": "http://json-schema.org/draft-07/schema#",
@@ -176,10 +173,6 @@
       "type": "object",
       "description": "Represents a deck of cards owned by a character.",
       "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the deck."
-        },
         "characterId": {
           "type": "string",
           "description": "Reference to Character. (Relationship: Character 1:N Deck)"
@@ -193,7 +186,6 @@
         }
       },
       "required": [
-        "id",
         "characterId",
         "cards"
       ]
@@ -267,7 +259,7 @@
         "currentEncounter": {
           "type": "object",
           "description": "The current AI-generated combat encounter.",
-          "$ref": "#/backend/entities/Encounter",
+          "$ref": "#/entities/Encounter",
           "nullable": true
         },
         "triggerNextScenario": {
@@ -318,10 +310,6 @@
       "type": "object",
       "description": "Represents a single run of the game, storing information for the chronicle system.",
       "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the run chronicle."
-        },
         "userId": {
           "type": "string",
           "description": "Reference to User. (Relationship: User 1:N RunChronicle)"
@@ -356,7 +344,6 @@
         }
       },
       "required": [
-        "id",
         "userId",
         "characterClass",
         "moralAlignment"
@@ -376,7 +363,7 @@
         "definition": {
           "entityName": "User",
           "schema": {
-            "$ref": "#/backend/entities/User"
+            "$ref": "#/entities/User"
           },
           "description": "Stores user account information.  Path-based ownership ensures only the user can access their own document.",
           "params": [
@@ -392,7 +379,7 @@
         "definition": {
           "entityName": "Character",
           "schema": {
-            "$ref": "#/backend/entities/Character"
+            "$ref": "#/entities/Character"
           },
           "description": "Stores character data owned by a specific user.  Path-based ownership ensures only the owning user can access the character data. Contains 'userId' for explicit ownership.",
           "params": [
@@ -412,7 +399,7 @@
         "definition": {
           "entityName": "Deck",
           "schema": {
-            "$ref": "#/backend/entities/Deck"
+            "$ref": "#/entities/Deck"
           },
           "description": "Stores decks of cards associated with a character. Path-based ownership ensures only the owning user can access the deck data. Contains 'characterId' to link to the parent character.",
           "params": [
@@ -436,7 +423,7 @@
         "definition": {
           "entityName": "Item",
           "schema": {
-            "$ref": "#/backend/entities/Item"
+            "$ref": "#/entities/Item"
           },
           "description": "Stores items in a character's inventory.",
           "params": [
@@ -460,7 +447,7 @@
         "definition": {
           "entityName": "NarrativeContext",
           "schema": {
-            "$ref": "#/backend/entities/NarrativeContext"
+            "$ref": "#/entities/NarrativeContext"
           },
           "description": "Stores narrative context data for a character, used for AI-driven story generation. Path-based ownership ensures only the owning user can access this data. Contains 'characterId' to link to the parent character.",
           "params": [
@@ -484,7 +471,7 @@
         "definition": {
           "entityName": "RunChronicle",
           "schema": {
-            "$ref": "#/backend/entities/RunChronicle"
+            "$ref": "#/entities/RunChronicle"
           },
           "description": "Stores game run chronicles for a user. Path-based ownership ensures only the owning user can access their run history. Contains 'userId' for explicit ownership.",
           "params": [
@@ -504,7 +491,7 @@
         "definition": {
           "entityName": "Card",
           "schema": {
-            "$ref": "#/backend/entities/Card"
+            "$ref": "#/entities/Card"
           },
           "description": "Stores global card data. This collection is publicly readable, but only admin writeable.",
           "params": [
@@ -519,5 +506,3 @@
     "reasoning": "The Firestore structure is designed to securely manage user data, character information, card collections, narrative contexts, and game run chronicles for the 'Poot Quest' game. Prioritizing authorization independence, data clarity, and structural segregation, the design eliminates hierarchical authorization dependencies (`get()`) and ensures robust security rules.\\n\\nAuthorization Independence is achieved through structural denormalization. For example, access to `characters` is governed by ownership; `/users/{userId}/characters/{characterId}` allows direct, secure access without needing to check parent (`/users/{userId}`) data. This same approach is applied to the other collections, creating a consistent and secure data access pattern.\\n\\nQAPs (Rules are not Filters) is supported by segregating data based on ownership (path-based authorization), and by avoiding mixing data with different access needs within the same collection. The consistent use of path-based ownership enables efficient and secure `list` operations, as rules can directly enforce access based on the `userId` parameter.\\n\\nThe design explicitly models a single, dedicated `status` field for entities, enabling clear state management and enhancing debuggability. Predictable schemas are enforced by avoiding dynamic keys and using arrays of objects with static keys instead."
   }
 }
-
-    
