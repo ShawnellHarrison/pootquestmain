@@ -1,6 +1,8 @@
+
 "use client";
 
-import { useState, useEffect } from "react";
+import * as React from "react";
+import { useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -24,7 +26,7 @@ const signInSchema = z.object({
 });
 
 const Bubble = ({ id }: { id: number }) => {
-  const [style, setStyle] = useState({});
+  const [style, setStyle] = React.useState({});
 
   useEffect(() => {
     const size = 2 + Math.random() * 4;
@@ -180,7 +182,7 @@ const AuthForm = () => {
 };
 
 export function SplashScreen() {
-  const [bubbles, setBubbles] = useState<number[]>([]);
+  const [bubbles, setBubbles] = React.useState<number[]>([]);
   const { user, isUserLoading } = useUser();
 
   useEffect(() => {
@@ -238,3 +240,5 @@ export function SplashScreen() {
     </div>
   );
 }
+
+    
