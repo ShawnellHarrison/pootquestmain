@@ -19,7 +19,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import Link from "next/link";
 import { Separator } from "@/components/ui/separator";
 import { useDoc, useFirebase, useMemoFirebase } from "@/firebase";
-import { doc, arrayUnion, writeBatch } from "firebase/firestore";
+import { doc, arrayUnion, writeBatch, increment } from "firebase/firestore";
 import { updateDocumentNonBlocking } from "@/firebase/non-blocking-updates";
 import { CLASSES } from "@/lib/game-data";
 import { generateEncounter } from "@/ai/flows/generate-encounter-flow";
@@ -116,11 +116,26 @@ export function AdventureClient({ characterId }: AdventureClientProps) {
     setGameState("generating");
 
     const choiceData = { id: choice.id, text: choice.text, tags: choice.tags, timestamp: new Date().toISOString() };
-    let updates: any = {
-        playerChoices: arrayUnion(choiceData),
-        currentScenario: null,
-    };
+    
+    // Use a write batch for atomic updates
+    const batch = writeBatch(firestore);
 
+    batch.update(narrativeContextRef, {
+        playerChoices: arrayUnion(choiceData),
+        currentScenario: null, // Clear current scenario
+    });
+
+    // Update reputation scores
+    if (choice.tags.includes("STEALTH")) {
+        batch.update(narrativeContextRef, { reputationStealth: increment(1) });
+    }
+    if (choice.tags.includes("COMBAT")) {
+        batch.update(narrativeContextRef, { reputationCombat: increment(1) });
+    }
+    if (choice.tags.includes("DIPLOMACY")) {
+        batch.update(narrativeContextRef, { reputationDiplomacy: increment(1) });
+    }
+    
     try {
         if (choice.tags.includes("COMBAT")) {
             const encounterResult = await generateEncounter({
@@ -129,10 +144,10 @@ export function AdventureClient({ characterId }: AdventureClientProps) {
                 location: narrativeContext.location,
             });
 
-            updates.currentEncounter = encounterResult;
-            updateDocumentNonBlocking(narrativeContextRef, updates);
-            
+            batch.update(narrativeContextRef, { currentEncounter: encounterResult });
+            await batch.commit();
             router.push('/battle');
+
         } else if (choice.tags.includes("NPC_INTERACTION")) {
             const sanitizedChoices = narrativeContext.playerChoices.map((c: any) => ({
               id: c.id, text: c.text, tags: c.tags
@@ -153,15 +168,18 @@ export function AdventureClient({ characterId }: AdventureClientProps) {
                 }
             });
 
+            let updates: any = {};
             if (npcResult.quest && npcResult.questId) {
                 updates[`questFlags.${npcResult.questId}`] = "started";
             }
             updates.lastNarration = `${npcResult.name} says: "${npcResult.dialogue}" ${npcResult.quest ? `\n\nNew Quest: ${npcResult.quest}`: ''}`;
             updates.triggerNextScenario = true; // Go to next story bit
-            updateDocumentNonBlocking(narrativeContextRef, updates);
+            
+            batch.update(narrativeContextRef, updates);
+            await batch.commit();
         } else {
-             updates.triggerNextScenario = true; // Skip battle and go to next scenario
-             updateDocumentNonBlocking(narrativeContextRef, updates);
+             batch.update(narrativeContextRef, { triggerNextScenario: true }); // Skip battle and go to next scenario
+             await batch.commit();
         }
 
     } catch (e: any) {

@@ -1,3 +1,4 @@
+
 'use client';
 
 import { GameContainer } from "@/components/game/GameContainer";
@@ -88,7 +89,7 @@ export default function ChroniclePage() {
                             </div>
                             <Separator />
                             <div className="space-y-4">
-                                <h3 className="font-headline text-2xl">Secrets Remaining: 23</h3>
+                                <h3 className="font-headline text-2xl">Secrets</h3>
                                 <ul className="list-disc list-inside text-muted-foreground font-code text-sm space-y-1">
                                     {secrets.map((secret, index) => <li key={index}>{secret}</li>)}
                                 </ul>

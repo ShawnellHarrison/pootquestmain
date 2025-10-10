@@ -54,6 +54,9 @@ export function ConfirmationScreen({ character }: ConfirmationScreenProps) {
                 maxHealth: 60,
                 mana: 10,
                 maxMana: 10,
+                attack: character.stats.attack,
+                defense: character.stats.defense,
+                speed: character.stats.speed,
                 createdAt: new Date(),
             });
 
@@ -84,7 +87,9 @@ export function ConfirmationScreen({ character }: ConfirmationScreenProps) {
 
             await batch.commit();
 
-            localStorage.setItem('characterId', newCharacterRef.id);
+            if (typeof window !== 'undefined') {
+                localStorage.setItem('characterId', newCharacterRef.id);
+            }
 
             router.push(`/adventure/${newCharacterRef.id}`);
 
@@ -99,10 +104,21 @@ export function ConfirmationScreen({ character }: ConfirmationScreenProps) {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <div className="lg:col-span-2">
                 <Card className="bg-card/80 border-primary/20 shadow-lg shadow-primary/10">
-                    <CardHeader>
-                        <CardTitle className="font-headline text-3xl text-glow">
-                            Your Chosen Warrior: {character.name}
-                        </CardTitle>
+                    <CardHeader className="flex flex-row items-start gap-4">
+                        <Image 
+                            src={character.image}
+                            alt={character.name}
+                            width={100}
+                            height={100}
+                            className="rounded-lg object-cover border-2 border-primary/50"
+                            data-ai-hint={character.imageHint}
+                        />
+                        <div>
+                            <CardTitle className="font-headline text-3xl text-glow">
+                                Your Chosen Warrior: {character.name}
+                            </CardTitle>
+                            <p className="text-muted-foreground">{character.playstyle}</p>
+                        </div>
                     </CardHeader>
                     <CardContent className="space-y-6 font-code text-base">
                         <div>
@@ -178,7 +194,7 @@ export function ConfirmationScreen({ character }: ConfirmationScreenProps) {
                     </CardFooter>
                 </Card>
             </div>
-            <div className="flex flex-col items-center">
+            <div className="hidden lg:flex flex-col items-center">
                 <Card className="w-full max-w-sm sticky top-24">
                     <CardContent className="p-0">
                         <Image 

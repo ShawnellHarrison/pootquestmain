@@ -1,3 +1,4 @@
+
 'use server';
 /**
  * @fileOverview This file defines the Genkit flow for the BranchingNarrativeSystem story.
@@ -34,7 +35,7 @@ const NarrativeOutputSchema = z.object({
   choices: z.array(z.object({
     id: z.string().describe('A unique ID for the choice (e.g., "A", "B", "C").'),
     text: z.string().describe('The text of the choice.'),
-    tags: z.array(z.string()).describe('An array of tags classifying the choice (e.g., COMBAT, DIPLOMACY, STEALTH).'),
+    tags: z.array(z.string()).describe('An array of tags classifying the choice (e.g., COMBAT, DIPLOMACY, STEALTH, NPC_INTERACTION).'),
   })).describe('The choices available to the player.'),
 });
 export type NarrativeOutput = z.infer<typeof NarrativeOutputSchema>;
@@ -68,8 +69,8 @@ const branchingNarrativePrompt = ai.definePrompt({
   **Your Task:**
   Analyze all of the above context. Generate the next scenario and three distinct, compelling choices (A, B, C).
   1.  **Reactive Scenario:** Write a scenario that is a direct consequence of the character's being. If they are on a quest, the scenario should be related to that quest. If they are a high-combat barbarian, maybe they're ambushed by someone wanting to test their strength. If they are a high-diplomacy paladin who just negotiated peace, perhaps they are greeted as a hero.
-  2.  **Character-Driven Choices:** The choices you offer must reflect the character's core attributes. There should be at least one choice that aligns perfectly with their class or highest reputation score (e.g., a stealthy option for a Rogue, a diplomatic one for a Paladin).
-  3.  **Tag Your Choices:** Each choice must have at least one tag: \`STEALTH\`, \`COMBAT\`, or \`DIPLOMACY\`. You can add more descriptive tags if needed. A choice can have multiple tags, like \`['COMBAT', 'GREED']\`.
+  2.  **Character-Driven Choices:** The choices you offer must reflect the character's core attributes. There should be at least one choice that aligns perfectly with their class or highest reputation score (e.g., a stealthy option for a Rogue, a diplomatic one for a Paladin). **Also, include a choice with the 'NPC_INTERACTION' tag occasionally to allow the player to meet new characters.**
+  3.  **Tag Your Choices:** Each choice must have at least one tag: \`STEALTH\`, \`COMBAT\`, \`DIPLOMACY\`, or \`NPC_INTERACTION\`. You can add more descriptive tags if needed. A choice can have multiple tags, like \`['COMBAT', 'GREED']\`.
 
   The output MUST conform to the schema. Make the story a living reflection of the player's soul.`,
 });
