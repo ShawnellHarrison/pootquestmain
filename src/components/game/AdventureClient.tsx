@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useEffect } from "react";
 import {
   generateNextScenario,
   NarrativeOutput,
@@ -14,7 +14,7 @@ import {
   CardDescription,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Loader2, BookOpen, Forward } from "lucide-react";
+import { Loader2, BookOpen, Forward, ChevronRight } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import Link from "next/link";
 import { Separator } from "@/components/ui/separator";
@@ -36,8 +36,8 @@ type Choice = NarrativeOutput['choices'][0];
 export function AdventureClient({ characterId }: AdventureClientProps) {
   const { firestore, user } = useFirebase();
   const router = useRouter();
-  const [gameState, setGameState] = useState<GameState>("loading");
-  const [error, setError] = useState<string | null>(null);
+  const [gameState, setGameState] = React.useState<GameState>("loading");
+  const [error, setError] = React.useState<string | null>(null);
 
   const narrativeContextRef = useMemoFirebase(() => {
     if (!firestore || !user) return null;
@@ -53,7 +53,7 @@ export function AdventureClient({ characterId }: AdventureClientProps) {
 
   const { data: character, isLoading: isCharacterLoading } = useDoc<any>(characterDocRef);
 
-  const characterClassData = useMemo(() => {
+  const characterClassData = React.useMemo(() => {
     if (!character) return null;
     return CLASSES.find(c => c.id === character.class);
   }, [character]);
@@ -64,7 +64,7 @@ export function AdventureClient({ characterId }: AdventureClientProps) {
     try {
       setGameState("generating");
 
-      const sanitizedChoices = narrativeContext.playerChoices.map((choice: any) => ({
+      const sanitizedChoices = (narrativeContext.playerChoices || []).map((choice: any) => ({
         id: choice.id,
         text: choice.text,
         tags: choice.tags,
@@ -76,12 +76,12 @@ export function AdventureClient({ characterId }: AdventureClientProps) {
         location: narrativeContext.location,
         choices: sanitizedChoices,
         reputation: {
-          stealth: narrativeContext.reputationStealth,
-          combat: narrativeContext.reputationCombat,
-          diplomacy: narrativeContext.reputationDiplomacy,
+          stealth: narrativeContext.reputationStealth || 0,
+          combat: narrativeContext.reputationCombat || 0,
+          diplomacy: narrativeContext.reputationDiplomacy || 0,
         },
-        unlockedPaths: narrativeContext.unlockedPaths,
-        questFlags: narrativeContext.questFlags,
+        unlockedPaths: narrativeContext.unlockedPaths || [],
+        questFlags: narrativeContext.questFlags || {},
       });
 
       if (result) {
@@ -118,15 +118,13 @@ export function AdventureClient({ characterId }: AdventureClientProps) {
 
     const choiceData = { id: choice.id, text: choice.text, tags: choice.tags, timestamp: new Date().toISOString() };
     
-    // Use a write batch for atomic updates
     const batch = writeBatch(firestore);
 
     let updates: Record<string, any> = {
         playerChoices: arrayUnion(choiceData),
-        currentScenario: null, // Clear current scenario
+        currentScenario: null,
     };
 
-    // Update reputation scores
     if (choice.tags.includes("STEALTH")) {
         updates['reputationStealth'] = increment(1);
     }
@@ -143,15 +141,15 @@ export function AdventureClient({ characterId }: AdventureClientProps) {
         if (choice.tags.includes("QUEST_COMPLETE") && choice.questId) {
             const questUpdates: Record<string, any> = {};
             questUpdates[`questFlags.${choice.questId}`] = "completed";
-            questUpdates['lastNarration'] = `Quest Complete: ${choice.questId}!`; // Simple completion message
+            questUpdates['lastNarration'] = `Quest Complete: ${choice.questId}!`;
             questUpdates['triggerNextScenario'] = true;
             
             batch.update(narrativeContextRef, questUpdates);
             await batch.commit();
 
         } else if (choice.tags.includes("COMBAT")) {
-            const activeQuestId = Object.keys(narrativeContext.questFlags).find(
-              (key) => narrativeContext.questFlags[key] === 'started'
+            const activeQuestId = Object.keys(narrativeContext.questFlags || {}).find(
+              (key) => (narrativeContext.questFlags || {})[key] === 'started'
             );
 
             const encounterResult = await generateEncounter({
@@ -166,7 +164,7 @@ export function AdventureClient({ characterId }: AdventureClientProps) {
             router.push('/battle');
 
         } else if (choice.tags.includes("NPC_INTERACTION")) {
-            const sanitizedChoices = narrativeContext.playerChoices.map((c: any) => ({
+            const sanitizedChoices = (narrativeContext.playerChoices || []).map((c: any) => ({
               id: c.id, text: c.text, tags: c.tags
             }));
 
@@ -177,11 +175,11 @@ export function AdventureClient({ characterId }: AdventureClientProps) {
                     level: character.level,
                     choices: sanitizedChoices,
                     reputation: {
-                        stealth: narrativeativeContext.reputationStealth,
-                        combat: narrativeContext.reputationCombat,
-                        diplomacy: narrativeContext.reputationDiplomacy,
+                        stealth: narrativeContext.reputationStealth || 0,
+                        combat: narrativeContext.reputationCombat || 0,
+                        diplomacy: narrativeContext.reputationDiplomacy || 0,
                     },
-                    questFlags: narrativeContext.questFlags,
+                    questFlags: narrativeContext.questFlags || {},
                 }
             });
 
@@ -190,12 +188,12 @@ export function AdventureClient({ characterId }: AdventureClientProps) {
                 npcUpdates[`questFlags.${npcResult.questId}`] = "started";
             }
             npcUpdates.lastNarration = `${npcResult.name} says: "${npcResult.dialogue}" ${npcResult.quest ? `\n\nNew Quest: ${npcResult.quest}`: ''}`;
-            npcUpdates.triggerNextScenario = true; // Go to next story bit
+            npcUpdates.triggerNextScenario = true;
             
             batch.update(narrativeContextRef, npcUpdates);
             await batch.commit();
         } else {
-             batch.update(narrativeContextRef, { triggerNextScenario: true }); // Skip battle and go to next scenario
+             batch.update(narrativeContextRef, { triggerNextScenario: true });
              await batch.commit();
         }
 
@@ -211,9 +209,9 @@ export function AdventureClient({ characterId }: AdventureClientProps) {
   const renderContent = () => {
     if (isLoading) {
       return (
-        <div className="flex flex-col items-center justify-center text-center">
+        <div className="flex flex-col items-center justify-center text-center h-64">
           <Loader2 className="h-16 w-16 animate-spin text-primary mb-4" />
-          <p className="text-xl text-muted-foreground">Loading your legend...</p>
+          <p className="text-xl text-muted-foreground font-headline">Loading your legend...</p>
         </div>
       );
     }
@@ -240,10 +238,10 @@ export function AdventureClient({ characterId }: AdventureClientProps) {
 
     if (gameState === 'generating') {
          return (
-          <div className="flex flex-col items-center justify-center text-center">
+          <div className="flex flex-col items-center justify-center text-center h-64">
             <Loader2 className="h-16 w-16 animate-spin text-primary mb-4" />
-            <p className="text-xl text-muted-foreground">
-              The story unfolds...
+            <p className="text-xl text-muted-foreground font-headline">
+              The Fartmaster is weaving your fate...
             </p>
           </div>
         );
@@ -251,31 +249,33 @@ export function AdventureClient({ characterId }: AdventureClientProps) {
 
     if (currentScenario) {
       return (
-        <div className="space-y-4">
-          <p className="text-center text-lg leading-relaxed whitespace-pre-wrap mb-6">
+        <div className="space-y-8">
+          <div className="text-lg leading-relaxed whitespace-pre-wrap p-6 bg-background/50 rounded-lg border border-border/50 font-serif italic">
             {currentScenario.scenarioText}
-          </p>
-          <Separator />
-          <p className="text-center text-lg font-bold pt-4">What do you do next?</p>
-          {currentScenario.choices.map((choice) => (
-            <Button
-              key={choice.id}
-              onClick={() => handleChoice(choice)}
-              className="w-full justify-start"
-              variant="secondary"
-              size="lg"
-            >
-              <span className="font-bold mr-4">{choice.id}</span> {choice.text}
-            </Button>
-          ))}
+          </div>
+          <div className="space-y-4">
+            <h3 className="text-center font-headline text-2xl text-glow">What do you do?</h3>
+            {currentScenario.choices.map((choice) => (
+              <Button
+                key={choice.id}
+                onClick={() => handleChoice(choice)}
+                className="w-full justify-between h-auto py-3 px-4 text-left"
+                variant="outline"
+                size="lg"
+              >
+                <span className="font-bold mr-4">{choice.id}.</span> 
+                <span className="flex-1 whitespace-normal">{choice.text}</span>
+                <ChevronRight className="h-5 w-5 ml-4" />
+              </Button>
+            ))}
+          </div>
         </div>
       );
     }
     
-    // Default Intro State (or if there's no current scenario)
     return (
       <div className="space-y-6 text-center">
-        <div className="p-4 bg-muted rounded-lg">
+        <div className="p-4 bg-muted rounded-lg border border-border">
           <h3 className="font-headline text-lg text-accent flex items-center justify-center gap-2">
             <BookOpen /> Your Story Arc
           </h3>
@@ -283,11 +283,11 @@ export function AdventureClient({ characterId }: AdventureClientProps) {
             &quot;{narrativeContext.storyArc}&quot;
           </p>
         </div>
-        <p className="text-lg leading-relaxed whitespace-pre-wrap">
+        <p className="text-lg leading-relaxed whitespace-pre-wrap font-serif">
           {narrativeContext.lastNarration}
         </p>
         <Button onClick={handleStart} size="lg" disabled={gameState === 'generating'}>
-          What do you do? <Forward className="ml-2 h-4 w-4" />
+          Continue Your Adventure <Forward className="ml-2 h-4 w-4" />
         </Button>
       </div>
     );
@@ -295,16 +295,17 @@ export function AdventureClient({ characterId }: AdventureClientProps) {
 
 
   return (
-    <Card className="max-w-3xl mx-auto shadow-lg shadow-primary/10">
-      <CardHeader>
+    <Card className="max-w-3xl mx-auto shadow-lg shadow-primary/10 border-primary/20">
+      <CardHeader className="text-center">
         <CardTitle className="font-headline text-3xl text-glow">
-          The Adventure Begins
+          {characterClassData?.name || "The Adventure"}
         </CardTitle>
         <CardDescription>
           {narrativeContext?.location || "A mysterious place..."}
         </CardDescription>
       </CardHeader>
-      <CardContent>{renderContent()}</CardContent>
+      <Separator />
+      <CardContent className="p-4 sm:p-6">{renderContent()}</CardContent>
     </Card>
   );
 }
