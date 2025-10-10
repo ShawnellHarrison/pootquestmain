@@ -302,12 +302,3 @@ export function BattleClient() {
     </Card>
   );
 }
-
-const PlayerStats = ({ health, maxHealth, mana, maxMana}: {health: number, maxHealth: number, mana: number, maxMana: number}) => {
-  return (
-      <div className="flex items-center gap-4">
-          <div className="font-bold text-lg">HP: {health}/{maxHealth}</div>
-          <div className="font-bold text-lg">Mana: {mana}/{maxMana}</div>
-      </div>
-  );
-};
