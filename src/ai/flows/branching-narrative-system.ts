@@ -64,17 +64,15 @@ const branchingNarrativePrompt = ai.definePrompt({
       {{#each choices}}
       - {{this.text}} ({{#each this.tags}}{{@key}}{{#if @last}}{{else}}, {{/if}}{{/each}})
       {{/each}}
-  -   **Active Quests:**
-      {{#each questFlags}}
-        {{#if (eq this "started")}}
-        - Quest: {{@key}} (In Progress)
-        {{/if}}
-      {{/each}}
+  -   **Active Quests:** Your main priority is to generate a scenario for any quest with a "started" status in the questFlags object below.
+      \`\`\`json
+      {{{json questFlags}}}
+      \`\`\`
   -   **Unlocked Story Paths:** {{unlockedPaths}}
 
   **Your Task:**
   Analyze all of the above context. Generate the next scenario and three distinct, compelling choices (A, B, C).
-  1.  **Reactive Scenario:** Write a scenario that is a direct consequence of the character's being. **If they have an active quest with the status "started", the scenario MUST be related to completing that quest.** For example, if the quest is "clear_rat_king", the scenario should describe them finding the Rat King's lair.
+  1.  **Reactive Scenario:** Write a scenario that is a direct consequence of the character's being. **If they have an active quest with the status "started", the scenario MUST be related to completing that quest.** For example, if the quest is "clear_rat_king", the scenario should describe them finding the Rat King's lair. If there are no active quests, generate a scenario appropriate for the location.
   2.  **Character-Driven Choices:** The choices you offer must reflect the character's core attributes.
       - There should be at least one choice that aligns perfectly with their class or highest reputation score (e.g., a stealthy option for a Rogue, a diplomatic one for a Paladin).
       - **If the scenario is a quest conclusion, one of the choices MUST have the 'QUEST_COMPLETE' tag and the corresponding 'questId'.**
