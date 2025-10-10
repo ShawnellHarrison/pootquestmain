@@ -30,7 +30,7 @@ interface AdventureClientProps {
   characterId: string;
 }
 
-type GameState = "loading" | "generating" | "ready";
+type GameState = "loading" | "generating" | "ready" | "awaiting_continue";
 type Choice = NarrativeOutput['choices'][0];
 
 export function AdventureClient({ characterId }: AdventureClientProps) {
@@ -57,8 +57,29 @@ export function AdventureClient({ characterId }: AdventureClientProps) {
     if (!character) return null;
     return CLASSES.find(c => c.id === character.class);
   }, [character]);
+  
+  // This effect determines the initial state of the game when the component loads or data changes.
+  useEffect(() => {
+    if (isContextLoading || isCharacterLoading) {
+        setGameState("loading");
+        return;
+    }
 
-  const generateAndSaveNextScenario = async () => {
+    if (narrativeContext) {
+        if (narrativeContext.currentScenario) {
+            setGameState("ready"); // There's an active scenario with choices
+        } else if (narrativeContext.triggerNextScenario) {
+             // This flag is set by battle/NPC interactions to signal we should generate the next step.
+            handleContinue();
+        }
+        else {
+            setGameState("awaiting_continue"); // The game is paused, waiting for the user to proceed
+        }
+    }
+  }, [narrativeContext, isContextLoading, isCharacterLoading]);
+
+
+  const handleContinue = async () => {
     if (!narrativeContext || !firestore || !user || !characterClassData || !character || !narrativeContextRef) return;
     
     try {
@@ -98,19 +119,6 @@ export function AdventureClient({ characterId }: AdventureClientProps) {
       setGameState("loading");
     }
   };
-  
-  // This effect listens for the trigger from the battle screen.
-  useEffect(() => {
-    if (narrativeContext?.triggerNextScenario) {
-      generateAndSaveNextScenario();
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [narrativeContext?.triggerNextScenario]);
-
-
-  const handleStart = () => {
-    generateAndSaveNextScenario();
-  };
 
   const handleChoice = async (choice: Choice) => {
     if (!narrativeContextRef || !firestore || !user || !characterClassData || !character || !narrativeContext) return;
@@ -122,7 +130,8 @@ export function AdventureClient({ characterId }: AdventureClientProps) {
 
     let updates: Record<string, any> = {
         playerChoices: arrayUnion(choiceData),
-        currentScenario: null,
+        currentScenario: null, // Clear the current scenario after a choice is made
+        triggerNextScenario: true, // Signal that the next step should be generated
     };
 
     if (choice.tags.includes("STEALTH")) {
@@ -135,19 +144,16 @@ export function AdventureClient({ characterId }: AdventureClientProps) {
         updates['reputationDiplomacy'] = increment(1);
     }
     
-    batch.update(narrativeContextRef, updates);
-    
     try {
         if (choice.tags.includes("QUEST_COMPLETE") && choice.questId) {
             const questUpdates: Record<string, any> = {};
             questUpdates[`questFlags.${choice.questId}`] = "completed";
             questUpdates['lastNarration'] = `Quest Complete: ${choice.questId}!`;
-            questUpdates['triggerNextScenario'] = true;
-            
             batch.update(narrativeContextRef, questUpdates);
-            await batch.commit();
+        }
 
-        } else if (choice.tags.includes("COMBAT")) {
+        if (choice.tags.includes("COMBAT")) {
+            updates.triggerNextScenario = false; // The battle screen will handle the redirect and trigger
             const activeQuestId = Object.keys(narrativeContext.questFlags || {}).find(
               (key) => (narrativeContext.questFlags || {})[key] === 'started'
             );
@@ -159,9 +165,10 @@ export function AdventureClient({ characterId }: AdventureClientProps) {
                 questId: activeQuestId,
             });
 
-            batch.update(narrativeContextRef, { currentEncounter: encounterResult });
+            batch.update(narrativeContextRef, { ...updates, currentEncounter: encounterResult });
             await batch.commit();
             router.push('/battle');
+            return; // Exit early to prevent further processing
 
         } else if (choice.tags.includes("NPC_INTERACTION")) {
             const sanitizedChoices = (narrativeContext.playerChoices || []).map((c: any) => ({
@@ -183,19 +190,14 @@ export function AdventureClient({ characterId }: AdventureClientProps) {
                 }
             });
 
-            let npcUpdates: any = {};
             if (npcResult.quest && npcResult.questId) {
-                npcUpdates[`questFlags.${npcResult.questId}`] = "started";
+                updates[`questFlags.${npcResult.questId}`] = "started";
             }
-            npcUpdates.lastNarration = `${npcResult.name} says: "${npcResult.dialogue}" ${npcResult.quest ? `\n\nNew Quest: ${npcResult.quest}`: ''}`;
-            npcUpdates.triggerNextScenario = true;
-            
-            batch.update(narrativeContextRef, npcUpdates);
-            await batch.commit();
-        } else {
-             batch.update(narrativeContextRef, { triggerNextScenario: true });
-             await batch.commit();
+            updates.lastNarration = `${npcResult.name} says: "${npcResult.dialogue}" ${npcResult.quest ? `\n\nNew Quest: ${npcResult.quest}`: ''}`;
         }
+        
+        batch.update(narrativeContextRef, updates);
+        await batch.commit();
 
     } catch (e: any) {
         setError(e.message || "An unknown error occurred while processing your choice.");
@@ -203,7 +205,7 @@ export function AdventureClient({ characterId }: AdventureClientProps) {
     }
   };
   
-  const isLoading = isContextLoading || isCharacterLoading;
+  const isLoading = gameState === 'loading' || isContextLoading || isCharacterLoading;
   const currentScenario = narrativeContext?.currentScenario as NarrativeOutput | undefined;
 
   const renderContent = () => {
@@ -246,8 +248,9 @@ export function AdventureClient({ characterId }: AdventureClientProps) {
           </div>
         );
     }
-
-    if (currentScenario) {
+    
+    // State: A scenario is active, waiting for player choice
+    if (gameState === "ready" && currentScenario) {
       return (
         <div className="space-y-8">
           <div className="text-lg leading-relaxed whitespace-pre-wrap p-6 bg-background/50 rounded-lg border border-border/50 font-serif italic">
@@ -273,22 +276,32 @@ export function AdventureClient({ characterId }: AdventureClientProps) {
       );
     }
     
-    return (
-      <div className="space-y-6 text-center">
-        <div className="p-4 bg-muted rounded-lg border border-border">
-          <h3 className="font-headline text-lg text-accent flex items-center justify-center gap-2">
-            <BookOpen /> Your Story Arc
-          </h3>
-          <p className="text-muted-foreground italic mt-2">
-            &quot;{narrativeContext.storyArc}&quot;
+    // State: Game is paused, waiting for player to continue
+    if (gameState === "awaiting_continue") {
+      return (
+        <div className="space-y-6 text-center">
+          <div className="p-4 bg-muted rounded-lg border border-border">
+            <h3 className="font-headline text-lg text-accent flex items-center justify-center gap-2">
+              <BookOpen /> Your Story Arc
+            </h3>
+            <p className="text-muted-foreground italic mt-2">
+              &quot;{narrativeContext.storyArc}&quot;
+            </p>
+          </div>
+          <p className="text-lg leading-relaxed whitespace-pre-wrap font-serif min-h-24">
+            {narrativeContext.lastNarration}
           </p>
+          <Button onClick={handleContinue} size="lg" disabled={gameState === 'generating'}>
+            Continue Your Adventure <Forward className="ml-2 h-4 w-4" />
+          </Button>
         </div>
-        <p className="text-lg leading-relaxed whitespace-pre-wrap font-serif">
-          {narrativeContext.lastNarration}
-        </p>
-        <Button onClick={handleStart} size="lg" disabled={gameState === 'generating'}>
-          Continue Your Adventure <Forward className="ml-2 h-4 w-4" />
-        </Button>
+      );
+    }
+    
+    // Fallback for any other state
+    return (
+      <div className="flex justify-center">
+         <Button onClick={handleContinue} size="lg">Start Adventure</Button>
       </div>
     );
   };
@@ -309,3 +322,5 @@ export function AdventureClient({ characterId }: AdventureClientProps) {
     </Card>
   );
 }
+
+    
