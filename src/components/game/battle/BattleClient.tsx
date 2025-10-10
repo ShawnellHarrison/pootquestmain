@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
@@ -8,7 +9,7 @@ import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Card, CardContent } from '@/components/ui/card';
-import { EncounterOutput } from '@/ai/flows/generate-encounter-flow';
+import { EncounterOutput } from '@/ai/flows/flow-schemas';
 import { PlayerCard } from './PlayerCard';
 import { Enemy } from './Enemy';
 import { Button } from '@/components/ui/button';
@@ -75,6 +76,7 @@ export function BattleClient() {
     turn: 'player' as 'player' | 'enemy',
     selectedCard: null as string | null,
     selectedTarget: null as string | null,
+    isVictoryProcessing: false,
   });
 
   useEffect(() => {
@@ -95,6 +97,7 @@ export function BattleClient() {
   }, [character, encounter, deck]);
 
   const handleCardClick = (cardName: string) => {
+    if (battleState.turn !== 'player') return;
     const cardData = CARD_DATA[cardName];
     if (cardData.manaCost <= battleState.playerMana) {
         setBattleState(prev => ({ ...prev, selectedCard: cardName, selectedTarget: null }));
@@ -104,7 +107,7 @@ export function BattleClient() {
   };
 
   const handleEnemyClick = (enemyId: string) => {
-    if (!battleState.selectedCard) return;
+    if (!battleState.selectedCard || battleState.turn !== 'player') return;
 
     const cardData = CARD_DATA[battleState.selectedCard];
     if (!cardData || cardData.attack === 0) return; // Can't attack with non-attack cards
@@ -132,62 +135,77 @@ export function BattleClient() {
   };
 
   const handleEndTurn = async () => {
-    // Enemy turn logic
+    if (battleState.turn !== 'player') return;
+
+    // Check for victory before enemy turn
+    if (battleState.enemies.length === 0) return;
+
     setBattleState(prev => ({ ...prev, turn: 'enemy' }));
     
-    let totalEnemyAttack = 0;
-    battleState.enemies.forEach(enemy => {
-        totalEnemyAttack += enemy.attack;
-    });
+    // Artificial delay for enemy turn
+    setTimeout(() => {
+      let totalEnemyAttack = 0;
+      battleState.enemies.forEach(enemy => {
+          totalEnemyAttack += enemy.attack;
+      });
 
-    const newPlayerHealth = Math.max(0, battleState.playerHealth - totalEnemyAttack);
+      const newPlayerHealth = Math.max(0, battleState.playerHealth - totalEnemyAttack);
 
-    if (newPlayerHealth === 0) {
-        toast({ title: "You have been defeated!", variant: "destructive", duration: 5000 });
-        router.push('/');
-        return;
-    }
+      if (newPlayerHealth === 0) {
+          toast({ title: "You have been defeated!", variant: "destructive", duration: 5000 });
+          router.push('/');
+          return;
+      }
 
-    // Draw cards for next turn
-    let newDeck = [...battleState.deck];
-    let newDiscard = [...battleState.discard];
-    if (newDeck.length < 5 - battleState.hand.length) {
-        const shuffledDiscard = shuffle(newDiscard);
-        newDeck = [...newDeck, ...shuffledDiscard];
-        newDiscard = [];
-    }
+      // Draw cards for next turn
+      let newDeck = [...battleState.deck];
+      let newDiscard = [...battleState.discard];
+      let currentHand = [...battleState.hand];
 
-    const cardsToDraw = 5 - battleState.hand.length;
-    const drawnCards = newDeck.slice(0, cardsToDraw);
-    const remainingDeck = newDeck.slice(cardsToDraw);
+      const cardsToDrawCount = 5 - currentHand.length;
 
+      if (newDeck.length < cardsToDrawCount) {
+          const shuffledDiscard = shuffle(newDiscard);
+          newDeck = [...newDeck, ...shuffledDiscard];
+          newDiscard = [];
+      }
+      
+      const drawnCards = newDeck.slice(0, cardsToDrawCount);
+      const remainingDeck = newDeck.slice(cardsToDrawCount);
+      
+      setBattleState(prev => ({
+          ...prev,
+          playerHealth: newPlayerHealth,
+          hand: [...currentHand, ...drawnCards],
+          deck: remainingDeck,
+          discard: newDiscard,
+          turn: 'player',
+          playerMana: character?.maxMana || 10 // Reset mana
+      }));
 
-    setBattleState(prev => ({
-        ...prev,
-        playerHealth: newPlayerHealth,
-        hand: [...prev.hand, ...drawnCards],
-        deck: remainingDeck,
-        discard: newDiscard,
-        turn: 'player',
-        playerMana: character?.maxMana || 10 // Reset mana
-    }));
+      toast({ title: "Enemy attacks!", description: `You take ${totalEnemyAttack} damage.` });
 
-    toast({ title: "Enemy attacks!", description: `You take ${totalEnemyAttack} damage.` });
-
+    }, 1000);
   };
 
   useEffect(() => {
     const checkVictory = async () => {
-        if (encounter && battleState.enemies.length === 0 && battleState.turn === 'player') {
+        if (encounter && battleState.enemies.length === 0 && battleState.turn === 'player' && !battleState.isVictoryProcessing) {
+            setBattleState(prev => ({ ...prev, isVictoryProcessing: true }));
             toast({ title: "Victory!", description: `You found: ${encounter.loot.name}`, duration: 5000 });
 
             if(firestore && user && characterId) {
                 const batch = writeBatch(firestore);
-                // Clear encounter
-                batch.update(narrativeContextRef!, { currentEncounter: null });
+                // Clear encounter, set trigger for next scenario
+                batch.update(narrativeContextRef!, { 
+                  currentEncounter: null,
+                  triggerNextScenario: true,
+                });
+                
                 // Add loot to inventory
                 const inventoryRef = collection(firestore, `users/${user.uid}/characters/${characterId}/inventory`);
                 addDoc(inventoryRef, encounter.loot);
+                
                 // Update player health
                 batch.update(characterDocRef!, { health: battleState.playerHealth });
 
@@ -197,7 +215,7 @@ export function BattleClient() {
         }
     };
     checkVictory();
-  }, [battleState.enemies, battleState.turn, encounter, firestore, user, characterId, narrativeContextRef, characterDocRef, router, toast]);
+  }, [battleState, encounter, firestore, user, characterId, narrativeContextRef, characterDocRef, router, toast]);
 
   const isLoading = isContextLoading || isCharacterLoading || isDeckLoading || !character || !encounter || !deck;
   
@@ -208,8 +226,8 @@ export function BattleClient() {
   if (!encounter) {
       return (
           <Alert variant="destructive">
-              <AlertTitle>Encounter Error</AlertTitle>
-              <AlertDescription>Could not load the battle encounter. It might have been resolved already.</AlertDescription>
+              <AlertTitle>Encounter Over</AlertTitle>
+              <AlertDescription>This battle has concluded.</AlertDescription>
               <Button onClick={() => router.push(`/adventure/${characterId}`)} variant="secondary" className="mt-4">Back to Adventure</Button>
           </Alert>
       );
@@ -226,8 +244,8 @@ export function BattleClient() {
         </div>
 
         {/* Battlefield Zone */}
-        <div className="min-h-48 flex items-center justify-center text-muted-foreground italic">
-            {encounter.introText}
+        <div className="min-h-24 flex items-center justify-center text-muted-foreground italic">
+            {battleState.turn === 'enemy' ? 'Enemies are attacking...' : encounter.introText}
         </div>
 
         {/* Player Area */}
@@ -241,8 +259,8 @@ export function BattleClient() {
               <Button asChild variant="destructive" size="lg">
                 <a onClick={() => router.push('/')}><Flag className="mr-2 h-4 w-4" /> Flee</a>
               </Button>
-              <Button size="lg" onClick={handleEndTurn} disabled={battleState.turn === 'enemy'}>
-                End Turn <ArrowRightCircle className="ml-2 h-4 w-4" />
+              <Button size="lg" onClick={handleEndTurn} disabled={battleState.turn === 'enemy' || battleState.isVictoryProcessing}>
+                {battleState.turn === 'enemy' ? 'Enemy Turn' : 'End Turn'} <ArrowRightCircle className="ml-2 h-4 w-4" />
               </Button>
             </div>
           </div>
@@ -259,3 +277,5 @@ export function BattleClient() {
     </Card>
   );
 }
+
+    

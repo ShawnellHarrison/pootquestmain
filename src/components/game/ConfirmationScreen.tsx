@@ -72,6 +72,7 @@ export function ConfirmationScreen({ character }: ConfirmationScreenProps) {
                 lastNarration: narrationResult.openingNarration,
                 currentScenario: null,
                 currentEncounter: null,
+                triggerNextScenario: false,
             });
 
             // 3. Create initial Deck document
@@ -82,6 +83,9 @@ export function ConfirmationScreen({ character }: ConfirmationScreenProps) {
             });
 
             await batch.commit();
+
+            // Store the character ID for the battle page to use
+            localStorage.setItem('characterId', newCharacterRef.id);
 
             router.push(`/adventure/${newCharacterRef.id}`);
 
@@ -192,3 +196,5 @@ export function ConfirmationScreen({ character }: ConfirmationScreenProps) {
         </div>
     );
 }
+
+    

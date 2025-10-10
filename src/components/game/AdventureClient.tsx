@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import {
   generateNextScenario,
   NarrativeOutput,
@@ -14,7 +14,7 @@ import {
   CardDescription,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Loader2, Swords, BookOpen, Forward } from "lucide-react";
+import { Loader2, BookOpen, Forward } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import Link from "next/link";
 import { Separator } from "@/components/ui/separator";
@@ -30,7 +30,6 @@ interface AdventureClientProps {
 }
 
 type GameState = "intro" | "choices" | "loading" | "generating_scenario" | "generating_encounter";
-
 
 export function AdventureClient({ characterId }: AdventureClientProps) {
   const { firestore, user } = useFirebase();
@@ -57,9 +56,9 @@ export function AdventureClient({ characterId }: AdventureClientProps) {
     return CLASSES.find(c => c.id === character.class);
   }, [character]);
 
-  const handleStart = async () => {
-    if (!narrativeContext || !firestore || !user || !characterClassData || !character) return;
-
+  const generateAndSaveNextScenario = async () => {
+    if (!narrativeContext || !firestore || !user || !characterClassData || !character || !narrativeContextRef) return;
+    
     try {
       setLocalGameState("generating_scenario");
       const result = await generateNextScenario({
@@ -76,8 +75,14 @@ export function AdventureClient({ characterId }: AdventureClientProps) {
         questFlags: narrativeContext.questFlags,
       });
 
-      if (result && narrativeContextRef) {
-        updateDocumentNonBlocking(narrativeContextRef, { currentScenario: result });
+      if (result) {
+        const batch = writeBatch(firestore);
+        batch.update(narrativeContextRef, { 
+          currentScenario: result,
+          triggerNextScenario: false // Reset the trigger
+        });
+        await batch.commit();
+
         setLocalGameState("choices");
       } else {
         throw new Error("The AI Dungeon Fartmaster is confused. No scenario received.");
@@ -86,6 +91,18 @@ export function AdventureClient({ characterId }: AdventureClientProps) {
       setError(e.message || "An unknown error occurred while generating the scenario.");
       setLocalGameState("loading");
     }
+  };
+  
+  // This effect listens for the trigger from the battle screen.
+  useEffect(() => {
+    if (narrativeContext?.triggerNextScenario) {
+      generateAndSaveNextScenario();
+    }
+  }, [narrativeContext]);
+
+
+  const handleStart = () => {
+    generateAndSaveNextScenario();
   };
 
   const handleChoice = async (choice: { id: string; text: string }) => {
@@ -183,7 +200,7 @@ export function AdventureClient({ characterId }: AdventureClientProps) {
       );
     }
     
-    // Default Intro State
+    // Default Intro State (or if there's no current scenario)
     return (
       <div className="space-y-6 text-center">
         <div className="p-4 bg-muted rounded-lg">
@@ -219,3 +236,5 @@ export function AdventureClient({ characterId }: AdventureClientProps) {
     </Card>
   );
 }
+
+    
