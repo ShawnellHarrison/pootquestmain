@@ -1,31 +1,34 @@
 
 export type CardData = {
     name: string;
+    description: string;
     manaCost: number;
     attack: number;
+    defense: number;
+    healing: number;
 };
 
 export const CARD_DATA: { [key: string]: CardData } = {
-    "Backstab": { name: "Backstab", manaCost: 2, attack: 10 },
-    "Silent But Deadly": { name: "Silent But Deadly", manaCost: 3, attack: 5 },
-    "Smoke Bomb": { name: "Smoke Bomb", manaCost: 1, attack: 0 },
-    "Basic Attack": { name: "Basic Attack", manaCost: 1, attack: 3 },
-    "Smell the Truth": { name: "Smell the Truth", manaCost: 3, attack: 2 },
-    "Holy Shield": { name: "Holy Shield", manaCost: 2, attack: 0 },
-    "Purify": { name: "Purify", manaCost: 2, attack: 0 },
-    "Gas Cloud": { name: "Gas Cloud", manaCost: 4, attack: 8 },
-    "Chain Lightning Farts": { name: "Chain Lightning Farts", manaCost: 5, attack: 12 },
-    "Arcane Missile": { name: "Arcane Missile", manaCost: 2, attack: 5 },
-    "Bean Rage": { name: "Bean Rage", manaCost: 3, attack: 15 },
-    "Mighty Cleave": { name: "Mighty Cleave", manaCost: 2, attack: 7 },
-    "Unstoppable Charge": { name: "Unstoppable Charge", manaCost: 4, attack: 10 },
-    "Aroma Heal": { name: "Aroma Heal", manaCost: 3, attack: 0 },
-    "Blessing of Freshness": { name: "Blessing of Freshness", manaCost: 2, attack: 0 },
-    "Resurrection": { name: "Resurrection", manaCost: 8, attack: 0 },
-    "Basic Smite": { name: "Basic Smite", manaCost: 1, attack: 2 },
-    "Hostile Takeover": { name: "Hostile Takeover", manaCost: 4, attack: 5 },
-    "Corporate Merger": { name: "Corporate Merger", manaCost: 5, attack: 0 },
-    "Invest": { name: "Invest", manaCost: 1, attack: 0 },
+    "Backstab": { name: "Backstab", description: "A swift, high-damage attack.", manaCost: 2, attack: 10, defense: 0, healing: 0 },
+    "Silent But Deadly": { name: "Silent But Deadly", description: "A moderate attack that ignores some defense.", manaCost: 3, attack: 5, defense: 0, healing: 0 },
+    "Smoke Bomb": { name: "Smoke Bomb", description: "Gain a small amount of defense.", manaCost: 1, attack: 0, defense: 5, healing: 0 },
+    "Basic Attack": { name: "Basic Attack", description: "A simple, low-cost attack.", manaCost: 1, attack: 3, defense: 0, healing: 0 },
+    "Smell the Truth": { name: "Smell the Truth", description: "A weak attack that reveals enemy weaknesses.", manaCost: 3, attack: 2, defense: 0, healing: 0 },
+    "Holy Shield": { name: "Holy Shield", description: "Greatly increases your defense for one turn.", manaCost: 2, attack: 0, defense: 15, healing: 0 },
+    "Purify": { name: "Purify", description: "Heal yourself for a small amount.", manaCost: 2, attack: 0, defense: 0, healing: 8 },
+    "Gas Cloud": { name: "Gas Cloud", description: "A potent area-of-effect attack.", manaCost: 4, attack: 8, defense: 0, healing: 0 },
+    "Chain Lightning Farts": { name: "Chain Lightning Farts", description: "Powerful magic that strikes multiple foes.", manaCost: 5, attack: 12, defense: 0, healing: 0 },
+    "Arcane Missile": { name: "Arcane Missile", description: "A reliable magic attack.", manaCost: 2, attack: 5, defense: 0, healing: 0 },
+    "Bean Rage": { name: "Bean Rage", description: "A furious, high-damage attack.", manaCost: 3, attack: 15, defense: 0, healing: 0 },
+    "Mighty Cleave": { name: "Mighty Cleave", description: "A strong swing that can hit adjacent enemies.", manaCost: 2, attack: 7, defense: 0, healing: 0 },
+    "Unstoppable Charge": { name: "Unstoppable Charge", description: "A powerful charge that breaks defenses.", manaCost: 4, attack: 10, defense: 0, healing: 0 },
+    "Aroma Heal": { name: "Aroma Heal", description: "A powerful healing spell.", manaCost: 3, attack: 0, defense: 0, healing: 20 },
+    "Blessing of Freshness": { name: "Blessing of Freshness", description: "Gain a significant amount of defense.", manaCost: 2, attack: 0, defense: 10, healing: 0 },
+    "Resurrection": { name: "Resurrection", description: "Revive a fallen ally (or yourself).", manaCost: 8, attack: 0, defense: 0, healing: 50 },
+    "Basic Smite": { name: "Basic Smite", description: "A minor holy attack.", manaCost: 1, attack: 2, defense: 0, healing: 0 },
+    "Hostile Takeover": { name: "Hostile Takeover", description: "Weaken an enemy and steal their strength.", manaCost: 4, attack: 5, defense: 0, healing: 0 },
+    "Corporate Merger": { name: "Corporate Merger", description: "Combine two cards for a stronger effect.", manaCost: 5, attack: 0, defense: 0, healing: 0 },
+    "Invest": { name: "Invest", description: "Sacrifice your turn to gain more mana next turn.", manaCost: 1, attack: 0, defense: 0, healing: 0 },
 };
 
 

@@ -31,6 +31,7 @@ const shuffle = <T,>(array: T[]): T[] => {
 type BattleState = {
     playerHealth: number;
     playerMana: number;
+    playerDefense: number;
     enemies: EncounterOutput['enemies'];
     deck: string[];
     hand: string[];
@@ -48,11 +49,14 @@ export function BattleClient() {
   const [characterId, setCharacterId] = useState<string | null>(null);
 
   useEffect(() => {
-    const lastCharId = localStorage.getItem('characterId');
-    if (lastCharId) {
-      setCharacterId(lastCharId);
-    } else {
-      router.push('/');
+    if (typeof window !== 'undefined') {
+      const lastCharId = localStorage.getItem('characterId');
+      if (lastCharId) {
+        setCharacterId(lastCharId);
+      } else {
+        // Only redirect if not on the server and characterId is confirmed to be missing
+        router.push('/');
+      }
     }
   }, [router]);
   
@@ -88,6 +92,7 @@ export function BattleClient() {
         setBattleState({
             playerHealth: character.health,
             playerMana: character.maxMana,
+            playerDefense: 0,
             enemies: encounter.enemies.map(e => ({...e, hp: e.maxHp})), // Ensure enemies have full HP
             deck: remainingDeck,
             hand: initialHand,
@@ -101,17 +106,42 @@ export function BattleClient() {
   }, [character, encounter, deck, battleState]);
 
   const handleCardClick = (cardName: string) => {
-    if (!battleState || battleState.turn !== 'player') return;
+    if (!battleState || battleState.turn !== 'player' || battleState.isProcessing) return;
     const cardData = CARD_DATA[cardName];
-    if (cardData.manaCost <= battleState.playerMana) {
-        setBattleState(prev => prev ? ({ ...prev, selectedCard: cardName, selectedTarget: null }) : null);
-    } else {
+    if (cardData.manaCost > battleState.playerMana) {
         toast({ title: "Not enough mana!", variant: "destructive" });
+        return;
+    }
+    
+    // If the card is purely defensive or healing, apply it immediately
+    if (cardData.attack === 0) {
+        setBattleState(prev => {
+            if (!prev) return null;
+            const newHand = prev.hand.filter(c => c !== cardName);
+            const newPlayerHealth = Math.min(character.maxHealth, prev.playerHealth + cardData.healing);
+            if (cardData.healing > 0) {
+                toast({ title: cardData.name, description: `You heal for ${cardData.healing}!` });
+            }
+            if (cardData.defense > 0) {
+                toast({ title: cardData.name, description: `You gain ${cardData.defense} defense!` });
+            }
+            return {
+                ...prev,
+                playerHealth: newPlayerHealth,
+                playerDefense: prev.playerDefense + cardData.defense,
+                playerMana: prev.playerMana - cardData.manaCost,
+                hand: newHand,
+                discard: [...prev.discard, cardName],
+                selectedCard: null,
+            };
+        });
+    } else {
+        setBattleState(prev => prev ? ({ ...prev, selectedCard: cardName, selectedTarget: null }) : null);
     }
   };
 
   const handleEnemyClick = (enemyId: string) => {
-    if (!battleState || !battleState.selectedCard || battleState.turn !== 'player') return;
+    if (!battleState || !battleState.selectedCard || battleState.turn !== 'player' || battleState.isProcessing) return;
 
     const cardData = CARD_DATA[battleState.selectedCard];
     if (!cardData || cardData.attack === 0) return; // Can't attack with non-attack cards
@@ -119,96 +149,100 @@ export function BattleClient() {
     setBattleState(prev => {
         if (!prev) return null;
         
+        let isVictory = false;
         const newEnemies = prev.enemies.map(e => {
             if (e.id === enemyId) {
                 return { ...e, hp: Math.max(0, e.hp - cardData.attack) };
             }
             return e;
         }).filter(e => e.hp > 0);
-
-        const newHand = prev.hand.filter(c => c !== battleState.selectedCard);
         
-        const isVictory = newEnemies.length === 0;
+        if (newEnemies.length === 0) {
+            isVictory = true;
+        }
 
+        const newHand = prev.hand.filter(c => c !== prev!.selectedCard);
+        
         return {
             ...prev,
             playerMana: prev.playerMana - cardData.manaCost,
             enemies: newEnemies,
             hand: newHand,
-            discard: [...prev.discard, prev.selectedCard!],
+            discard: [...prev.discard, prev!.selectedCard],
             selectedCard: null,
             selectedTarget: null,
             turn: isVictory ? 'victory' : prev.turn,
-            isProcessing: isVictory,
+            isProcessing: isVictory, // Set processing on victory to stop further actions
         };
     });
   };
 
   const handleEndTurn = () => {
-    if (!battleState || battleState.turn !== 'player' || battleState.enemies.length === 0) return;
-
-    setBattleState(prev => prev ? ({ ...prev, turn: 'enemy', isProcessing: true }) : null);
+    if (!battleState || battleState.turn !== 'player' || battleState.isProcessing || battleState.enemies.length === 0) return;
+    setBattleState(prev => prev ? ({ ...prev, turn: 'enemy', isProcessing: true, playerDefense: 0, selectedCard: null }) : null);
   };
   
   useEffect(() => {
-    if (battleState?.turn === 'enemy') {
+    if (battleState?.turn === 'enemy' && battleState.enemies.length > 0) {
         const timeout = setTimeout(() => {
-            let totalEnemyAttack = 0;
-            battleState.enemies.forEach(enemy => {
-                totalEnemyAttack += enemy.attack;
+            setBattleState(prev => {
+                if (!prev) return null;
+
+                let totalEnemyAttack = 0;
+                prev.enemies.forEach(enemy => {
+                    totalEnemyAttack += enemy.attack;
+                });
+
+                const damageTaken = Math.max(0, totalEnemyAttack - prev.playerDefense);
+                const newPlayerHealth = Math.max(0, prev.playerHealth - damageTaken);
+                
+                toast({ title: "Enemy attacks!", description: `You take ${damageTaken} damage.` });
+
+                if (newPlayerHealth === 0) {
+                    return { ...prev, playerHealth: 0, turn: 'defeat', isProcessing: true };
+                }
+
+                // Draw cards for next turn
+                let newDeck = [...prev.deck];
+                let newDiscard = [...prev.discard];
+                let currentHand = [...prev.hand];
+                const cardsToDrawCount = 5 - currentHand.length;
+
+                let drawnCards: string[] = [];
+
+                for (let i = 0; i < cardsToDrawCount; i++) {
+                    if (newDeck.length === 0) {
+                        newDeck = shuffle(newDiscard);
+                        newDiscard = [];
+                    }
+                    if (newDeck.length > 0) {
+                        const card = newDeck.pop();
+                        if (card) drawnCards.push(card);
+                    }
+                }
+                
+                return {
+                    ...prev,
+                    playerHealth: newPlayerHealth,
+                    hand: [...currentHand, ...drawnCards],
+                    deck: newDeck,
+                    discard: newDiscard,
+                    turn: 'player',
+                    playerMana: character?.maxMana || 10, // Reset mana
+                    isProcessing: false,
+                };
             });
-
-            const newPlayerHealth = Math.max(0, battleState.playerHealth - totalEnemyAttack);
-            
-            toast({ title: "Enemy attacks!", description: `You take ${totalEnemyAttack} damage.` });
-
-            if (newPlayerHealth === 0) {
-                setBattleState(prev => prev ? ({ ...prev, playerHealth: 0, turn: 'defeat', isProcessing: true }) : null);
-                return;
-            }
-
-            // Draw cards for next turn
-            let newDeck = [...battleState.deck];
-            let newDiscard = [...battleState.discard];
-            let currentHand = [...battleState.hand];
-            const cardsToDrawCount = 5 - currentHand.length;
-
-            let cardsToDraw: string[] = [];
-
-            if (newDeck.length >= cardsToDrawCount) {
-              cardsToDraw = newDeck.slice(0, cardsToDrawCount);
-              newDeck = newDeck.slice(cardsToDrawCount);
-            } else {
-              cardsToDraw = [...newDeck];
-              const shuffledDiscard = shuffle(newDiscard);
-              const neededFromDiscard = cardsToDrawCount - cardsToDraw.length;
-              cardsToDraw = [...cardsToDraw, ...shuffledDiscard.slice(0, neededFromDiscard)];
-              newDeck = shuffledDiscard.slice(neededFromDiscard);
-              newDiscard = [];
-            }
-            
-            setBattleState(prev => prev ? ({
-                ...prev,
-                playerHealth: newPlayerHealth,
-                hand: [...currentHand, ...cardsToDraw],
-                deck: newDeck,
-                discard: newDiscard,
-                turn: 'player',
-                playerMana: character?.maxMana || 10, // Reset mana
-                isProcessing: false,
-            }) : null);
-
         }, 1000);
 
         return () => clearTimeout(timeout);
     }
-  }, [battleState, character?.maxMana, toast]);
+  }, [battleState?.turn, battleState?.enemies, character?.maxMana, toast]);
   
   useEffect(() => {
       const processVictory = () => {
-        if (!battleState || battleState.turn !== 'victory' || !characterId) return;
+        if (!battleState || battleState.turn !== 'victory' || !characterId || !encounter) return;
 
-        toast({ title: "Victory!", description: `You found: ${encounter!.loot.name}`, duration: 5000 });
+        toast({ title: "Victory!", description: `You found: ${encounter.loot.name}`, duration: 5000 });
 
         if(firestore && user && narrativeContextRef && characterDocRef) {
             // Update player health
@@ -216,7 +250,7 @@ export function BattleClient() {
 
             // Add loot to inventory
             const inventoryRef = collection(firestore, `users/${user.uid}/characters/${characterId}/inventory`);
-            addDocumentNonBlocking(inventoryRef, encounter!.loot);
+            addDocumentNonBlocking(inventoryRef, encounter.loot);
             
             // Clear encounter, set trigger for next scenario
             updateDocumentNonBlocking(narrativeContextRef, { 
@@ -224,7 +258,8 @@ export function BattleClient() {
               triggerNextScenario: true,
             });
         }
-        router.push(`/adventure/${characterId}`);
+        // Use a slight delay to allow toast to be seen before navigation
+        setTimeout(() => router.push(`/adventure/${characterId}`), 1000);
       };
 
       const processDefeat = () => {
@@ -262,13 +297,20 @@ export function BattleClient() {
         {/* Enemy Area */}
         <div className="flex justify-around items-end p-4 min-h-48 bg-muted/50 rounded-lg border-b-4 border-b-accent">
           {battleState.enemies.map(enemy => (
-            <Enemy key={enemy.id} enemy={enemy} onClick={() => handleEnemyClick(enemy.id)} />
+            <Enemy 
+                key={enemy.id} 
+                enemy={enemy} 
+                onClick={() => handleEnemyClick(enemy.id)} 
+                isTarget={battleState.selectedCard ? CARD_DATA[battleState.selectedCard]?.attack > 0 : false}
+            />
           ))}
         </div>
 
         {/* Battlefield Zone */}
         <div className="min-h-24 flex items-center justify-center text-muted-foreground italic">
-            {battleState.turn === 'enemy' ? 'Enemies are attacking...' : encounter.introText}
+            {battleState.isProcessing && battleState.turn === 'enemy' ? 'Enemies are attacking...' : encounter.introText}
+            {battleState.turn === 'victory' && 'You are victorious!'}
+            {battleState.turn === 'defeat' && 'You have been vanquished.'}
         </div>
 
         {/* Player Area */}
@@ -279,13 +321,14 @@ export function BattleClient() {
               maxHealth={character.maxHealth}
               mana={battleState.playerMana}
               maxMana={character.maxMana}
+              defense={battleState.playerDefense}
             />
             <div className="flex items-center gap-2">
               <Button asChild variant="destructive" size="lg">
                 <a onClick={() => router.push('/')}><Flag className="mr-2 h-4 w-4" /> Flee</a>
               </Button>
               <Button size="lg" onClick={handleEndTurn} disabled={battleState.turn !== 'player' || battleState.isProcessing}>
-                {battleState.turn === 'enemy' ? 'Enemy Turn' : 'End Turn'} <ArrowRightCircle className="ml-2 h-4 w-4" />
+                {battleState.isProcessing ? 'Processing...' : 'End Turn'} <ArrowRightCircle className="ml-2 h-4 w-4" />
               </Button>
             </div>
           </div>
