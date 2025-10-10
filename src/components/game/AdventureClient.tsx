@@ -98,6 +98,7 @@ export function AdventureClient({ characterId }: AdventureClientProps) {
     if (narrativeContext?.triggerNextScenario) {
       generateAndSaveNextScenario();
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [narrativeContext]);
 
 
@@ -105,30 +106,42 @@ export function AdventureClient({ characterId }: AdventureClientProps) {
     generateAndSaveNextScenario();
   };
 
-  const handleChoice = async (choice: { id: string; text: string }) => {
-    if (!narrativeContextRef || !firestore || !user || !characterClassData || !character) return;
+  const handleChoice = async (choice: { id: string; text: string; tags: string[] }) => {
+    if (!narrativeContextRef || !firestore || !user || !characterClassData || !character || !narrativeContext) return;
     setLocalGameState("generating_encounter");
 
-    try {
-        const encounterResult = await generateEncounter({
-            playerClass: characterClassData.name,
-            playerLevel: character.level,
-            location: narrativeContext.location,
-        });
+    const choiceData = { id: choice.id, text: choice.text, tags: choice.tags, timestamp: new Date() };
 
+    try {
         const batch = writeBatch(firestore);
-        
-        batch.update(narrativeContextRef, {
-            playerChoices: arrayUnion({ id: choice.id, text: choice.text, timestamp: new Date() }),
-            currentScenario: null, // Clear scenario to transition
-            currentEncounter: encounterResult,
-        });
-        
-        await batch.commit();
-        router.push('/battle');
+
+        if (choice.tags.includes("COMBAT")) {
+            const encounterResult = await generateEncounter({
+                playerClass: characterClassData.name,
+                playerLevel: character.level,
+                location: narrativeContext.location,
+            });
+
+            batch.update(narrativeContextRef, {
+                playerChoices: arrayUnion(choiceData),
+                currentScenario: null, // Clear scenario to transition
+                currentEncounter: encounterResult,
+            });
+            
+            await batch.commit();
+            router.push('/battle');
+        } else {
+             batch.update(narrativeContextRef, {
+                playerChoices: arrayUnion(choiceData),
+                currentScenario: null,
+                triggerNextScenario: true, // Skip battle and go to next scenario
+            });
+            await batch.commit();
+            // The useEffect will catch the trigger and generate the next scenario
+        }
 
     } catch (e: any) {
-        setError(e.message || "An unknown error occurred while generating the encounter.");
+        setError(e.message || "An unknown error occurred while processing your choice.");
         setLocalGameState("loading");
     }
   };
@@ -171,7 +184,7 @@ export function AdventureClient({ characterId }: AdventureClientProps) {
           <div className="flex flex-col items-center justify-center text-center">
             <Loader2 className="h-16 w-16 animate-spin text-primary mb-4" />
             <p className="text-xl text-muted-foreground">
-              {localGameState === 'generating_scenario' ? 'The story unfolds...' : 'A new challenge appears...'}
+              {localGameState === 'generating_scenario' ? 'The story unfolds...' : 'Your choice echoes...'}
             </p>
           </div>
         );
@@ -236,5 +249,3 @@ export function AdventureClient({ characterId }: AdventureClientProps) {
     </Card>
   );
 }
-
-    

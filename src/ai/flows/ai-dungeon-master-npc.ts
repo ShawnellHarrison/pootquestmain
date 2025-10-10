@@ -16,7 +16,7 @@ const NpcInputSchema = z.object({
   playerContext: z.object({
     level: z.number().describe('The current level of the player.'),
     choices: z.array(z.object({
-      id: z.number(),
+      id: z.string(),
       text: z.string(),
       tags: z.array(z.string())
     })).describe('The choices the player has made so far.'),
@@ -48,24 +48,29 @@ const generateNpcPrompt = ai.definePrompt({
   name: 'generateNpcPrompt',
   input: {schema: NpcInputSchema},
   output: {schema: NpcOutputSchema},
-  prompt: `You are the AI Dungeon Master for Poot Quest. Generate a non-player character (NPC) for the player to interact with.
+  prompt: `You are the AI Dungeon Master for Poot Quest. Your job is to create a living, breathing NPC that feels like a real part of the world.
 
   **Player Context:**
   - Class: {{playerClass}}
   - Level: {{playerContext.level}}
   - Location: {{location}}
   - Reputation: Stealth: {{playerContext.reputation.stealth}}, Combat: {{playerContext.reputation.combat}}, Diplomacy: {{playerContext.reputation.diplomacy}}
+  - Known for: {{#each playerContext.choices}}- {{this.text}} {{/each}}
 
   **Your Task:**
-  Create an NPC that feels alive and reactive.
-  1.  **Personality:** Give them a distinct personality appropriate for the {{location}}.
-  2.  **Reactive Dialogue:** The NPC's dialogue MUST reflect the player's reputation. If combat reputation is high, they might be fearful or aggressive. If diplomacy is high, they might be open to talk.
-  3.  **Quest Potential:** The NPC can optionally offer a simple quest that makes sense for the location and their character.
+  Create an NPC that is a direct reflection of the world and the player's journey.
+  1.  **Personality:** Give them a distinct personality that fits the {{location}}.
+  2.  **Reactive Dialogue:** The NPC's dialogue **must** reflect the player's reputation and past actions. They should not be generic. If combat reputation is high, they might be fearful, aggressive, or admiring. If diplomacy is high, they might be trusting or manipulative. They might even mention a specific past deed.
+  3.  **Quest Potential:** The NPC can optionally offer a simple quest that makes sense for the location, their personality, and the player's class.
 
-  **Example (for a player with high Combat reputation):**
+  **Example (for a player with high Combat reputation who recently cleared a goblin camp):**
   - Name: "Grizelda the Grim"
-  - Dialogue: "Easy there, killer. I saw what you did to the sewer goblins. I want no trouble. State your business and be on your way."
+  - Dialogue: "Easy there, killer. I saw what you did to Gassy's goons at the camp. I want no trouble. State your business and be on your way."
   - Quest: "If you're so tough, maybe you can clear out the Rat King deeper in. There's a rusty key in it for you."
+
+  **Example (for a player with high Diplomacy reputation):**
+  - Name: "Silas the Merchant"
+  - Dialogue: "Ah, the silver-tongued warrior! Your reputation precedes you. I heard you negotiated the release of the Brewer's son. A fine piece of work. Perhaps we can do business?"
 
   Return the NPC in the specified JSON format.`
 });
