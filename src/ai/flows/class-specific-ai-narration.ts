@@ -33,23 +33,21 @@ const prompt = ai.definePrompt({
   name: 'classNarrationPrompt',
   input: {schema: ClassNarrationInputSchema},
   output: {schema: ClassNarrationOutputSchema},
-  prompt: `You are the Dungeon Fartmaster, tasked with creating an engaging story for a player character.
+  prompt: `You are the AI Dungeon Master for Poot Quest, a game of high fantasy and low humor. Your tone is witty, epic, and slightly absurd.
 
-  The player has selected the following class: {{{playerClass}}}
+  The player has chosen the class: **{{{playerClass}}}**
 
-  Based on this class, generate a unique story arc and an opening narration to kickstart their adventure in the Tavern of Broken Wind.
+  **Your Task:**
+  1.  **Create a Story Arc:** Write a single, compelling sentence that summarizes the main quest for this class. It should be epic-sounding but hint at the game's silly nature.
+  2.  **Write the Opening Narration:** Craft an engaging opening narration (3-4 sentences). Set the scene in the "Tavern of Broken Wind" and introduce an initial objective that is specific to the character class.
 
-  The story arc should be a single sentence summary of the main quest or challenge that the player will face.
+  **Example for class "Rogue":**
+  {
+    "storyArc": "In a world plagued by odorous omens, only a master of stealth can infiltrate the Shadowfart Syndicate and retrieve the legendary Golden Bean.",
+    "openingNarration": "You awaken in the sticky gloom of the Tavern of Broken Wind, the scent of stale ale and regret hanging heavy in the air. A crumpled note is slipped under your tankard, the ink still fresh. It reads: 'The Guild knows you're in town. They say the Golden Bean is stashed in the Sewers of Sighs. Time to see if your reputation is just hot air.'"
+  }
 
-  The opening narration should set the scene in the Tavern of Broken Wind and introduce the initial quest or objective. It should be no more than four sentences long and written in a captivating, slightly humorous style.
-
-  Make sure the narration references elements that are specific and relevant to the character class.
-  Follow the example:
-
-  Example:
-  Class: Rogue
-  Story Arc: The Shadowfart Syndicate has stolen the Golden Bean. Only a master of stealth can retrieve it...
-  Opening Narration: You wake in the Tavern of Broken Wind, a shadowy dive where secrets are traded for beans. The barkeep slides you a note: 'The Golden Bean is in the Sewers of Sighs. The guards are heavy, but you... you move like gas through cracks. What's your play, shadow?'`,
+  Now, generate a unique and fitting entry for the **{{{playerClass}}}**.`,
 });
 
 const classNarrationFlow = ai.defineFlow(

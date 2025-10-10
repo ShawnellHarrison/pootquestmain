@@ -46,43 +46,29 @@ const branchingNarrativePrompt = ai.definePrompt({
   name: 'branchingNarrativePrompt',
   input: {schema: NarrativeInputSchema},
   output: {schema: NarrativeOutputSchema},
-  prompt: `You are a dungeon master generating the next part of a text adventure game.
+  prompt: `You are a master storyteller, the AI Dungeon Master for Poot Quest. Your goal is to create a cohesive, engaging, and reactive narrative.
 
-  The player is currently a level {{level}} {{playerClass}} in the {{location}}.
+  The player, a level {{level}} {{playerClass}}, is in the {{location}}.
 
-  Here's some information about the player:
-  * Current Reputation: Stealth: {{reputation.stealth}}, Combat: {{reputation.combat}}, Diplomacy: {{reputation.diplomacy}}
-  * Unlocked Paths: {{unlockedPaths}}
-  * Quest Flags: {{questFlags}}
-  * Previous Choices:
-  {{#each choices}}
-  - {{this.text}} (Tags: {{this.tags}})
-  {{/each}}
+  **Player Context:**
+  *   **Reputation:** Stealth: {{reputation.stealth}}, Combat: {{reputation.combat}}, Diplomacy: {{reputation.diplomacy}}
+  *   **Past Choices:**
+      {{#each choices}}
+      - {{this.text}}
+      {{/each}}
+  *   **Known Quests:** {{questFlags}}
+  *   **Unlocked Story Paths:** {{unlockedPaths}}
 
-  Generate the next scenario, offering the player 3 distinct choices. Each choice should have a unique ID, starting with A, and a clear text description of the action the player will take.
+  **Your Task:**
+  Generate the next scenario. The scenario MUST be influenced by the player's context.
+  1.  **Reactive World:** If reputation is high in one area, reflect it. A high-combat character might be challenged, while a high-diplomacy one is met with negotiation.
+  2.  **Cohesive Story:** Your scenario should logically follow their previous choices.
+  3.  **Engaging Choices:** Provide 3 distinct choices (A, B, C). At least one choice should offer a clear path related to their highest reputation score or class. For example, a Rogue with high stealth should get a stealthy option.
 
-  The scenario and the choices should be affected by the player's class, reputation, and previous choices. For example, a player with high stealth might have a stealth-based option available. A paladin might be presented with more morally driven choices.
+  **Example Scenario (for a high-diplomacy Paladin):**
+  A hulking goblin guard blocks your path, but upon seeing your emblem, he hesitates. "You... you are the one who parleyed with Chief Gassy," he grunts, lowering his axe slightly. "Your words carry weight. State your business, holy one."
 
-  Make it so that this scenario involves a decision regarding the Goblin Chief. The output MUST conform to the schema.
-
-  Here's an example of the output format you should follow:
-  {
-    "scenarioText": "You enter the throne room. The Goblin Chief sees you and... lowers his weapon. \\'You spared my scout. Why?\\' His eyes gleam with cunning. This could go many ways...",
-    "choices": [
-      {
-        "id": "A",
-        "text": "I'm here to end this." 
-      },
-      {
-        "id": "B",
-        "text": "I seek the Golden Bean, not war."
-      },
-      {
-        "id": "C",
-        "text": "I work for someone bigger than both of us."
-      }
-    ]
-  }
+  The output MUST conform to the schema. Make the scenario interesting and continue the story.
   `,
 });
 

@@ -48,20 +48,26 @@ const generateNpcPrompt = ai.definePrompt({
   name: 'generateNpcPrompt',
   input: {schema: NpcInputSchema},
   output: {schema: NpcOutputSchema},
-  prompt: `You are the AI Dungeon Master for the Poot Quest game. Generate a non-player character (NPC) for the player to interact with.
+  prompt: `You are the AI Dungeon Master for Poot Quest. Generate a non-player character (NPC) for the player to interact with.
 
-  The NPC should be relevant to the player's current location: {{{location}}}.
-  The player is playing as a {{{playerClass}}} and their current context is: {{{playerContext}}}.
+  **Player Context:**
+  - Class: {{playerClass}}
+  - Level: {{playerContext.level}}
+  - Location: {{location}}
+  - Reputation: Stealth: {{playerContext.reputation.stealth}}, Combat: {{playerContext.reputation.combat}}, Diplomacy: {{playerContext.reputation.diplomacy}}
 
-  Consider the player's reputation (stealth, combat, diplomacy) when generating the NPC.  If the player has a high reputation in a certain area, the NPC should react accordingly.
+  **Your Task:**
+  Create an NPC that feels alive and reactive.
+  1.  **Personality:** Give them a distinct personality appropriate for the {{location}}.
+  2.  **Reactive Dialogue:** The NPC's dialogue MUST reflect the player's reputation. If combat reputation is high, they might be fearful or aggressive. If diplomacy is high, they might be open to talk.
+  3.  **Quest Potential:** The NPC can optionally offer a simple quest that makes sense for the location and their character.
 
-  Return the NPC in the following JSON format:
-  {
-    "name": "The name of the NPC",
-    "dialogue": "The dialogue the NPC speaks to the player.  Make it interesting and relevant to the player's situation.",
-    "quest": "The quest the NPC offers to the player, if any. Omit if the NPC has no quest",
-    "reward": "The reward for completing the quest, if any. Omit if the NPC has no quest"
-  }`
+  **Example (for a player with high Combat reputation):**
+  - Name: "Grizelda the Grim"
+  - Dialogue: "Easy there, killer. I saw what you did to the sewer goblins. I want no trouble. State your business and be on your way."
+  - Quest: "If you're so tough, maybe you can clear out the Rat King deeper in. There's a rusty key in it for you."
+
+  Return the NPC in the specified JSON format.`
 });
 
 const generateNpcFlow = ai.defineFlow(
@@ -75,5 +81,3 @@ const generateNpcFlow = ai.defineFlow(
     return output!;
   }
 );
-
-    
