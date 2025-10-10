@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useEffect } from "react";
+import React, { useEffect, useMemo } from "react";
 import {
   generateNextScenario,
   NarrativeOutput,
