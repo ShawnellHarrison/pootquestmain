@@ -61,11 +61,19 @@ export function AdventureClient({ characterId }: AdventureClientProps) {
     
     try {
       setGameState("generating");
+
+      // Sanitize playerChoices to remove non-serializable Firestore Timestamps
+      const sanitizedChoices = narrativeContext.playerChoices.map((choice: any) => ({
+        id: choice.id,
+        text: choice.text,
+        tags: choice.tags,
+      }));
+
       const result = await generateNextScenario({
         playerClass: characterClassData.name,
         level: character.level,
         location: narrativeContext.location,
-        choices: narrativeContext.playerChoices,
+        choices: sanitizedChoices,
         reputation: {
           stealth: narrativeContext.reputationStealth,
           combat: narrativeContext.reputationCombat,
@@ -107,7 +115,7 @@ export function AdventureClient({ characterId }: AdventureClientProps) {
     if (!narrativeContextRef || !firestore || !user || !characterClassData || !character || !narrativeContext) return;
     setGameState("generating");
 
-    const choiceData = { id: choice.id, text: choice.text, tags: choice.tags, timestamp: new Date() };
+    const choiceData = { id: choice.id, text: choice.text, tags: choice.tags, timestamp: new Date().toISOString() };
 
     try {
         if (choice.tags.includes("COMBAT")) {
