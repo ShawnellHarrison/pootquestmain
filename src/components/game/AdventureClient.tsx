@@ -24,13 +24,14 @@ import { updateDocumentNonBlocking } from "@/firebase/non-blocking-updates";
 import { CLASSES } from "@/lib/game-data";
 import { generateEncounter } from "@/ai/flows/generate-encounter-flow";
 import { useRouter } from "next/navigation";
-import { generateNpc, NpcOutput } from "@/ai/flows/ai-dungeon-master-npc";
+import { generateNpc } from "@/ai/flows/ai-dungeon-master-npc";
 
 interface AdventureClientProps {
   characterId: string;
 }
 
 type GameState = "loading" | "generating" | "ready";
+type Choice = NarrativeOutput['choices'][0];
 
 export function AdventureClient({ characterId }: AdventureClientProps) {
   const { firestore, user } = useFirebase();
@@ -111,7 +112,7 @@ export function AdventureClient({ characterId }: AdventureClientProps) {
     generateAndSaveNextScenario();
   };
 
-  const handleChoice = async (choice: { id: string; text: string; tags: string[] }) => {
+  const handleChoice = async (choice: Choice) => {
     if (!narrativeContextRef || !firestore || !user || !characterClassData || !character || !narrativeContext) return;
     setGameState("generating");
 
@@ -120,28 +121,44 @@ export function AdventureClient({ characterId }: AdventureClientProps) {
     // Use a write batch for atomic updates
     const batch = writeBatch(firestore);
 
-    batch.update(narrativeContextRef, {
+    let updates: Record<string, any> = {
         playerChoices: arrayUnion(choiceData),
         currentScenario: null, // Clear current scenario
-    });
+    };
 
     // Update reputation scores
     if (choice.tags.includes("STEALTH")) {
-        batch.update(narrativeContextRef, { reputationStealth: increment(1) });
+        updates['reputationStealth'] = increment(1);
     }
     if (choice.tags.includes("COMBAT")) {
-        batch.update(narrativeContextRef, { reputationCombat: increment(1) });
+        updates['reputationCombat'] = increment(1);
     }
     if (choice.tags.includes("DIPLOMACY")) {
-        batch.update(narrativeContextRef, { reputationDiplomacy: increment(1) });
+        updates['reputationDiplomacy'] = increment(1);
     }
     
+    batch.update(narrativeContextRef, updates);
+    
     try {
-        if (choice.tags.includes("COMBAT")) {
+        if (choice.tags.includes("QUEST_COMPLETE") && choice.questId) {
+            const questUpdates: Record<string, any> = {};
+            questUpdates[`questFlags.${choice.questId}`] = "completed";
+            questUpdates['lastNarration'] = `Quest Complete: ${choice.questId}!`; // Simple completion message
+            questUpdates['triggerNextScenario'] = true;
+            
+            batch.update(narrativeContextRef, questUpdates);
+            await batch.commit();
+
+        } else if (choice.tags.includes("COMBAT")) {
+            const activeQuestId = Object.keys(narrativeContext.questFlags).find(
+              (key) => narrativeContext.questFlags[key] === 'started'
+            );
+
             const encounterResult = await generateEncounter({
                 playerClass: characterClassData.name,
                 playerLevel: character.level,
                 location: narrativeContext.location,
+                questId: activeQuestId,
             });
 
             batch.update(narrativeContextRef, { currentEncounter: encounterResult });
@@ -160,7 +177,7 @@ export function AdventureClient({ characterId }: AdventureClientProps) {
                     level: character.level,
                     choices: sanitizedChoices,
                     reputation: {
-                        stealth: narrativeContext.reputationStealth,
+                        stealth: narrativeativeContext.reputationStealth,
                         combat: narrativeContext.reputationCombat,
                         diplomacy: narrativeContext.reputationDiplomacy,
                     },
@@ -168,14 +185,14 @@ export function AdventureClient({ characterId }: AdventureClientProps) {
                 }
             });
 
-            let updates: any = {};
+            let npcUpdates: any = {};
             if (npcResult.quest && npcResult.questId) {
-                updates[`questFlags.${npcResult.questId}`] = "started";
+                npcUpdates[`questFlags.${npcResult.questId}`] = "started";
             }
-            updates.lastNarration = `${npcResult.name} says: "${npcResult.dialogue}" ${npcResult.quest ? `\n\nNew Quest: ${npcResult.quest}`: ''}`;
-            updates.triggerNextScenario = true; // Go to next story bit
+            npcUpdates.lastNarration = `${npcResult.name} says: "${npcResult.dialogue}" ${npcResult.quest ? `\n\nNew Quest: ${npcResult.quest}`: ''}`;
+            npcUpdates.triggerNextScenario = true; // Go to next story bit
             
-            batch.update(narrativeContextRef, updates);
+            batch.update(narrativeContextRef, npcUpdates);
             await batch.commit();
         } else {
              batch.update(narrativeContextRef, { triggerNextScenario: true }); // Skip battle and go to next scenario

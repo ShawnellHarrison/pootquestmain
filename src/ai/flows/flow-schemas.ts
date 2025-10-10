@@ -4,6 +4,7 @@ export const EncounterInputSchema = z.object({
     playerClass: z.string().describe('The class of the player character.'),
     playerLevel: z.number().describe('The current level of the player.'),
     location: z.string().describe('The current location in the game.'),
+    questId: z.string().optional().describe('The ID of the active quest, if any.'),
 });
 export type EncounterInput = z.infer<typeof EncounterInputSchema>;
 
