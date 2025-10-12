@@ -5,33 +5,35 @@ import { GameContainer } from "@/components/game/GameContainer";
 import { Header } from "@/components/game/Header";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { Lock, BookOpen, ArrowLeft, Loader2 } from "lucide-react";
+import { Lock, BookOpen, ArrowLeft, Loader2, Trophy, Skull } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { useCollection, useFirebase, useMemoFirebase } from "@/firebase";
-import { collection } from "firebase/firestore";
+import { collection, query, orderBy } from "firebase/firestore";
+import { formatDistanceToNow } from 'date-fns';
 
-const RunCard = ({ run, isLocked }: { run: any, isLocked?: boolean }) => (
-    <Card>
+const RunCard = ({ run }: { run: any }) => (
+    <Card className="bg-card/80 border border-border/50">
         <CardHeader>
-            <CardTitle className="font-headline">{run.title || `Run #${run.id}`}</CardTitle>
+            <div className="flex justify-between items-start">
+                <div>
+                    <CardTitle className="font-headline text-xl text-glow flex items-center gap-2">
+                        {run.ending.includes("Vanquished") ? <Skull className="text-destructive" /> : <Trophy className="text-yellow-400" />}
+                        The Legend of a {run.characterClass}
+                    </CardTitle>
+                    <CardDescription>
+                        {run.createdAt ? formatDistanceToNow(new Date(run.createdAt), { addSuffix: true }) : 'A timeless legend'}
+                    </CardDescription>
+                </div>
+                <div className="text-right">
+                    <p className="font-code text-sm text-muted-foreground">Killed: {run.enemiesKilled}</p>
+                    <p className="font-code text-sm text-muted-foreground">Alignment: {run.moralAlignment}</p>
+                </div>
+            </div>
         </CardHeader>
         <CardContent>
-            {isLocked ? (
-                <div className="flex flex-col items-center justify-center text-muted-foreground py-8">
-                    <Lock className="h-8 w-8 mb-2" />
-                    <p>???</p>
-                </div>
-            ) : (
-                <ul className="space-y-1 font-code text-sm">
-                    {Object.entries(run).map(([key, value]) => (
-                        <li key={key}>
-                            <span className="text-muted-foreground capitalize">{key}: </span>
-                            <span className="text-foreground">{String(value)}</span>
-                        </li>
-                    ))}
-                </ul>
-            )}
+             <p className="font-serif italic text-foreground/90">&quot;{run.ending}&quot;</p>
+             <p className="font-serif text-sm text-muted-foreground mt-2">&mdash; {run.uniqueDiscovery}</p>
         </CardContent>
     </Card>
 );
@@ -39,27 +41,27 @@ const RunCard = ({ run, isLocked }: { run: any, isLocked?: boolean }) => (
 export default function ChroniclePage() {
     const { firestore, user } = useFirebase();
 
-    const runsRef = useMemoFirebase(() => {
+    const runsQuery = useMemoFirebase(() => {
         if (!firestore || !user) return null;
-        return collection(firestore, `users/${user.uid}/runChronicles`);
+        const runsRef = collection(firestore, `users/${user.uid}/runChronicles`);
+        // Order by creation date, newest first
+        return query(runsRef, orderBy("createdAt", "desc"));
     }, [firestore, user]);
 
-    const { data: runs, isLoading } = useCollection(runsRef);
-
-    const secrets = [
-        "??? in the Boardroom",
-        "??? Barbarian True Ending",
-        "??? Tycoon's Hidden Vault",
-    ];
+    const { data: runs, isLoading } = useCollection(runsQuery);
 
     const renderRuns = () => {
         if (isLoading) {
-            return <div className="flex justify-center"><Loader2 className="h-8 w-8 animate-spin" /></div>;
+            return <div className="flex justify-center py-8"><Loader2 className="h-8 w-8 animate-spin" /></div>;
         }
         if (!runs || runs.length === 0) {
-            return <p className="text-muted-foreground text-center">No chronicles yet. Your legend awaits!</p>
+            return <p className="text-muted-foreground text-center py-8">No chronicles yet. Your legend awaits!</p>
         }
-        return runs.map((run) => <RunCard key={run.id} run={run} />);
+        return (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {runs.map((run) => <RunCard key={run.id} run={run} />)}
+            </div>
+        );
     }
 
     return (
@@ -82,17 +84,10 @@ export default function ChroniclePage() {
                             </CardTitle>
                             <CardDescription>Your legend, etched in the annals of absurdity.</CardDescription>
                         </CardHeader>
-                        <CardContent className="space-y-8">
-                            <div className="space-y-4">
-                                <h3 className="font-headline text-2xl">Completed Runs</h3>
+                        <CardContent className="space-y-8 p-4 sm:p-6">
+                            <div>
+                                <h3 className="font-headline text-2xl mb-4">Completed Runs</h3>
                                 {renderRuns()}
-                            </div>
-                            <Separator />
-                            <div className="space-y-4">
-                                <h3 className="font-headline text-2xl">Secrets</h3>
-                                <ul className="list-disc list-inside text-muted-foreground font-code text-sm space-y-1">
-                                    {secrets.map((secret, index) => <li key={index}>{secret}</li>)}
-                                </ul>
                             </div>
                         </CardContent>
                     </Card>

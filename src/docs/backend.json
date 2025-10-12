@@ -346,13 +346,13 @@
           "type": "string",
           "description": "The moral alignment of the character during the run."
         },
-        "enemiesSpared": {
-          "type": "number",
-          "description": "The number of enemies spared during the run."
-        },
         "enemiesKilled": {
           "type": "number",
           "description": "The number of enemies killed during the run."
+        },
+        "enemiesSpared": {
+          "type": "number",
+          "description": "The number of enemies spared during the run."
         },
         "secretRoomsFound": {
           "type": "number",
@@ -365,12 +365,18 @@
         "uniqueDiscovery": {
           "type": "string",
           "description": "Any unique discoveries made during the run."
+        },
+        "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Timestamp of when the chronicle was created."
         }
       },
       "required": [
         "userId",
         "characterClass",
-        "moralAlignment"
+        "moralAlignment",
+        "createdAt"
       ]
     }
   },

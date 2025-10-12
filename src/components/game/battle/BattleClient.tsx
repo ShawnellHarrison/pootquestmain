@@ -3,7 +3,7 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { useFirebase, useDoc, useMemoFirebase, addDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase';
-import { doc, collection } from 'firebase/firestore';
+import { doc, collection, writeBatch } from 'firebase/firestore';
 import { Loader2, Flag, ArrowRightCircle } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
@@ -14,7 +14,7 @@ import { PlayerCard } from './PlayerCard';
 import { Enemy } from './Enemy';
 import { Button } from '@/components/ui/button';
 import { PlayerStats } from './PlayerStats';
-import { CARD_DATA } from '@/lib/game-data';
+import { CARD_DATA, CharacterClass, getClass } from '@/lib/game-data';
 
 // Fisher-Yates shuffle algorithm
 const shuffle = <T,>(array: T[]): T[] => {
@@ -40,6 +40,7 @@ type BattleState = {
     selectedCard: string | null;
     selectedTarget: string | null;
     isProcessing: boolean;
+    enemiesKilled: number;
 };
 
 export function BattleClient() {
@@ -54,7 +55,6 @@ export function BattleClient() {
       if (lastCharId) {
         setCharacterId(lastCharId);
       } else {
-        // Only redirect if not on the server and characterId is confirmed to be missing
         router.push('/');
       }
     }
@@ -72,6 +72,8 @@ export function BattleClient() {
     return doc(firestore, `users/${user.uid}/characters/${characterId}`);
   }, [firestore, user, characterId]);
   const { data: character, isLoading: isCharacterLoading } = useDoc<any>(characterDocRef);
+  const characterClass = useMemo(() => character ? getClass(character.class) : null, [character]);
+
 
   const deckRef = useMemoFirebase(() => {
     if (!firestore || !user || !characterId) return null;
@@ -101,6 +103,7 @@ export function BattleClient() {
             selectedCard: null,
             selectedTarget: null,
             isProcessing: false,
+            enemiesKilled: 0,
         });
     }
   }, [character, encounter, deck, battleState]);
@@ -113,7 +116,6 @@ export function BattleClient() {
         return;
     }
     
-    // If the card is purely defensive or healing, apply it immediately
     if (cardData.attack === 0) {
         setBattleState(prev => {
             if (!prev) return null;
@@ -144,15 +146,20 @@ export function BattleClient() {
     if (!battleState || !battleState.selectedCard || battleState.turn !== 'player' || battleState.isProcessing) return;
 
     const cardData = CARD_DATA[battleState.selectedCard];
-    if (!cardData || cardData.attack === 0) return; // Can't attack with non-attack cards
+    if (!cardData || cardData.attack === 0) return;
 
     setBattleState(prev => {
         if (!prev) return null;
         
         let isVictory = false;
+        let enemiesKilledThisTurn = 0;
         const newEnemies = prev.enemies.map(e => {
             if (e.id === enemyId) {
-                return { ...e, hp: Math.max(0, e.hp - cardData.attack) };
+                const newHp = Math.max(0, e.hp - cardData.attack);
+                if (newHp === 0) {
+                    enemiesKilledThisTurn++;
+                }
+                return { ...e, hp: newHp };
             }
             return e;
         }).filter(e => e.hp > 0);
@@ -172,7 +179,8 @@ export function BattleClient() {
             selectedCard: null,
             selectedTarget: null,
             turn: isVictory ? 'victory' : prev.turn,
-            isProcessing: isVictory, // Set processing on victory to stop further actions
+            isProcessing: isVictory,
+            enemiesKilled: prev.enemiesKilled + enemiesKilledThisTurn
         };
     });
   };
@@ -202,7 +210,6 @@ export function BattleClient() {
                     return { ...prev, playerHealth: 0, turn: 'defeat', isProcessing: true };
                 }
 
-                // Draw cards for next turn
                 let newDeck = [...prev.deck];
                 let newDiscard = [...prev.discard];
                 let currentHand = [...prev.hand];
@@ -228,7 +235,7 @@ export function BattleClient() {
                     deck: newDeck,
                     discard: newDiscard,
                     turn: 'player',
-                    playerMana: character?.maxMana || 10, // Reset mana
+                    playerMana: character?.maxMana || 10,
                     isProcessing: false,
                 };
             });
@@ -245,35 +252,59 @@ export function BattleClient() {
         toast({ title: "Victory!", description: `You found: ${encounter.loot.name}`, duration: 5000 });
 
         if(firestore && user && narrativeContextRef && characterDocRef) {
-            // Update player health
             updateDocumentNonBlocking(characterDocRef, { health: battleState.playerHealth });
 
-            // Add loot to inventory
             const inventoryRef = collection(firestore, `users/${user.uid}/characters/${characterId}/inventory`);
             addDocumentNonBlocking(inventoryRef, encounter.loot);
             
-            // Clear encounter, set trigger for next scenario
             updateDocumentNonBlocking(narrativeContextRef, { 
               currentEncounter: null,
               triggerNextScenario: true,
             });
         }
-        // Use a slight delay to allow toast to be seen before navigation
         setTimeout(() => router.push(`/adventure/${characterId}`), 1000);
       };
 
-      const processDefeat = () => {
-          if (battleState?.turn === 'defeat') {
-              toast({ title: "You have been defeated!", variant: "destructive", duration: 5000 });
-              // Here you could add logic to create a RunChronicle
-              router.push('/chronicle');
+      const processDefeat = async () => {
+          if (battleState?.turn !== 'defeat' || !user || !firestore || !characterClass || !battleState ) return;
+
+          toast({ title: "You have been defeated!", variant: "destructive", duration: 5000 });
+
+          const runChronicleData = {
+              userId: user.uid,
+              characterClass: characterClass.name,
+              moralAlignment: "Chaotic Flatulent",
+              enemiesKilled: battleState.enemiesKilled,
+              enemiesSpared: 0,
+              secretRoomsFound: 0,
+              ending: `Vanquished by ${encounter?.enemies[0]?.name || 'a mysterious foe'}.`,
+              uniqueDiscovery: "Learned that hubris smells a lot like sulfur.",
+              createdAt: new Date().toISOString(),
+          };
+
+          const runChroniclesRef = collection(firestore, `users/${user.uid}/runChronicles`);
+          await addDocumentNonBlocking(runChroniclesRef, runChronicleData);
+
+          // Clear character and narrative data to force a new game
+          if (characterDocRef) {
+            const batch = writeBatch(firestore);
+            batch.delete(characterDocRef);
+            if (narrativeContextRef) batch.delete(narrativeContextRef);
+            if (deckRef) batch.delete(deckRef);
+            // We can add inventory deletion later if needed
+            await batch.commit();
           }
+          if (typeof window !== 'undefined') {
+            localStorage.removeItem('characterId');
+          }
+
+          router.push('/chronicle');
       };
 
       if (battleState?.turn === 'victory') processVictory();
       if (battleState?.turn === 'defeat') processDefeat();
 
-  }, [battleState, encounter, firestore, user, characterId, narrativeContextRef, characterDocRef, router, toast]);
+  }, [battleState, encounter, firestore, user, characterId, characterDocRef, characterClass, narrativeContextRef, deckRef, router, toast]);
 
   const isLoading = isContextLoading || isCharacterLoading || isDeckLoading || !character || !encounter || !deck || !battleState;
   
@@ -294,7 +325,6 @@ export function BattleClient() {
   return (
     <Card className="bg-card/50">
       <CardContent className="p-4 space-y-4">
-        {/* Enemy Area */}
         <div className="flex justify-around items-end p-4 min-h-48 bg-muted/50 rounded-lg border-b-4 border-b-accent">
           {battleState.enemies.map(enemy => (
             <Enemy 
@@ -306,14 +336,12 @@ export function BattleClient() {
           ))}
         </div>
 
-        {/* Battlefield Zone */}
         <div className="min-h-24 flex items-center justify-center text-muted-foreground italic">
             {battleState.isProcessing && battleState.turn === 'enemy' ? 'Enemies are attacking...' : encounter.introText}
             {battleState.turn === 'victory' && 'You are victorious!'}
             {battleState.turn === 'defeat' && 'You have been vanquished.'}
         </div>
 
-        {/* Player Area */}
         <div className="pt-4 border-t-2 border-border">
           <div className="flex justify-between items-center mb-4 px-4">
             <PlayerStats 
