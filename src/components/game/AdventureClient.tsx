@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { useEffect, useMemo } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   generateNextScenario,
   NarrativeOutput,
@@ -11,17 +11,15 @@ import {
   CardContent,
   CardHeader,
   CardTitle,
-  CardDescription,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Loader2, BookOpen, Forward, ChevronRight, HelpCircle } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import Link from "next/link";
 import { Separator } from "@/components/ui/separator";
-import { useDoc, useFirebase, useMemoFirebase } from "@/firebase";
-import { doc, arrayUnion, writeBatch, increment } from "firebase/firestore";
-import { updateDocumentNonBlocking } from "@/firebase/non-blocking-updates";
-import { CLASSES } from "@/lib/game-data";
+import { useFirebase } from "@/firebase";
+import { doc, getDoc, writeBatch, increment } from "firebase/firestore";
+import { CLASSES, CharacterClass } from "@/lib/game-data";
 import { generateEncounter } from "@/ai/flows/generate-encounter-flow";
 import { useRouter } from "next/navigation";
 import { generateNpc, NpcOutput } from "@/ai/flows/ai-dungeon-master-npc";
@@ -32,90 +30,153 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 
+// Define local state types to avoid using 'any'
+type NarrativeContextState = {
+    characterId: string;
+    location: string;
+    storyArc: string;
+    playerChoices: any[];
+    reputationStealth: number;
+    reputationCombat: number;
+    reputationDiplomacy: number;
+    unlockedPaths: string[];
+    questFlags: Record<string, { status: string; currentStep: number }>;
+    lastNarration: string | null;
+    currentScenario: NarrativeOutput | null;
+    triggerNextScenario: boolean;
+};
+
+type CharacterState = {
+    class: string;
+    level: number;
+    experience: number;
+    health: number;
+    maxHealth: number;
+    maxMana: number;
+    attack: number;
+    defense: number;
+    speed: number;
+};
+
+
 interface AdventureClientProps {
   characterId: string;
+  initialBattleState?: any;
 }
 
 type GameState = "loading" | "generating" | "ready" | "awaiting_continue";
 type Choice = NarrativeOutput['choices'][0];
 
-export function AdventureClient({ characterId }: AdventureClientProps) {
+export function AdventureClient({ characterId, initialBattleState }: AdventureClientProps) {
   const { firestore, user } = useFirebase();
   const router = useRouter();
-  const [gameState, setGameState] = React.useState<GameState>("loading");
-  const [error, setError] = React.useState<string | null>(null);
 
-  const narrativeContextRef = useMemoFirebase(() => {
-    if (!firestore || !user) return null;
-    return doc(firestore, `users/${user.uid}/characters/${characterId}/narrativeContexts`, "main");
-  }, [firestore, user, characterId]);
+  // Local state for game data
+  const [narrativeContext, setNarrativeContext] = useState<NarrativeContextState | null>(null);
+  const [character, setCharacter] = useState<CharacterState | null>(null);
+  
+  const [gameState, setGameState] = useState<GameState>("loading");
+  const [error, setError] = useState<string | null>(null);
 
-  const { data: narrativeContext, isLoading: isContextLoading } = useDoc<any>(narrativeContextRef);
-
-  const characterDocRef = useMemoFirebase(() => {
-    if (!firestore || !user) return null;
-    return doc(firestore, `users/${user.uid}/characters/${characterId}`);
-  }, [firestore, user, characterId]);
-
-  const { data: character, isLoading: isCharacterLoading } = useDoc<any>(characterDocRef);
-
-  const characterClassData = React.useMemo(() => {
+  const characterClassData = useMemo(() => {
     if (!character) return null;
-    return CLASSES.find(c => c.id === character.class);
+    return CLASSES.find(c => c.id === character.class) as CharacterClass | undefined;
   }, [character]);
   
-  // This effect determines the initial state of the game when the component loads or data changes.
+  // Effect to fetch initial data once
   useEffect(() => {
-    if (isContextLoading || isCharacterLoading) {
+    const fetchInitialData = async () => {
+        if (!firestore || !user) return;
+        setGameState("loading");
+        try {
+            const narrativeContextRef = doc(firestore, `users/${user.uid}/characters/${characterId}/narrativeContexts`, "main");
+            const characterDocRef = doc(firestore, `users/${user.uid}/characters/${characterId}`);
+
+            const [narrativeContextSnap, characterSnap] = await Promise.all([
+                getDoc(narrativeContextRef),
+                getDoc(characterDocRef),
+            ]);
+
+            if (narrativeContextSnap.exists() && characterSnap.exists()) {
+                const narrativeData = narrativeContextSnap.data() as NarrativeContextState;
+                const characterData = characterSnap.data() as CharacterState;
+
+                if (initialBattleState) {
+                    // Coming back from a battle
+                    setNarrativeContext({
+                        ...narrativeData,
+                        currentEncounter: null,
+                        triggerNextScenario: true,
+                        lastNarration: `You are victorious! You found: ${initialBattleState.loot.name}.`
+                    });
+                    setCharacter({
+                        ...characterData,
+                        health: initialBattleState.playerHealth,
+                        experience: characterData.experience + initialBattleState.xpGained,
+                        // Handle level up
+                    });
+                } else {
+                    setNarrativeContext(narrativeData);
+                    setCharacter(characterData);
+                }
+
+            } else {
+                setError("Could not find your character's story. It might be lost in the ether...");
+            }
+        } catch (e: any) {
+            setError("Failed to load game data. " + e.message);
+        } finally {
+            // State will be determined by the next effect
+        }
+    };
+
+    fetchInitialData();
+  }, [firestore, user, characterId, initialBattleState]);
+
+  // This effect determines the game state based on the locally managed data.
+  useEffect(() => {
+    if (!character || !narrativeContext) {
         setGameState("loading");
         return;
     }
 
-    if (narrativeContext) {
-        if (narrativeContext.currentScenario) {
-            setGameState("ready"); // There's an active scenario with choices
-        } else if (narrativeContext.triggerNextScenario) {
-             // This flag is set by battle/NPC interactions to signal we should generate the next step.
-            handleContinue();
-        }
-        else {
-            setGameState("awaiting_continue"); // The game is paused, waiting for the user to proceed
-        }
+    if (narrativeContext.currentScenario) {
+        setGameState("ready"); // There's an active scenario with choices
+    } else if (narrativeContext.triggerNextScenario) {
+        // This flag is set by battle/NPC interactions to signal we should generate the next step.
+        handleContinue();
+    } else {
+        setGameState("awaiting_continue"); // The game is paused, waiting for the user to proceed
     }
-  }, [narrativeContext, isContextLoading, isCharacterLoading]);
+  }, [narrativeContext, character]);
 
 
   const handleContinue = async () => {
-    if (!narrativeContext || !firestore || !user || !characterClassData || !character || !narrativeContextRef) return;
+    if (!narrativeContext || !firestore || !user || !characterClassData || !character) return;
     
     try {
       setGameState("generating");
-
-      const sanitizedChoices = (narrativeContext.playerChoices || []).map((choice: any) => ({
-        id: choice.id,
-        text: choice.text,
-        tags: choice.tags,
-      }));
 
       const result = await generateNextScenario({
         playerClass: characterClassData.name,
         level: character.level,
         location: narrativeContext.location,
-        choices: sanitizedChoices,
+        choices: narrativeContext.playerChoices,
         reputation: {
-          stealth: narrativeContext.reputationStealth || 0,
-          combat: narrativeContext.reputationCombat || 0,
-          diplomacy: narrativeContext.reputationDiplomacy || 0,
+          stealth: narrativeContext.reputationStealth,
+          combat: narrativeContext.reputationCombat,
+          diplomacy: narrativeContext.reputationDiplomacy,
         },
-        unlockedPaths: narrativeContext.unlockedPaths || [],
-        questFlags: narrativeContext.questFlags || {},
+        unlockedPaths: narrativeContext.unlockedPaths,
+        questFlags: narrativeContext.questFlags,
       });
 
       if (result) {
-        updateDocumentNonBlocking(narrativeContextRef, {
+        setNarrativeContext(prev => prev ? ({
+            ...prev,
             currentScenario: result,
             triggerNextScenario: false // Reset the trigger
-        });
+        }) : null);
         setGameState("ready");
       } else {
         throw new Error("The AI Dungeon Fartmaster is confused. No scenario received.");
@@ -127,108 +188,102 @@ export function AdventureClient({ characterId }: AdventureClientProps) {
   };
 
   const handleChoice = async (choice: Choice) => {
-    if (!narrativeContextRef || !firestore || !user || !characterClassData || !character || !narrativeContext) return;
+    if (!firestore || !user || !characterClassData || !character || !narrativeContext) return;
     setGameState("generating");
 
     const choiceData = { id: choice.id, text: choice.text, tags: choice.tags, timestamp: new Date().toISOString() };
     
-    const batch = writeBatch(firestore);
+    // Create a mutable copy of the current state to update
+    let newNarrativeContext = { ...narrativeContext };
+    
+    newNarrativeContext.playerChoices = [...newNarrativeContext.playerChoices, choiceData];
+    newNarrativeContext.currentScenario = null; // Clear the current scenario
 
-    let updates: Record<string, any> = {
-        playerChoices: arrayUnion(choiceData),
-        currentScenario: null, // Clear the current scenario after a choice is made
-    };
-
-    if (choice.tags.includes("STEALTH")) {
-        updates['reputationStealth'] = increment(5);
-    }
-    if (choice.tags.includes("COMBAT")) {
-        updates['reputationCombat'] = increment(5);
-    }
-    if (choice.tags.includes("DIPLOMACY")) {
-        updates['reputationDiplomacy'] = increment(5);
-    }
+    // Update reputation locally
+    if (choice.tags.includes("STEALTH")) newNarrativeContext.reputationStealth += 5;
+    if (choice.tags.includes("COMBAT")) newNarrativeContext.reputationCombat += 5;
+    if (choice.tags.includes("DIPLOMACY")) newNarrativeContext.reputationDiplomacy += 5;
     
     try {
         if (choice.questProgress) {
             const { questId, nextStep } = choice.questProgress;
-            updates[`questFlags.${questId}.currentStep`] = nextStep;
-            updates['lastNarration'] = `Quest updated: ${questId}.`;
+            if (newNarrativeContext.questFlags[questId]) {
+                newNarrativeContext.questFlags[questId].currentStep = nextStep;
+            }
+            newNarrativeContext.lastNarration = `Quest updated: ${questId}.`;
         }
 
         if (choice.isQuestCompletion) {
-            const questId = Object.keys(narrativeContext.questFlags || {}).find(
-              (key) => (narrativeContext.questFlags || {})[key]?.status === 'started'
+            const questId = Object.keys(newNarrativeContext.questFlags).find(
+              (key) => newNarrativeContext.questFlags[key]?.status === 'started'
             );
-            if (questId) {
-                updates[`questFlags.${questId}.status`] = "completed";
-                updates['lastNarration'] = `Quest Complete: ${questId}!`;
+            if (questId && newNarrativeContext.questFlags[questId]) {
+                newNarrativeContext.questFlags[questId].status = "completed";
+                newNarrativeContext.lastNarration = `Quest Complete: ${questId}!`;
             }
         }
 
+        // Handle different choice tags by updating local state
         if (choice.tags.includes("COMBAT")) {
-            updates.triggerNextScenario = false; // The battle screen will handle the redirect and trigger
-            const activeQuestId = Object.keys(narrativeContext.questFlags || {}).find(
-              (key) => (narrativeContext.questFlags || {})[key]?.status === 'started'
+            const activeQuestId = Object.keys(newNarrativeContext.questFlags).find(
+              (key) => newNarrativeContext.questFlags[key]?.status === 'started'
             );
 
             const encounterResult = await generateEncounter({
                 playerClass: characterClassData.name,
                 playerLevel: character.level,
-                location: narrativeContext.location,
+                location: newNarrativeContext.location,
                 questId: activeQuestId,
             });
-
-            batch.update(narrativeContextRef, { ...updates, currentEncounter: encounterResult });
-            await batch.commit();
-            router.push('/battle');
-            return; // Exit early to prevent further processing
+            
+            // Navigate to battle page with state in URL
+            const encounterString = JSON.stringify(encounterResult);
+            router.push(`/battle?characterId=${characterId}&encounter=${encodeURIComponent(encounterString)}`);
+            return; // Exit early
 
         } else if (choice.tags.includes("NPC_INTERACTION")) {
-            updates.triggerNextScenario = false; // NPC interaction pauses the flow
-            const sanitizedChoices = (narrativeContext.playerChoices || []).map((c: any) => ({
-              id: c.id, text: c.text, tags: c.tags
-            }));
-
+            newNarrativeContext.triggerNextScenario = false; // NPC interaction pauses the flow
+            
             const npcResult: NpcOutput = await generateNpc({
-                location: narrativeContext.location,
+                location: newNarrativeContext.location,
                 playerClass: characterClassData.name,
                 playerContext: {
                     level: character.level,
-                    choices: sanitizedChoices,
+                    choices: newNarrativeContext.playerChoices,
                     reputation: {
-                        stealth: narrativeContext.reputationStealth || 0,
-                        combat: narrativeContext.reputationCombat || 0,
-                        diplomacy: narrativeContext.reputationDiplomacy || 0,
+                        stealth: newNarrativeContext.reputationStealth,
+                        combat: newNarrativeContext.reputationCombat,
+                        diplomacy: newNarrativeContext.reputationDiplomacy,
                     },
-                    questFlags: narrativeContext.questFlags || {},
+                    questFlags: newNarrativeContext.questFlags,
                 }
             });
 
             let npcNarration = `${npcResult.name} says: "${npcResult.dialogue}"`;
             
             if (npcResult.quest && npcResult.questId) {
-                const rep = {
-                    stealth: narrativeContext.reputationStealth || 0,
-                    combat: narrativeContext.reputationCombat || 0,
-                    diplomacy: npcResult.reputationCheck?.stat === 'diplomacy' ? narrativeContext.reputationDiplomacy || 0 : 0
-                }
-                const canAccept = !npcResult.reputationCheck || (rep as any)[npcResult.reputationCheck.stat] >= npcResult.reputationCheck.threshold;
+                const repCheck = npcResult.reputationCheck;
+                const canAccept = !repCheck || 
+                    (repCheck.stat === 'stealth' && newNarrativeContext.reputationStealth >= repCheck.threshold) ||
+                    (repCheck.stat === 'combat' && newNarrativeContext.reputationCombat >= repCheck.threshold) ||
+                    (repCheck.stat === 'diplomacy' && newNarrativeContext.reputationDiplomacy >= repCheck.threshold);
 
                 if (canAccept) {
-                    updates[`questFlags.${npcResult.questId}`] = { status: "started", currentStep: 1 };
+                    newNarrativeContext.questFlags[npcResult.questId] = { status: "started", currentStep: 1 };
                     npcNarration += `\n\n**New Quest:** ${npcResult.quest}`;
                 } else {
                     npcNarration += `\n\n*You feel you are not yet reputable enough to accept this task.*`;
                 }
             }
-            updates.lastNarration = npcNarration;
+            newNarrativeContext.lastNarration = npcNarration;
+            newNarrativeContext.triggerNextScenario = true;
+
         } else {
-          updates.triggerNextScenario = true; // For any other choice, continue the story.
+          newNarrativeContext.triggerNextScenario = true; // For any other choice, continue the story.
         }
         
-        batch.update(narrativeContextRef, updates);
-        await batch.commit();
+        // Update the main state object
+        setNarrativeContext(newNarrativeContext);
 
     } catch (e: any) {
         setError(e.message || "An unknown error occurred while processing your choice.");
@@ -236,8 +291,8 @@ export function AdventureClient({ characterId }: AdventureClientProps) {
     }
   };
   
-  const isLoading = gameState === 'loading' || isContextLoading || isCharacterLoading;
-  const currentScenario = narrativeContext?.currentScenario as NarrativeOutput | undefined;
+  const isLoading = gameState === 'loading' || !narrativeContext || !character;
+  const currentScenario = narrativeContext?.currentScenario;
 
   const renderContent = () => {
     if (isLoading) {
@@ -258,17 +313,6 @@ export function AdventureClient({ characterId }: AdventureClientProps) {
         );
     }
     
-    if (!narrativeContext || !character) {
-      return (
-        <div className="text-center">
-          <p className="text-lg text-destructive">Could not find your character's story. It might be lost in the ether...</p>
-          <Button asChild variant="secondary" className="mt-4">
-            <Link href="/character-creation">Start a New Adventure</Link>
-          </Button>
-        </div>
-      );
-    }
-
     if (gameState === 'generating') {
          return (
           <div className="flex flex-col items-center justify-center text-center h-64">
@@ -308,7 +352,7 @@ export function AdventureClient({ characterId }: AdventureClientProps) {
     }
     
     // State: Game is paused, waiting for player to continue
-    if (gameState === "awaiting_continue") {
+    if (gameState === "awaiting_continue" && narrativeContext) {
       return (
         <div className="space-y-6 text-center">
           <div className="p-4 bg-muted rounded-lg border border-border">
@@ -334,7 +378,7 @@ export function AdventureClient({ characterId }: AdventureClientProps) {
     // Fallback for any other state
     return (
       <div className="flex justify-center">
-         <Button onClick={handleContinue} size="lg">Start Adventure</Button>
+         <Button asChild><Link href="/character-creation">Start New Adventure</Link></Button>
       </div>
     );
   };
@@ -368,5 +412,3 @@ export function AdventureClient({ characterId }: AdventureClientProps) {
     </Card>
   );
 }
-
-    
