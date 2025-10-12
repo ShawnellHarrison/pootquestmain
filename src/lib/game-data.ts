@@ -58,7 +58,7 @@ export const CLASSES: CharacterClass[] = [
   {
     id: "rogue",
     name: "Sneaky Rogue",
-    image: "https://storage.googleapis.com/aifire-6e52e.appspot.com/users%2Fw9Iax1D99SMbV6n53s7y2t1a36A2%2Fprojects%2Fstudio-2365687152-9579e%2Ffiles%2F1725568551717_image.png",
+    image: "/images/rogue.png",
     imageHint: "rogue man",
     attributes: {
       strengths: ["Stealth +90%", "Critical Hit +75%", "Speed +80%"],
@@ -80,7 +80,7 @@ export const CLASSES: CharacterClass[] = [
   {
     id: "paladin",
     name: "Paladin of Purity",
-    image: "https://storage.googleapis.com/aifire-6e52e.appspot.com/users%2Fw9Iax1D99SMbV6n53s7y2t1a36A2%2Fprojects%2Fstudio-2365687152-9579e%2Ffiles%2F1725569420067_image.png",
+    image: "/images/paladin.png",
     imageHint: "female knight",
     attributes: {
       strengths: ["Defense +85%", "Healing +90%", "Debuff Resistance +100%"],
@@ -102,7 +102,7 @@ export const CLASSES: CharacterClass[] = [
   {
     id: "wizard",
     name: "Wizard of Wind",
-    image: "https://picsum.photos/seed/wizard/600/800",
+    image: "/images/wizard.png",
     imageHint: "wizard robes",
     attributes: {
       strengths: ["AOE Damage +95%", "Elemental Mastery +85%", "Mana +100%"],
@@ -124,7 +124,7 @@ export const CLASSES: CharacterClass[] = [
   {
     id: "barbarian",
     name: "Barbarian of Beans",
-    image: "https://picsum.photos/seed/barbarian/600/800",
+    image: "/images/barbarian.png",
     imageHint: "muscular warrior",
     attributes: {
       strengths: ["Melee Damage +100%", "HP +90%", "Knockback +80%"],
@@ -146,7 +146,7 @@ export const CLASSES: CharacterClass[] = [
   {
     id: "cleric",
     name: "Cleric of Febreze",
-    image: "https://picsum.photos/seed/cleric/600/800",
+    image: "/images/cleric.png",
     imageHint: "healer robes",
     attributes: {
       strengths: ["Healing +95%", "Buff Duration +80%", "Revive Chance +50%"],
@@ -168,7 +168,7 @@ export const CLASSES: CharacterClass[] = [
   {
     id: "tycoon",
     name: "Tycoon of Toots",
-    image: "https://picsum.photos/seed/tycoon/600/800",
+    image: "/images/tycoon.png",
     imageHint: "business suit",
     attributes: {
       strengths: ["Resource Gain +90%", "Summons +85%", "Versatility +75%"],
@@ -192,3 +192,5 @@ export const CLASSES: CharacterClass[] = [
 export const getClass = (id: string) => {
     return CLASSES.find(c => c.id === id);
 }
+
+    
