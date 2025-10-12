@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { Swords } from "lucide-react";
+import { Swords, Coffee } from "lucide-react";
+import { Button } from "../ui/button";
 
 export function Header() {
   return (
@@ -12,16 +13,19 @@ export function Header() {
           </h1>
         </Link>
         <nav className="flex items-center gap-4">
-            <Link href="/character-creation" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
+            <Link href="/character-creation" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors hidden sm:block">
                 New Game
             </Link>
-            <Link href="/chronicle" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
+            <Link href="/chronicle" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors hidden sm:block">
                 Chronicles
             </Link>
+            <Button asChild variant="ghost" size="sm">
+                <a href="https://buymeacoffee.com/harrisonfamilyventures" target="_blank" rel="noopener noreferrer">
+                    <Coffee className="mr-2 h-4 w-4" /> Buy me a Coffee
+                </a>
+            </Button>
         </nav>
       </div>
     </header>
   );
 }
-
-    
