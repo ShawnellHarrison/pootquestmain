@@ -3,7 +3,7 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { useFirebase, useDoc, useMemoFirebase, addDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase';
-import { doc, collection, writeBatch } from 'firebase/firestore';
+import { doc, collection, writeBatch, increment } from 'firebase/firestore';
 import { Loader2, Flag, ArrowRightCircle } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
@@ -156,7 +156,7 @@ export function BattleClient() {
         const newEnemies = prev.enemies.map(e => {
             if (e.id === enemyId) {
                 const newHp = Math.max(0, e.hp - cardData.attack);
-                if (newHp === 0) {
+                if (newHp === 0 && e.hp > 0) { // Check if it was alive before
                     enemiesKilledThisTurn++;
                 }
                 return { ...e, hp: newHp };
@@ -246,13 +246,34 @@ export function BattleClient() {
   }, [battleState?.turn, battleState?.enemies, character?.maxMana, toast]);
   
   useEffect(() => {
-      const processVictory = () => {
-        if (!battleState || battleState.turn !== 'victory' || !characterId || !encounter) return;
+      const processVictory = async () => {
+        if (!battleState || battleState.turn !== 'victory' || !characterId || !encounter || !character) return;
 
         toast({ title: "Victory!", description: `You found: ${encounter.loot.name}`, duration: 5000 });
 
         if(firestore && user && narrativeContextRef && characterDocRef) {
-            updateDocumentNonBlocking(characterDocRef, { health: battleState.playerHealth });
+            
+            const xpGained = encounter.enemies.reduce((acc, enemy) => acc + enemy.attack * 5, 0); // XP based on enemy power
+            const newXp = (character.experience || 0) + xpGained;
+            const xpToNextLevel = character.level * 100;
+            
+            let characterUpdates: Record<string, any> = {
+                health: battleState.playerHealth,
+                experience: newXp
+            };
+
+            if (newXp >= xpToNextLevel) {
+                characterUpdates = {
+                    ...characterUpdates,
+                    level: increment(1),
+                    experience: newXp - xpToNextLevel,
+                    maxHealth: increment(10), // Level up bonus
+                    maxMana: increment(5),
+                };
+                toast({ title: "Level Up!", description: "You feel stronger!", className: "bg-yellow-500 text-black" });
+            }
+
+            updateDocumentNonBlocking(characterDocRef, characterUpdates);
 
             const inventoryRef = collection(firestore, `users/${user.uid}/characters/${characterId}/inventory`);
             addDocumentNonBlocking(inventoryRef, encounter.loot);
@@ -291,7 +312,11 @@ export function BattleClient() {
             batch.delete(characterDocRef);
             if (narrativeContextRef) batch.delete(narrativeContextRef);
             if (deckRef) batch.delete(deckRef);
-            // We can add inventory deletion later if needed
+            
+            const inventoryCollection = collection(firestore, `users/${user.uid}/characters/${characterId}/inventory`);
+            // To delete a sub-collection, we would need to list and delete each doc, which is more complex.
+            // For now, we leave the inventory, it will be orphaned but won't affect new games.
+
             await batch.commit();
           }
           if (typeof window !== 'undefined') {
@@ -304,7 +329,7 @@ export function BattleClient() {
       if (battleState?.turn === 'victory') processVictory();
       if (battleState?.turn === 'defeat') processDefeat();
 
-  }, [battleState, encounter, firestore, user, characterId, characterDocRef, characterClass, narrativeContextRef, deckRef, router, toast]);
+  }, [battleState, character, encounter, firestore, user, characterId, characterDocRef, characterClass, narrativeContextRef, deckRef, router, toast]);
 
   const isLoading = isContextLoading || isCharacterLoading || isDeckLoading || !character || !encounter || !deck || !battleState;
   
@@ -336,8 +361,9 @@ export function BattleClient() {
           ))}
         </div>
 
-        <div className="min-h-24 flex items-center justify-center text-muted-foreground italic">
-            {battleState.isProcessing && battleState.turn === 'enemy' ? 'Enemies are attacking...' : encounter.introText}
+        <div className="min-h-24 flex items-center justify-center text-muted-foreground italic text-center px-4">
+            {battleState.isProcessing && battleState.turn === 'enemy' ? 'Enemies are plotting their attack...' : ''}
+            {battleState.turn === 'player' && !battleState.isProcessing ? (battleState.selectedCard ? 'Select a target!' : encounter.introText) : ''}
             {battleState.turn === 'victory' && 'You are victorious!'}
             {battleState.turn === 'defeat' && 'You have been vanquished.'}
         </div>
@@ -350,6 +376,9 @@ export function BattleClient() {
               mana={battleState.playerMana}
               maxMana={character.maxMana}
               defense={battleState.playerDefense}
+              level={character.level}
+              xp={character.experience}
+              xpToNextLevel={character.level * 100}
             />
             <div className="flex items-center gap-2">
               <Button asChild variant="destructive" size="lg">

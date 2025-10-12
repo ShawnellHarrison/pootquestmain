@@ -14,7 +14,7 @@ import {
   CardDescription,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Loader2, BookOpen, Forward, ChevronRight } from "lucide-react";
+import { Loader2, BookOpen, Forward, ChevronRight, HelpCircle } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import Link from "next/link";
 import { Separator } from "@/components/ui/separator";
@@ -24,7 +24,13 @@ import { updateDocumentNonBlocking } from "@/firebase/non-blocking-updates";
 import { CLASSES } from "@/lib/game-data";
 import { generateEncounter } from "@/ai/flows/generate-encounter-flow";
 import { useRouter } from "next/navigation";
-import { generateNpc } from "@/ai/flows/ai-dungeon-master-npc";
+import { generateNpc, NpcOutput } from "@/ai/flows/ai-dungeon-master-npc";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface AdventureClientProps {
   characterId: string;
@@ -131,17 +137,16 @@ export function AdventureClient({ characterId }: AdventureClientProps) {
     let updates: Record<string, any> = {
         playerChoices: arrayUnion(choiceData),
         currentScenario: null, // Clear the current scenario after a choice is made
-        triggerNextScenario: true, // Signal that the next step should be generated
     };
 
     if (choice.tags.includes("STEALTH")) {
-        updates['reputationStealth'] = increment(1);
+        updates['reputationStealth'] = increment(5);
     }
     if (choice.tags.includes("COMBAT")) {
-        updates['reputationCombat'] = increment(1);
+        updates['reputationCombat'] = increment(5);
     }
     if (choice.tags.includes("DIPLOMACY")) {
-        updates['reputationDiplomacy'] = increment(1);
+        updates['reputationDiplomacy'] = increment(5);
     }
     
     try {
@@ -152,7 +157,9 @@ export function AdventureClient({ characterId }: AdventureClientProps) {
         }
 
         if (choice.isQuestCompletion) {
-            const questId = choice.questProgress?.questId; // Assuming the ID would still be here
+            const questId = Object.keys(narrativeContext.questFlags || {}).find(
+              (key) => (narrativeContext.questFlags || {})[key]?.status === 'started'
+            );
             if (questId) {
                 updates[`questFlags.${questId}.status`] = "completed";
                 updates['lastNarration'] = `Quest Complete: ${questId}!`;
@@ -178,11 +185,12 @@ export function AdventureClient({ characterId }: AdventureClientProps) {
             return; // Exit early to prevent further processing
 
         } else if (choice.tags.includes("NPC_INTERACTION")) {
+            updates.triggerNextScenario = false; // NPC interaction pauses the flow
             const sanitizedChoices = (narrativeContext.playerChoices || []).map((c: any) => ({
               id: c.id, text: c.text, tags: c.tags
             }));
 
-            const npcResult = await generateNpc({
+            const npcResult: NpcOutput = await generateNpc({
                 location: narrativeContext.location,
                 playerClass: characterClassData.name,
                 playerContext: {
@@ -197,10 +205,26 @@ export function AdventureClient({ characterId }: AdventureClientProps) {
                 }
             });
 
+            let npcNarration = `${npcResult.name} says: "${npcResult.dialogue}"`;
+            
             if (npcResult.quest && npcResult.questId) {
-                updates[`questFlags.${npcResult.questId}`] = { status: "started", currentStep: 1 };
+                const rep = {
+                    stealth: narrativeContext.reputationStealth || 0,
+                    combat: narrativeContext.reputationCombat || 0,
+                    diplomacy: npcResult.reputationCheck?.stat === 'diplomacy' ? narrativeContext.reputationDiplomacy || 0 : 0
+                }
+                const canAccept = !npcResult.reputationCheck || (rep as any)[npcResult.reputationCheck.stat] >= npcResult.reputationCheck.threshold;
+
+                if (canAccept) {
+                    updates[`questFlags.${npcResult.questId}`] = { status: "started", currentStep: 1 };
+                    npcNarration += `\n\n**New Quest:** ${npcResult.quest}`;
+                } else {
+                    npcNarration += `\n\n*You feel you are not yet reputable enough to accept this task.*`;
+                }
             }
-            updates.lastNarration = `${npcResult.name} says: "${npcResult.dialogue}" ${npcResult.quest ? `\n\nNew Quest: ${npcResult.quest}`: ''}`;
+            updates.lastNarration = npcNarration;
+        } else {
+          updates.triggerNextScenario = true; // For any other choice, continue the story.
         }
         
         batch.update(narrativeContextRef, updates);
@@ -295,9 +319,11 @@ export function AdventureClient({ characterId }: AdventureClientProps) {
               &quot;{narrativeContext.storyArc}&quot;
             </p>
           </div>
-          <p className="text-lg leading-relaxed whitespace-pre-wrap font-serif min-h-24">
-            {narrativeContext.lastNarration}
-          </p>
+          {narrativeContext.lastNarration && (
+            <p className="text-lg leading-relaxed whitespace-pre-wrap font-serif min-h-[6rem] p-4 bg-background/30 rounded-md">
+              {narrativeContext.lastNarration}
+            </p>
+          )}
           <Button onClick={handleContinue} size="lg" disabled={gameState === 'generating'}>
             Continue Your Adventure <Forward className="ml-2 h-4 w-4" />
           </Button>
@@ -320,12 +346,27 @@ export function AdventureClient({ characterId }: AdventureClientProps) {
         <CardTitle className="font-headline text-3xl text-glow">
           {characterClassData?.name || "The Adventure"}
         </CardTitle>
-        <CardDescription>
-          {narrativeContext?.location || "A mysterious place..."}
-        </CardDescription>
+        <div className="flex justify-center items-center gap-4 text-muted-foreground">
+            <span>{narrativeContext?.location || "A mysterious place..."}</span>
+            <Separator orientation="vertical" className="h-4" />
+            <TooltipProvider>
+                <Tooltip>
+                    <TooltipTrigger className="flex items-center gap-1">
+                        <HelpCircle className="h-4 w-4" /> Reputations
+                    </TooltipTrigger>
+                    <TooltipContent>
+                        <p>Stealth: {narrativeContext?.reputationStealth || 0}</p>
+                        <p>Combat: {narrativeContext?.reputationCombat || 0}</p>
+                        <p>Diplomacy: {narrativeContext?.reputationDiplomacy || 0}</p>
+                    </TooltipContent>
+                </Tooltip>
+            </TooltipProvider>
+        </div>
       </CardHeader>
       <Separator />
       <CardContent className="p-4 sm:p-6">{renderContent()}</CardContent>
     </Card>
   );
 }
+
+    

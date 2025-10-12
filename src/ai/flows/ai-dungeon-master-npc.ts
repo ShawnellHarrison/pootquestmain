@@ -40,6 +40,10 @@ const NpcOutputSchema = z.object({
   dialogue: z.string().describe('The dialogue the NPC speaks.'),
   quest: z.string().optional().describe('A simple, actionable quest the NPC offers (e.g., "Clear out the Rat King in the cellar").'),
   questId: z.string().optional().describe('A simple, machine-readable ID for the quest (e.g., "rat_king_quest").'),
+  reputationCheck: z.object({
+      stat: z.enum(['stealth', 'combat', 'diplomacy']),
+      threshold: z.number(),
+  }).optional().describe('If this quest requires a certain reputation, specify it here.'),
   reward: z.string().optional().describe('The reward for completing the quest, if any.')
 });
 
@@ -68,6 +72,7 @@ const generateNpcPrompt = ai.definePrompt({
   1.  **Personality:** Give them a distinct personality that fits the {{location}}.
   2.  **Reactive Dialogue:** The NPC's dialogue **must** reflect the player's reputation and past actions. They should not be generic. If combat reputation is high, they might be fearful, aggressive, or admiring. If diplomacy is high, they might be trusting or manipulative. They might even mention a specific past deed.
   3.  **Quest Generation:** The NPC should offer a simple, actionable quest that makes sense for the location, their personality, and the player's class. The quest MUST have a simple, snake_case 'questId'. The quest should be a multi-step quest.
+  4.  **Reputation-Gated Quests:** Occasionally, create a quest that requires a minimum reputation score to accept. For example, a sneaky quest might require 50 stealth points. If you create such a quest, set the \`reputationCheck\` field.
 
   **Example (for a player with high Combat reputation who recently cleared a goblin camp):**
   - Name: "Grizelda the Grim"
@@ -76,9 +81,13 @@ const generateNpcPrompt = ai.definePrompt({
   - questId: "clear_rat_king"
   - Reward: "A Rusty Key"
 
-  **Example (for a player with high Diplomacy reputation):**
-  - Name: "Silas the Merchant"
-  - Dialogue: "Ah, the silver-tongued warrior! Your reputation precedes you. I heard you negotiated the release of the Brewer's son. A fine piece of work. Perhaps we can do business?"
+  **Example (Reputation-Gated Quest):**
+  - Name: "Whispering Willow"
+  - Dialogue: "I've heard whispers of your silent deeds. Not many can move through these shadows as you do."
+  - Quest: "The Shadow Syndicate has a new ledger in their safehouse. I need a ghost to acquire it. This is not a job for a clumsy oaf."
+  - questId: "shadow_ledger_heist"
+  - reputationCheck: { "stat": "stealth", "threshold": 50 }
+  - Reward: "A set of masterwork lockpicks"
 
   Return the NPC in the specified JSON format. If you offer a quest, you MUST provide a questId.`
 });
@@ -94,3 +103,5 @@ const generateNpcFlow = ai.defineFlow(
     return output!;
   }
 );
+
+    
