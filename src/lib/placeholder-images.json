@@ -2,9 +2,9 @@
   "placeholderImages": [
     {
       "id": "splash-throne",
-      "description": "A 3D toilet throne for the splash screen.",
-      "imageUrl": "https://picsum.photos/seed/throne/800/800",
-      "imageHint": "toilet throne"
+      "description": "A character stands before a swirling purple magical storm.",
+      "imageUrl": "https://storage.googleapis.com/aif-stg-request-images/us-central1/02a7b8ce-21e3-479e-b5c6-608b4ef219a1.png",
+      "imageHint": "fantasy storm"
     },
     {
       "id": "rogue",
