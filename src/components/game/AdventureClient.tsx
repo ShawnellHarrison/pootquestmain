@@ -254,7 +254,6 @@ export function AdventureClient({ characterId, initialBattleState }: AdventureCl
             return;
 
         } else if (choice.tags.includes("NPC_INTERACTION")) {
-            newNarrativeContext.triggerNextScenario = false;
             
             const npcResult: NpcOutput = await generateNpc({
                 location: newNarrativeContext.location,
@@ -288,7 +287,7 @@ export function AdventureClient({ characterId, initialBattleState }: AdventureCl
                 }
             }
             newNarrativeContext.lastNarration = npcNarration;
-            newNarrativeContext.triggerNextScenario = true;
+            newNarrativeContext.triggerNextScenario = false; // We want to show the NPC text, then let user continue
 
         } else {
           newNarrativeContext.triggerNextScenario = true;
@@ -425,5 +424,3 @@ export function AdventureClient({ characterId, initialBattleState }: AdventureCl
     </Card>
   );
 }
-
-    
