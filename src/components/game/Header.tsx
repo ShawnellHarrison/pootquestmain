@@ -1,5 +1,6 @@
+
 import Link from "next/link";
-import { Swords, Coffee } from "lucide-react";
+import { Swords, Coffee, BookOpen } from "lucide-react";
 import { Button } from "../ui/button";
 
 export function Header() {

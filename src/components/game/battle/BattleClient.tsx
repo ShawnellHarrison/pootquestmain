@@ -305,8 +305,7 @@ export function BattleClient({ characterId, encounter }: BattleClientProps) {
             loot: encounter.loot,
         };
 
-        // Instead of pushing directly, we just end the battle logic. The user will be shown a button.
-        setBattleState(prev => prev ? ({...prev, isProcessing: false}) : null);
+        router.push(`/adventure/${characterId}?battleState=${encodeURIComponent(JSON.stringify(resultState))}`);
       };
 
       const processDefeat = async () => {
@@ -343,11 +342,11 @@ export function BattleClient({ characterId, encounter }: BattleClientProps) {
           if (typeof window !== 'undefined') {
             localStorage.removeItem('characterId');
           }
-          setBattleState(prev => prev ? ({...prev, isProcessing: false}) : null);
+          router.push('/chronicle');
       };
 
-      if (battleState?.turn === 'victory' && battleState.isProcessing) processVictory();
-      if (battleState?.turn === 'defeat' && battleState.isProcessing) processDefeat();
+      if (battleState?.turn === 'victory') processVictory();
+      if (battleState?.turn === 'defeat') processDefeat();
 
   }, [battleState?.turn, firestore, user, characterId, router, toast, character, characterClass, encounter, battleState]);
 
@@ -356,31 +355,7 @@ export function BattleClient({ characterId, encounter }: BattleClientProps) {
   if (isLoading) {
     return <div className="flex justify-center items-center h-96"><Loader2 className="h-16 w-16 animate-spin text-primary" /></div>;
   }
-
-  if (battleState.turn === 'victory' && !battleState.isProcessing) {
-    return (
-        <Alert>
-            <AlertTitle className="font-headline text-2xl text-yellow-400">Victory!</AlertTitle>
-            <AlertDescription>You have defeated the enemies and found: {encounter.loot.name}.</AlertDescription>
-            <Button onClick={() => router.push(`/adventure/${characterId}`)} className="mt-4">
-                Return to Adventure
-            </Button>
-        </Alert>
-    );
-  }
-
-  if (battleState.turn === 'defeat' && !battleState.isProcessing) {
-      return (
-          <Alert variant="destructive">
-              <AlertTitle className="font-headline text-2xl">You Have Been Defeated</AlertTitle>
-              <AlertDescription>Your legend has come to an end... for now. Your story has been recorded in the Chronicles.</AlertDescription>
-              <Button onClick={() => router.push('/chronicle')} variant="secondary" className="mt-4">
-                View Your Chronicle
-              </Button>
-          </Alert>
-      );
-  }
-
+  
   return (
     <Card className="bg-card/50">
       <CardContent className="p-4 space-y-4">
