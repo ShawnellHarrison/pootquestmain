@@ -2,8 +2,8 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
-import { useFirebase, addDocumentNonBlocking } from '@/firebase';
-import { doc, getDoc, writeBatch, increment, collection } from 'firebase/firestore';
+import { useFirebase } from '@/firebase';
+import { doc, getDoc, writeBatch, increment, collection, addDoc } from 'firebase/firestore';
 import { Loader2, Flag, ArrowRightCircle } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
@@ -326,7 +326,7 @@ export function BattleClient({ characterId, encounter }: BattleClientProps) {
           };
 
           const runChroniclesRef = collection(firestore, `users/${user.uid}/runChronicles`);
-          await addDocumentNonBlocking(runChroniclesRef, runChronicleData);
+          await addDoc(runChroniclesRef, runChronicleData);
 
           if (characterId) {
             const characterDocRef = doc(firestore, `users/${user.uid}/characters/${characterId}`);
@@ -346,10 +346,10 @@ export function BattleClient({ characterId, encounter }: BattleClientProps) {
           setBattleState(prev => prev ? ({...prev, isProcessing: false}) : null);
       };
 
-      if (battleState?.turn === 'victory') processVictory();
-      if (battleState?.turn === 'defeat') processDefeat();
+      if (battleState?.turn === 'victory' && battleState.isProcessing) processVictory();
+      if (battleState?.turn === 'defeat' && battleState.isProcessing) processDefeat();
 
-  }, [battleState?.turn, firestore, user, characterId, router, toast, character, characterClass, encounter]);
+  }, [battleState?.turn, firestore, user, characterId, router, toast, character, characterClass, encounter, battleState]);
 
   const isLoading = !character || !deck || !battleState;
   
@@ -357,7 +357,7 @@ export function BattleClient({ characterId, encounter }: BattleClientProps) {
     return <div className="flex justify-center items-center h-96"><Loader2 className="h-16 w-16 animate-spin text-primary" /></div>;
   }
 
-  if (battleState.turn === 'victory') {
+  if (battleState.turn === 'victory' && !battleState.isProcessing) {
     return (
         <Alert>
             <AlertTitle className="font-headline text-2xl text-yellow-400">Victory!</AlertTitle>
@@ -369,7 +369,7 @@ export function BattleClient({ characterId, encounter }: BattleClientProps) {
     );
   }
 
-  if (battleState.turn === 'defeat') {
+  if (battleState.turn === 'defeat' && !battleState.isProcessing) {
       return (
           <Alert variant="destructive">
               <AlertTitle className="font-headline text-2xl">You Have Been Defeated</AlertTitle>
@@ -396,7 +396,7 @@ export function BattleClient({ characterId, encounter }: BattleClientProps) {
         </div>
 
         <div className="min-h-24 flex items-center justify-center text-muted-foreground italic text-center px-4">
-            {battleState.isProcessing && battleState.turn === 'enemy' ? 'Enemies are plotting their attack...' : ''}
+            {battleState.isProcessing && (battleState.turn === 'enemy' || battleState.turn === 'victory' || battleState.turn === 'defeat') ? 'Processing...' : ''}
             {battleState.turn === 'player' && !battleState.isProcessing ? (battleState.selectedCard ? 'Select a target!' : encounter.introText) : ''}
         </div>
 
