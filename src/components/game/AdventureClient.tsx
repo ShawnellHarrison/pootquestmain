@@ -172,11 +172,17 @@ export function AdventureClient({ characterId, initialBattleState }: AdventureCl
       });
 
       if (result) {
-        setNarrativeContext(prev => prev ? ({
-            ...prev,
+        const batch = writeBatch(firestore);
+        const narrativeContextRef = doc(firestore, `users/${user.uid}/characters/${characterId}/narrativeContexts`, "main");
+        const updates = {
             currentScenario: result,
-            triggerNextScenario: false // Reset the trigger
-        }) : null);
+            triggerNextScenario: false,
+            lastNarration: narrativeContext.lastNarration,
+        };
+        batch.update(narrativeContextRef, updates);
+        await batch.commit();
+
+        setNarrativeContext(prev => prev ? ({ ...prev, ...updates }) : null);
         setGameState("ready");
       } else {
         throw new Error("The AI Dungeon Fartmaster is confused. No scenario received.");
@@ -193,13 +199,11 @@ export function AdventureClient({ characterId, initialBattleState }: AdventureCl
 
     const choiceData = { id: choice.id, text: choice.text, tags: choice.tags, timestamp: new Date().toISOString() };
     
-    // Create a mutable copy of the current state to update
     let newNarrativeContext = { ...narrativeContext };
     
     newNarrativeContext.playerChoices = [...newNarrativeContext.playerChoices, choiceData];
     newNarrativeContext.currentScenario = null; // Clear the current scenario
 
-    // Update reputation locally
     if (choice.tags.includes("STEALTH")) newNarrativeContext.reputationStealth += 5;
     if (choice.tags.includes("COMBAT")) newNarrativeContext.reputationCombat += 5;
     if (choice.tags.includes("DIPLOMACY")) newNarrativeContext.reputationDiplomacy += 5;
@@ -223,7 +227,6 @@ export function AdventureClient({ characterId, initialBattleState }: AdventureCl
             }
         }
 
-        // Handle different choice tags by updating local state
         if (choice.tags.includes("COMBAT")) {
             const activeQuestId = Object.keys(newNarrativeContext.questFlags).find(
               (key) => newNarrativeContext.questFlags[key]?.status === 'started'
@@ -241,13 +244,17 @@ export function AdventureClient({ characterId, initialBattleState }: AdventureCl
                 },
             });
             
-            // Navigate to battle page with state in URL
+            const batch = writeBatch(firestore);
+            const narrativeContextRef = doc(firestore, `users/${user.uid}/characters/${characterId}/narrativeContexts`, "main");
+            batch.update(narrativeContextRef, newNarrativeContext);
+            await batch.commit();
+
             const encounterString = JSON.stringify(encounterResult);
             router.push(`/battle?characterId=${characterId}&encounter=${encodeURIComponent(encounterString)}`);
-            return; // Exit early
+            return;
 
         } else if (choice.tags.includes("NPC_INTERACTION")) {
-            newNarrativeContext.triggerNextScenario = false; // NPC interaction pauses the flow
+            newNarrativeContext.triggerNextScenario = false;
             
             const npcResult: NpcOutput = await generateNpc({
                 location: newNarrativeContext.location,
@@ -284,10 +291,14 @@ export function AdventureClient({ characterId, initialBattleState }: AdventureCl
             newNarrativeContext.triggerNextScenario = true;
 
         } else {
-          newNarrativeContext.triggerNextScenario = true; // For any other choice, continue the story.
+          newNarrativeContext.triggerNextScenario = true;
         }
         
-        // Update the main state object
+        const batch = writeBatch(firestore);
+        const narrativeContextRef = doc(firestore, `users/${user.uid}/characters/${characterId}/narrativeContexts`, "main");
+        batch.update(narrativeContextRef, newNarrativeContext);
+        await batch.commit();
+
         setNarrativeContext(newNarrativeContext);
 
     } catch (e: any) {
@@ -329,7 +340,6 @@ export function AdventureClient({ characterId, initialBattleState }: AdventureCl
         );
     }
     
-    // State: A scenario is active, waiting for player choice
     if (gameState === "ready" && currentScenario) {
       return (
         <div className="space-y-8">
@@ -356,7 +366,6 @@ export function AdventureClient({ characterId, initialBattleState }: AdventureCl
       );
     }
     
-    // State: Game is paused, waiting for player to continue
     if (gameState === "awaiting_continue" && narrativeContext) {
       return (
         <div className="space-y-6 text-center">
@@ -380,7 +389,6 @@ export function AdventureClient({ characterId, initialBattleState }: AdventureCl
       );
     }
     
-    // Fallback for any other state
     return (
       <div className="flex justify-center">
          <Button asChild><Link href="/character-creation">Start New Adventure</Link></Button>
@@ -417,3 +425,5 @@ export function AdventureClient({ characterId, initialBattleState }: AdventureCl
     </Card>
   );
 }
+
+    
