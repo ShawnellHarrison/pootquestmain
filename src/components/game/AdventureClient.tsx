@@ -234,6 +234,11 @@ export function AdventureClient({ characterId, initialBattleState }: AdventureCl
                 playerLevel: character.level,
                 location: newNarrativeContext.location,
                 questId: activeQuestId,
+                reputation: {
+                    stealth: newNarrativeContext.reputationStealth,
+                    combat: newNarrativeContext.reputationCombat,
+                    diplomacy: newNarrativeContext.reputationDiplomacy,
+                },
             });
             
             // Navigate to battle page with state in URL

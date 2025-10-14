@@ -18,46 +18,35 @@ const generateEncounterPrompt = ai.definePrompt({
     name: 'generateEncounterPrompt',
     input: { schema: EncounterInputSchema },
     output: { schema: EncounterOutputSchema },
-    prompt: `You are the AI Dungeon Master for Poot Quest. Your task is to generate a challenging but fair combat encounter for the player. The encounter should be creative and thematically linked to the player's context.
+    prompt: `You are the AI Dungeon Master for Poot Quest. Your task is to generate a challenging but fair combat encounter that ADAPTS to the player's playstyle, reflected by their reputation scores.
 
   **Player Information:**
   - Class: {{playerClass}}
   - Level: {{playerLevel}}
   - Location: {{location}}
   - Active Quest: {{questId}}
+  - Reputation: Stealth: {{reputation.stealth}}, Combat: {{reputation.combat}}, Diplomacy: {{reputation.diplomacy}}
 
   **Your Task:**
-  Based on this information, generate an encounter with the following properties:
-  1.  **Enemies**: Create a group of 1 to 3 enemies. The enemies MUST be thematically appropriate for the location and the current quest. Be creative! A 'sewer' could have a 'Gelatinous Cube of Forgotten Leftovers', not just a goblin. If it's a quest-related battle (e.g., 'rat_king_quest'), one enemy MUST be the main boss (e.g., 'The Rat King'). Each enemy needs a unique ID.
-  2.  **Loot**: Generate one piece of loot that the player will receive if they win. The loot should be useful, interesting, and thematically tied to the enemies or location.
-  3.  **Intro Text**: Write a short, engaging introductory text (1-2 sentences) to set the scene for the battle.
+  Generate an encounter that feels like a direct response to the player's reputation.
+  1.  **Adaptive Enemies**:
+      -   If **Combat** is high, create enemies that are more strategic. Maybe they have a leader, use defensive abilities, or have higher health to withstand a brawl. Don't just throw more goblins at them; throw smarter goblins.
+      -   If **Stealth** is high, design an encounter that challenges that skill. The enemies could be highly perceptive (e.g., "Sharp-Eared Guard"), use traps, or be positioned in a way that makes a stealthy approach difficult.
+      -   If **Diplomacy** is high, the enemies might be a faction that is less likely to be reasoned with, forcing a fight where words won't work. Or perhaps their leader is arrogant and dismisses the player's attempts at talk.
+      -   The enemies MUST be thematically appropriate for the location and quest. If it's a quest-related battle (e.g., 'rat_king_quest'), one enemy MUST be the main boss. Each enemy needs a unique ID.
+  2.  **Loot**: Generate one piece of loot that is thematically tied to the encounter. A stealth-challenging encounter might drop boots of silence; a combat-heavy one might drop a sturdier shield.
+  3.  **Intro Text**: Write a short, engaging introductory text (1-2 sentences) that hints at why this encounter is happening. It should reflect the adaptive nature of the challenge.
 
-  **Example for a 'rat_king_quest' in a 'sewer':**
+  **Example (High Combat Reputation):**
   {
-    "enemies": [
-      {
-        "id": "rat-king-boss",
-        "name": "The Rat King",
-        "hp": 40,
-        "maxHp": 40,
-        "imageUrl": "https://picsum.photos/seed/rat-king/150/150",
-        "attack": 8
-      },
-      {
-        "id": "rabid-rat-1",
-        "name": "Rabid Rat",
-        "hp": 10,
-        "maxHp": 10,
-        "imageUrl": "https://picsum.photos/seed/rabid-rat/100/100",
-        "attack": 3
-      }
-    ],
-    "loot": {
-      "name": "Crown of the Rat King",
-      "description": "A filthy, yet oddly majestic crown. Grants +1 to Diplomacy with rodents.",
-      "type": "misc"
-    },
-    "introText": "A monstrous amalgamation of rats, bound by a single will, rises from the filth. The Rat King screeches, its legion of eyes fixed on you!"
+    "introText": "The goblin grunts, pointing at you. 'That's the one! The brawler! Get the big shields, lads!' They form a defensive wall, ready for a long fight.",
+    ...
+  }
+  
+  **Example (High Stealth Reputation):**
+  {
+    "introText": "As you sneak forward, a tripwire you barely notice snaps taut. Bells jingle down the hall and heavily armored guards turn, their eyes already scanning the shadows you occupy.",
+    ...
   }`,
 });
 
