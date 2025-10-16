@@ -58,8 +58,8 @@ export const CLASSES: CharacterClass[] = [
   {
     id: "rogue",
     name: "Sneaky Rogue",
-    image: "/images/rogue.png",
-    imageHint: "rogue man",
+    image: "https://storage.googleapis.com/character_poot/ch1.png",
+    imageHint: "rogue assassin",
     attributes: {
       strengths: ["Stealth +90%", "Critical Hit +75%", "Speed +80%"],
       weaknesses: ["Defense -60%", "HP -40%", "Area Damage -70%"],
