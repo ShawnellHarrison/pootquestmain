@@ -80,8 +80,8 @@ export const CLASSES: CharacterClass[] = [
   {
     id: "paladin",
     name: "Paladin of Purity",
-    image: "/images/paladin.png",
-    imageHint: "female knight",
+    image: "https://storage.googleapis.com/character_poot/charact%202.jpg",
+    imageHint: "armored knight",
     attributes: {
       strengths: ["Defense +85%", "Healing +90%", "Debuff Resistance +100%"],
       weaknesses: ["Damage -50%", "Speed -45%", "Mana Regen -30%"],
