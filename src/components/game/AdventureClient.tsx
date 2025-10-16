@@ -13,7 +13,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Loader2, BookOpen, Forward, ChevronRight, HelpCircle } from "lucide-react";
+import { Loader2, BookOpen, Forward, ChevronRight, HelpCircle, Briefcase } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import Link from "next/link";
 import { Separator } from "@/components/ui/separator";
@@ -381,9 +381,16 @@ export function AdventureClient({ characterId, initialBattleState }: AdventureCl
               {narrativeContext.lastNarration}
             </p>
           )}
-          <Button onClick={handleContinue} size="lg" disabled={gameState === 'generating'}>
-            Continue Your Adventure <Forward className="ml-2 h-4 w-4" />
-          </Button>
+          <div className="flex gap-4 justify-center">
+            <Button onClick={handleContinue} size="lg" disabled={gameState === 'generating'}>
+              Continue Your Adventure <Forward className="ml-2 h-4 w-4" />
+            </Button>
+             <Button asChild variant="outline" size="lg">
+                <Link href={`/deck/${characterId}`}>
+                    <Briefcase className="mr-2 h-4 w-4" /> Manage Deck
+                </Link>
+            </Button>
+          </div>
         </div>
       );
     }
@@ -424,3 +431,5 @@ export function AdventureClient({ characterId, initialBattleState }: AdventureCl
     </Card>
   );
 }
+
+    
