@@ -102,7 +102,7 @@ export const CLASSES: CharacterClass[] = [
   {
     id: "wizard",
     name: "Goddess of Wind",
-    image: "/images/wizard.png",
+    image: "https://storage.googleapis.com/character_poot/3.jpg",
     imageHint: "wind goddess",
     attributes: {
       strengths: ["AOE Damage +95%", "Elemental Mastery +85%", "Mana +100%"],
