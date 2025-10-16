@@ -101,9 +101,9 @@ export const CLASSES: CharacterClass[] = [
   },
   {
     id: "wizard",
-    name: "Wizard of Wind",
+    name: "Goddess of Wind",
     image: "/images/wizard.png",
-    imageHint: "wizard robes",
+    imageHint: "wind goddess",
     attributes: {
       strengths: ["AOE Damage +95%", "Elemental Mastery +85%", "Mana +100%"],
       weaknesses: ["Physical Defense -65%", "HP -55%", "Chaos Risk +40%"],
