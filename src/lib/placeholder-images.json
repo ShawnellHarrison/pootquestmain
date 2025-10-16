@@ -41,6 +41,12 @@
       "description": "Character art for Tycoon of Toots.",
       "imageUrl": "/images/tycoon.png",
       "imageHint": "business suit"
+    },
+    {
+      "id": "new-character-1",
+      "description": "A mysterious cloaked figure in a dark alley.",
+      "imageUrl": "https://storage.googleapis.com/character_poot/ch1.png",
+      "imageHint": "rogue assassin"
     }
   ]
 }
