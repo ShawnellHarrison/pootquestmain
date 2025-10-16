@@ -15,6 +15,7 @@ import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import Link from 'next/link';
 import { Header } from '@/components/game/Header';
 import { GameContainer } from '@/components/game/GameContainer';
+import { useToast } from '@/hooks/use-toast';
 
 const DECK_SIZE = 15;
 
@@ -93,18 +94,26 @@ export default function DeckManagerPage({ params }: { params: { characterId: str
         const inDeck = deck.includes(cardName);
         const inCollection = collectionPool.includes(cardName);
 
-        if (over?.id === 'deck-droppable' && inCollection) {
-            setDeck((prev) => [...prev, cardName]);
-        } else if (over?.id === 'collection-droppable' && inDeck) {
-            setDeck((prev) => prev.filter(c => c !== cardName));
-        } else {
-            // Reordering logic
-            if (inDeck) {
-                setDeck((items) => {
-                    const oldIndex = items.indexOf(active.id as string);
-                    const newIndex = items.indexOf(over?.id as string);
-                    return arrayMove(items, oldIndex, newIndex);
-                });
+        // This logic handles moving cards between the deck and the collection pool
+        // It's a bit simplified; a real implementation would be more robust.
+        if (over) {
+             if (over.id === 'deck-droppable' && inCollection) {
+                if (deck.length < DECK_SIZE) {
+                    setDeck((prev) => [...prev, cardName]);
+                } else {
+                    toast({ title: "Deck Full", description: `You can only have ${DECK_SIZE} cards in your deck.`, variant: "destructive" });
+                }
+            } else if (over.id === 'collection-droppable' && inDeck) {
+                 setDeck((prev) => prev.filter(c => c !== cardName));
+            } else {
+                // Reordering logic
+                if (inDeck && deck.includes(over.id as string)) {
+                    setDeck((items) => {
+                        const oldIndex = items.indexOf(active.id as string);
+                        const newIndex = items.indexOf(over.id as string);
+                        return arrayMove(items, oldIndex, newIndex);
+                    });
+                }
             }
         }
     };
@@ -143,6 +152,7 @@ export default function DeckManagerPage({ params }: { params: { characterId: str
     return (
         <>
         <Header />
+        <main className="py-12">
         <GameContainer>
         <DndContext onDragEnd={handleDragEnd} collisionDetection={closestCenter}>
             <div className="space-y-8">
@@ -194,8 +204,7 @@ export default function DeckManagerPage({ params }: { params: { characterId: str
             </div>
         </DndContext>
         </GameContainer>
+        </main>
         </>
     );
 }
-
-    
