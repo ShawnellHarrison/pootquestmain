@@ -209,7 +209,20 @@ export function BattleClient({ characterId, encounter }: BattleClientProps) {
 
   const handleEndTurn = () => {
     if (!battleState || battleState.turn !== 'player' || battleState.isProcessing || battleState.enemies.length === 0) return;
-    setBattleState(prev => prev ? ({ ...prev, turn: 'enemy', isProcessing: true, playerDefense: 0, selectedCard: null }) : null);
+    setBattleState(prev => {
+      if (!prev) return null;
+      // Move hand to discard pile
+      const newDiscard = [...prev.discard, ...prev.hand];
+      return { 
+        ...prev, 
+        turn: 'enemy', 
+        isProcessing: true, 
+        playerDefense: 0, 
+        selectedCard: null,
+        hand: [],
+        discard: newDiscard,
+      };
+    });
   };
   
   useEffect(() => {
@@ -234,8 +247,7 @@ export function BattleClient({ characterId, encounter }: BattleClientProps) {
 
                 let newDeck = [...prev.deck];
                 let newDiscard = [...prev.discard];
-                let currentHand = [...prev.hand];
-                const cardsToDrawCount = 5 - currentHand.length;
+                const cardsToDrawCount = 5;
 
                 let drawnCards: string[] = [];
 
@@ -253,7 +265,7 @@ export function BattleClient({ characterId, encounter }: BattleClientProps) {
                 return {
                     ...prev,
                     playerHealth: newPlayerHealth,
-                    hand: [...currentHand, ...drawnCards],
+                    hand: drawnCards,
                     deck: newDeck,
                     discard: newDiscard,
                     turn: 'player',
@@ -409,3 +421,5 @@ export function BattleClient({ characterId, encounter }: BattleClientProps) {
     </Card>
   );
 }
+
+    
