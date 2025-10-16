@@ -10,8 +10,7 @@ type Props = {
   params: { class: string }; // 'class' is the characterId from the URL
 };
 
-function AdventurePageContent({ params }: Props) {
-  const characterId = params.class;
+function AdventurePageContent({ params: { class: characterId } }: Props) {
   const searchParams = useSearchParams();
   const battleStateString = searchParams.get('battleState');
   const initialBattleState = battleStateString ? JSON.parse(battleStateString) : null;
