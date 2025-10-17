@@ -7,7 +7,7 @@ import { doc, collection, writeBatch } from 'firebase/firestore';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Loader2, ArrowLeft, Save, AlertCircle } from 'lucide-react';
-import { CARD_DATA, CardData } from '@/lib/game-data';
+import { CARD_DATA, CardData, getClass } from '@/lib/game-data';
 import { DndContext, closestCenter, DragEndEvent } from '@dnd-kit/core';
 import { arrayMove, SortableContext, useSortable, rectSortingStrategy } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
@@ -57,6 +57,13 @@ export default function DeckManagerPage({ params }: { params: Promise<{ characte
     const [deck, setDeck] = useState<string[]>([]);
     const [collectionState, setCollectionState] = useState<CardData[]>([]);
     const [isSaving, setIsSaving] = useState(false);
+    
+    const characterDocRef = useMemoFirebase(() => {
+        if (!firestore || !user) return null;
+        return doc(firestore, `users/${user.uid}/characters/${characterId}`);
+    }, [firestore, user, characterId]);
+
+    const { data: characterData, isLoading: isCharacterLoading } = useDoc(characterDocRef);
 
     const deckRef = useMemoFirebase(() => {
         if (!firestore || !user) return null;
@@ -70,6 +77,8 @@ export default function DeckManagerPage({ params }: { params: Promise<{ characte
 
     const { data: deckData, isLoading: isDeckLoading } = useDoc(deckRef);
     const { data: inventoryData, isLoading: isInventoryLoading } = useCollection(inventoryRef);
+    
+    const characterClass = useMemo(() => characterData ? getClass(characterData.class) : null, [characterData]);
 
     useEffect(() => {
         if (deckData?.cards) {
@@ -78,38 +87,49 @@ export default function DeckManagerPage({ params }: { params: Promise<{ characte
     }, [deckData]);
 
     useEffect(() => {
-        if (inventoryData && deckData?.cards) {
+        if (inventoryData && deckData?.cards && characterClass) {
             const allCardsMap = new Map<string, CardData>();
             
-            // Add starter cards
-            Object.values(CARD_DATA).forEach(card => allCardsMap.set(card.name, card));
+            // Add starter cards for the character's class
+            characterClass.starterDeck.forEach(starter => {
+                if (CARD_DATA[starter.name]) {
+                    allCardsMap.set(starter.name, CARD_DATA[starter.name]);
+                }
+            });
 
             // Add cards from inventory (which are newly generated)
             inventoryData.forEach(item => {
-                if (item.type === 'card') {
+                if (item.type === 'card' || CARD_DATA[item.name]) { // also add starter cards if they appear in inventory
                     allCardsMap.set(item.name, {
+                        id: item.id, // Keep original id if possible
                         name: item.name,
                         description: item.description,
                         manaCost: item.manaCost,
                         attack: item.attack,
                         defense: item.defense,
                         healing: item.healing,
-                    });
+                        class: characterClass.name,
+                    } as CardData);
                 }
             });
             
             // Add cards from the current deck if they aren't already in the map
             deckData.cards.forEach((cardName: string) => {
-                if (!allCardsMap.has(cardName) && CARD_DATA[cardName]) {
-                    allCardsMap.set(cardName, CARD_DATA[cardName]);
+                const cardDetails = CARD_DATA[cardName];
+                if (cardDetails && !allCardsMap.has(cardName)) {
+                    allCardsMap.set(cardName, cardDetails);
                 }
             });
 
             setCollectionState(Array.from(allCardsMap.values()));
-        } else if (deckData?.cards) {
+        } else if (deckData?.cards && characterClass) {
             // Fallback if inventory is empty
             const starterAndDeckCards = new Map<string, CardData>();
-            Object.values(CARD_DATA).forEach(card => starterAndDeckCards.set(card.name, card));
+            characterClass.starterDeck.forEach(starter => {
+                if (CARD_DATA[starter.name]) {
+                    starterAndDeckCards.set(starter.name, CARD_DATA[starter.name]);
+                }
+            });
             deckData.cards.forEach((cardName: string) => {
                  if (CARD_DATA[cardName]) {
                     starterAndDeckCards.set(cardName, CARD_DATA[cardName]);
@@ -117,7 +137,7 @@ export default function DeckManagerPage({ params }: { params: Promise<{ characte
             });
             setCollectionState(Array.from(starterAndDeckCards.values()));
         }
-    }, [inventoryData, deckData]);
+    }, [inventoryData, deckData, characterClass]);
 
 
     const collectionPool = collectionState.filter(card => !deck.includes(card.name));
@@ -158,7 +178,9 @@ export default function DeckManagerPage({ params }: { params: Promise<{ characte
         }
         setIsSaving(true);
         try {
-            await writeBatch(firestore).update(deckRef, { cards: deck }).commit();
+            const batch = writeBatch(firestore);
+            batch.update(deckRef, { cards: deck })
+            await batch.commit();
             toast({ title: "Deck Saved!", description: "Your changes have been saved successfully." });
         } catch (error) {
             console.error("Failed to save deck:", error);
@@ -169,7 +191,7 @@ export default function DeckManagerPage({ params }: { params: Promise<{ characte
     };
 
 
-    const isLoading = isUserLoading || isDeckLoading || isInventoryLoading;
+    const isLoading = isUserLoading || isDeckLoading || isInventoryLoading || isCharacterLoading;
 
     if (isLoading) {
         return (

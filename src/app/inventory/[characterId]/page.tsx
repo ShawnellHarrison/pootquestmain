@@ -1,7 +1,8 @@
+
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useFirebase, useCollection, useMemoFirebase } from '@/firebase';
+import { useState, useEffect, useMemo, use } from 'react';
+import { useFirebase, useCollection, useDoc, useMemoFirebase } from '@/firebase';
 import { collection, writeBatch, doc, addDoc, deleteDoc } from 'firebase/firestore';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -49,8 +50,8 @@ const NewCard = ({ card }: { card: GenerateCardOutput }) => (
     </Card>
 )
 
-export default function InventoryPage({ params }: { params: { characterId: string } }) {
-    const { characterId } = params;
+export default function InventoryPage({ params }: { params: Promise<{ characterId: string }> }) {
+    const { characterId } = use(params);
     const { firestore, user, isUserLoading } = useFirebase();
     const { toast } = useToast();
 
@@ -68,36 +69,34 @@ export default function InventoryPage({ params }: { params: { characterId: strin
     }, [firestore, user, characterId]);
 
     const { data: inventoryData, isLoading: isInventoryLoading } = useCollection(inventoryRef);
-    const { data: characterData, isLoading: isCharacterLoading } = useCollection(characterRef ? collection(characterRef.parent) : null);
+    const { data: characterData, isLoading: isCharacterLoading } = useDoc(characterRef);
     
     const deckRef = useMemoFirebase(() => {
         if (!firestore || !user) return null;
         return doc(firestore, `users/${user.uid}/characters/${characterId}/decks`, "main");
     }, [firestore, user, characterId]);
     
-    const { data: deckData, isLoading: isDeckLoading } = useCollection(deckRef ? collection(deckRef.parent) : null);
+    const { data: deckData, isLoading: isDeckLoading } = useDoc(deckRef);
 
     const handleIdentifyScroll = async (itemId: string) => {
         if (!firestore || !user || !characterData || !deckData) return;
         setIsIdentifying(itemId);
         setNewlyCreatedCard(null);
 
-        const character = characterData.find(c => c.id === characterId);
-        const characterClass = getClass(character?.class);
-        const mainDeck = deckData.find(d => d.id === 'main');
+        const characterClass = getClass(characterData?.class);
         
-        if (!character || !characterClass || !mainDeck) {
+        if (!characterData || !characterClass || !deckData) {
              toast({ title: "Error", description: "Could not find character data to generate card.", variant: "destructive" });
              setIsIdentifying(null);
              return;
         }
 
         try {
-            const allOwnedCards = Array.from(new Set([...mainDeck.cards, ...Object.keys(CARD_DATA)]));
+            const allOwnedCards = Array.from(new Set([...deckData.cards, ...Object.keys(CARD_DATA)]));
             
             const newCard = await generateCard({
                 playerClass: characterClass.name,
-                playerLevel: character.level,
+                playerLevel: characterData.level,
                 existingCards: allOwnedCards,
             });
 
@@ -108,8 +107,8 @@ export default function InventoryPage({ params }: { params: { characterId: strin
             batch.delete(itemToDeleteRef);
             
             // Add the new card to the inventory (it's a card now, but represented as an Item doc)
-            const newCardItemRef = doc(collection(firestore, `users/${user.uid}/characters/${characterId}/inventory`));
-            batch.set(newCardItemRef, { ...newCard, type: 'card' });
+            const newCardItemRef = collection(firestore, `users/${user.uid}/characters/${characterId}/inventory`);
+            batch.set(doc(newCardItemRef), { ...newCard, type: 'card' });
 
             await batch.commit();
 
