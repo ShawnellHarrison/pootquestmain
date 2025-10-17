@@ -2,71 +2,58 @@
  * @fileoverview Firestore Security Rules for Poot Quest.
  *
  * Core Philosophy:
- * This ruleset enforces a strict user-ownership model for most data, supplemented by public read access for global content.
- * Data is structured to minimize the need for complex security checks, favoring simpler, more performant rules.
+ * This ruleset enforces a strict user-ownership model for user-related data (users, characters, decks, narrative contexts, and run chronicles).
+ * Data is organized under user-specific paths (e.g., /users/{userId}/...), ensuring that only the authenticated user can access their own data.
+ * Global data such as Cards are publicly readable but not writable.
  *
  * Data Structure:
- * - /users/{userId}:  User account information. Only the user can access their own document.
- * - /users/{userId}/characters/{characterId}: Character data owned by a user. Only the user can access their characters.
- * - /users/{userId}/characters/{characterId}/decks/{deckId}: Decks of cards owned by a user's character.
- * - /users/{userId}/characters/{characterId}/inventory/{itemId}: Items held by a user's character.
- * - /users/{userId}/characters/{characterId}/narrativeContexts/{narrativeContextId}: Narrative context for characters.
- * - /users/{userId}/runChronicles/{runChronicleId}: Game run history for users.
- * - /cards/{cardId}: Global card data. Publicly readable, but only writeable by authenticated users.
+ * - /users/{userId}: User account information, accessible only to the user.
+ * - /users/{userId}/characters/{characterId}: Character data, accessible only to the owning user.
+ * - /users/{userId}/characters/{characterId}/decks/{deckId}: Decks of cards, accessible only to the owning user.
+ * - /users/{userId}/characters/{characterId}/narrativeContexts/{narrativeContextId}: AI-related narrative content
+ * - /users/{userId}/runChronicles/{runChronicleId}: Game run history, accessible only to the user.
+ * - /cards/{cardId}: Publicly readable card data, writable by admins only (not implemented in this version).
  *
  * Key Security Decisions:
- * - User listing is disallowed for privacy.
- * - Public read access is granted to the /cards collection.
- * - All write operations are protected by authorization checks.
+ * - User listing is implicitly denied as there is no top-level `list` rule on `/users`.
+ * - Default security posture for ambiguous relationships is strict owner-only access.
  *
  * Denormalization for Authorization:
- *  Ownership: The structure `/users/{userId}/...` inherently denormalizes user ownership into the path, which is then enforced by the `isOwner(userId)` function.
+ * - Documents under `/users/{userId}` implicitly have the `userId` denormalized into their path, allowing for simple `isOwner(userId)` checks.
  */
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
     /**
-     * @description Checks if the request is made by an authenticated user.
-     * @path N/A
-     * @allow N/A
-     * @deny N/A
-     * @principle Ensures that only authenticated users can perform certain actions.
-     */
-    function isSignedIn() {
-      return request.auth != null;
-    }
-
-    /**
-     * @description Checks if the request is made by the owner of the resource.
-     * @path N/A
-     * @allow N/A
-     * @deny N/A
-     * @principle Enforces ownership for data access.
-     */
-    function isOwner(userId) {
-      return request.auth.uid == userId;
-    }
-
-    /**
-     * @description Checks if the request is made by the existing owner of the resource.
-     * @path N/A
-     * @allow N/A
-     * @deny N/A
-     * @principle Ensures that only existing owners can modify or delete resources.
-     */
-    function isExistingOwner(userId) {
-      return isOwner(userId) && resource != null;
-    }
-
-    /**
-     * @description Rule set for user documents.
+     * @description Secures user account information, ensuring only the user can access their own data.
      * @path /users/{userId}
-     * @allow (create) User with ID 'user123' creates their own document at /users/user123.
-     * @deny (create) User with ID 'user123' tries to create a document at /users/anotherUser.
-     * @principle Enforces document ownership for writes and restricts access to a user's own data tree.
+     * @allow (create) User with ID 'user123' can create their profile with matching UID.
+     * @allow (get) User with ID 'user123' can retrieve their profile.
+     * @allow (update) User with ID 'user123' can update their profile.
+     * @allow (delete) User with ID 'user123' can delete their profile.
+     * @deny (create) User with ID 'user456' cannot create a profile under 'user123'.
+     * @deny (get) User with ID 'user456' cannot retrieve the profile of 'user123'.
+     * @deny (update) User with ID 'user456' cannot update the profile of 'user123'.
+     * @deny (delete) User with ID 'user456' cannot delete the profile of 'user123'.
+     * @principle Enforces document ownership for all operations.
      */
     match /users/{userId} {
+      // Helper function to check if the user is signed in
+      function isSignedIn() {
+        return request.auth != null;
+      }
+
+      // Helper function to check if the requested user ID matches the authenticated user's ID.
+      function isOwner(userId) {
+        return isSignedIn() && request.auth.uid == userId;
+      }
+
+      // Helper function to check if the requested user ID matches the authenticated user's ID and the resource exists.
+      function isExistingOwner(userId) {
+        return isOwner(userId) && resource != null;
+      }
+
       allow get: if isOwner(userId);
       allow list: if false;
       allow create: if isOwner(userId);
@@ -75,43 +62,33 @@ service cloud.firestore {
     }
 
     /**
-     * @description Rule set for character documents.
+     * @description Secures character data, ensuring only the owning user can access their characters.
      * @path /users/{userId}/characters/{characterId}
-     * @allow (create) User with ID 'user123' creates a character for themselves at /users/user123/characters/char1.
-     * @deny (update) User with ID 'user123' tries to update a character owned by another user.
+     * @allow (create) User with ID 'user123' can create a character for themselves.
+     * @allow (get) User with ID 'user123' can retrieve their character 'char456'.
+     * @allow (update) User with ID 'user123' can update their character 'char456'.
+     * @allow (delete) User with ID 'user123' can delete their character 'char456'.
+     * @deny (create) User with ID 'user456' cannot create a character under 'user123'.
+     * @deny (get) User with ID 'user456' cannot retrieve the character 'char456' owned by 'user123'.
+     * @deny (update) User with ID 'user456' cannot update the character 'char456' owned by 'user123'.
+     * @deny (delete) User with ID 'user456' cannot delete the character 'char456' owned by 'user123'.
      * @principle Enforces document ownership for writes and restricts access to a user's own data tree.
      */
     match /users/{userId}/characters/{characterId} {
-      allow get: if isOwner(userId);
-      allow list: if isOwner(userId);
-      allow create: if isOwner(userId) && request.resource.data.userId == userId;
-      allow update: if isExistingOwner(userId) && request.resource.data.userId == resource.data.userId;
-      allow delete: if isExistingOwner(userId);
-    }
+      // Helper function to check if the user is signed in
+      function isSignedIn() {
+        return request.auth != null;
+      }
 
-    /**
-     * @description Rule set for deck documents.
-     * @path /users/{userId}/characters/{characterId}/decks/{deckId}
-     * @allow (create) User with ID 'user123' creates a deck for their character.
-     * @deny (update) User with ID 'user123' tries to update a deck for another user's character.
-     * @principle Enforces document ownership for writes and restricts access to a user's own data tree.
-     */
-    match /users/{userId}/characters/{characterId}/decks/{deckId} {
-      allow get: if isOwner(userId);
-      allow list: if isOwner(userId);
-      allow create: if isOwner(userId) && request.resource.data.characterId == characterId;
-      allow update: if isExistingOwner(userId) && request.resource.data.characterId == resource.data.characterId;
-      allow delete: if isExistingOwner(userId);
-    }
+      // Helper function to check if the requested user ID matches the authenticated user's ID.
+      function isOwner(userId) {
+        return isSignedIn() && request.auth.uid == userId;
+      }
 
-    /**
-     * @description Rule set for item documents in a character's inventory.
-     * @path /users/{userId}/characters/{characterId}/inventory/{itemId}
-     * @allow (create) User with ID 'user123' creates an item in their character's inventory.
-     * @deny (update) User with ID 'user123' tries to update an item in another user's character's inventory.
-     * @principle Enforces document ownership for writes and restricts access to a user's own data tree.
-     */
-    match /users/{userId}/characters/{characterId}/inventory/{itemId} {
+      // Helper function to check if the requested user ID matches the authenticated user's ID and the resource exists.
+      function isExistingOwner(userId) {
+        return isOwner(userId) && resource != null;
+      }
       allow get: if isOwner(userId);
       allow list: if isOwner(userId);
       allow create: if isOwner(userId);
@@ -120,47 +97,161 @@ service cloud.firestore {
     }
 
     /**
-     * @description Rule set for narrative context documents.
-     * @path /users/{userId}/characters/{characterId}/narrativeContexts/{narrativeContextId}
-     * @allow (create) User with ID 'user123' creates a narrative context for their character.
-     * @deny (update) User with ID 'user123' tries to update a narrative context for another user's character.
+     * @description Secures decks of cards, ensuring only the owning user can access their decks.
+     * @path /users/{userId}/characters/{characterId}/decks/{deckId}
+     * @allow (get) User with ID 'user123' can retrieve their deck 'deck789' for character 'char456'.
+     * @allow (create) User with ID 'user123' can create a deck for character 'char456'.
+     * @allow (update) User with ID 'user123' can update their deck 'deck789' for character 'char456'.
+     * @allow (delete) User with ID 'user123' can delete their deck 'deck789' for character 'char456'.
+     * @deny (get) User with ID 'user456' cannot retrieve the deck 'deck789' owned by 'user123'.
+     * @deny (create) User with ID 'user456' cannot create a deck under 'user123'.
+     * @deny (update) User with ID 'user456' cannot update the deck 'deck789' owned by 'user123'.
+     * @deny (delete) User with ID 'user456' cannot delete the deck 'deck789' owned by 'user123'.
      * @principle Enforces document ownership for writes and restricts access to a user's own data tree.
      */
-    match /users/{userId}/characters/{characterId}/narrativeContexts/{narrativeContextId} {
+    match /users/{userId}/characters/{characterId}/decks/{deckId} {
+      // Helper function to check if the user is signed in
+      function isSignedIn() {
+        return request.auth != null;
+      }
+
+      // Helper function to check if the requested user ID matches the authenticated user's ID.
+      function isOwner(userId) {
+        return isSignedIn() && request.auth.uid == userId;
+      }
+
+      // Helper function to check if the requested user ID matches the authenticated user's ID and the resource exists.
+      function isExistingOwner(userId) {
+        return isOwner(userId) && resource != null;
+      }
       allow get: if isOwner(userId);
       allow list: if isOwner(userId);
-      allow create: if isOwner(userId) && request.resource.data.characterId == characterId;
-      allow update: if isExistingOwner(userId) && request.resource.data.characterId == resource.data.characterId;
+      allow create: if isOwner(userId);
+      allow update: if isExistingOwner(userId);
       allow delete: if isExistingOwner(userId);
     }
 
     /**
-     * @description Rule set for run chronicle documents.
-     * @path /users/{userId}/runChronicles/{runChronicleId}
-     * @allow (create) User with ID 'user123' creates a run chronicle for themselves.
-     * @deny (update) User with ID 'user123' tries to update a run chronicle for another user.
+     * @description Secures item data within a character's inventory, ensuring only the owning user can access their items.
+     * @path /users/{userId}/characters/{characterId}/inventory/{itemId}
+     * @allow (get) User with ID 'user123' can retrieve item 'item1' from their character 'char1'.
+     * @allow (create) User with ID 'user123' can create an item for their character 'char1'.
+     * @allow (update) User with ID 'user123' can update item 'item1' for their character 'char1'.
+     * @allow (delete) User with ID 'user123' can delete item 'item1' from their character 'char1'.
+     * @deny (get) User with ID 'user456' cannot retrieve item 'item1' owned by 'user123'.
+     * @deny (create) User with ID 'user456' cannot create an item for character 'char1' owned by 'user123'.
+     * @deny (update) User with ID 'user456' cannot update item 'item1' owned by 'user123'.
+     * @deny (delete) User with ID 'user456' cannot delete item 'item1' owned by 'user123'.
      * @principle Enforces document ownership for writes and restricts access to a user's own data tree.
      */
-    match /users/{userId}/runChronicles/{runChronicleId} {
+     match /users/{userId}/characters/{characterId}/inventory/{itemId} {
+      // Helper function to check if the user is signed in
+      function isSignedIn() {
+        return request.auth != null;
+      }
+
+      // Helper function to check if the requested user ID matches the authenticated user's ID.
+      function isOwner(userId) {
+        return isSignedIn() && request.auth.uid == userId;
+      }
+
+      // Helper function to check if the requested user ID matches the authenticated user's ID and the resource exists.
+      function isExistingOwner(userId) {
+        return isOwner(userId) && resource != null;
+      }
       allow get: if isOwner(userId);
       allow list: if isOwner(userId);
-      allow create: if isOwner(userId) && request.resource.data.userId == userId;
-      allow update: if isExistingOwner(userId) && request.resource.data.userId == resource.data.userId;
+      allow create: if isOwner(userId);
+      allow update: if isExistingOwner(userId);
       allow delete: if isExistingOwner(userId);
     }
 
-     /**
-      * @description Rule set for card documents. Publicly readable, owner-only writeable.
-      * @path /cards/{cardId}
-      * @allow (get) Any user can read card data.
-      * @deny (create) Anonymous user tries to create a card.
-      */
+    /**
+     * @description Secures narrative context data, ensuring only the owning user can access the narrative context associated to their character.
+     * @path /users/{userId}/characters/{characterId}/narrativeContexts/{narrativeContextId}
+     * @allow (get) User 'user123' can retrieve the narrative context 'narrative1' for their character 'char456'.
+     * @allow (create) User 'user123' can create a narrative context 'narrative1' for their character 'char456'.
+     * @allow (update) User 'user123' can update the narrative context 'narrative1' for their character 'char456'.
+     * @allow (delete) User 'user123' can delete the narrative context 'narrative1' for their character 'char456'.
+     * @deny (get) User 'user456' cannot retrieve the narrative context 'narrative1' owned by 'user123'.
+     * @deny (create) User 'user456' cannot create a narrative context under 'user123'.
+     * @deny (update) User 'user456' cannot update the narrative context 'narrative1' owned by 'user123'.
+     * @deny (delete) User 'user456' cannot delete the narrative context 'narrative1' owned by 'user123'.
+     * @principle Enforces document ownership for writes and restricts access to a user's own data tree.
+     */
+    match /users/{userId}/characters/{characterId}/narrativeContexts/{narrativeContextId} {
+      // Helper function to check if the user is signed in
+      function isSignedIn() {
+        return request.auth != null;
+      }
+
+      // Helper function to check if the requested user ID matches the authenticated user's ID.
+      function isOwner(userId) {
+        return isSignedIn() && request.auth.uid == userId;
+      }
+
+      // Helper function to check if the requested user ID matches the authenticated user's ID and the resource exists.
+      function isExistingOwner(userId) {
+        return isOwner(userId) && resource != null;
+      }
+      allow get: if isOwner(userId);
+      allow list: if isOwner(userId);
+      allow create: if isOwner(userId);
+      allow update: if isExistingOwner(userId);
+      allow delete: if isExistingOwner(userId);
+    }
+
+    /**
+     * @description Secures game run chronicles, ensuring only the owning user can access their run history.
+     * @path /users/{userId}/runChronicles/{runChronicleId}
+     * @allow (create) User with ID 'user123' can create a run chronicle for themselves.
+     * @allow (get) User with ID 'user123' can retrieve their run chronicle 'run1'.
+     * @allow (update) User with ID 'user123' can update their run chronicle 'run1'.
+     * @allow (delete) User with ID 'user123' can delete their run chronicle 'run1'.
+     * @deny (create) User with ID 'user456' cannot create a run chronicle under 'user123'.
+     * @deny (get) User with ID 'user456' cannot retrieve the run chronicle 'run1' owned by 'user123'.
+     * @deny (update) User with ID 'user456' cannot update the run chronicle 'run1' owned by 'user123'.
+     * @deny (delete) User with ID 'user456' cannot delete the run chronicle 'run1' owned by 'user123'.
+     * @principle Enforces document ownership for writes and restricts access to a user's own data tree.
+     */
+    match /users/{userId}/runChronicles/{runChronicleId} {
+      // Helper function to check if the user is signed in
+      function isSignedIn() {
+        return request.auth != null;
+      }
+
+      // Helper function to check if the requested user ID matches the authenticated user's ID.
+      function isOwner(userId) {
+        return isSignedIn() && request.auth.uid == userId;
+      }
+
+      // Helper function to check if the requested user ID matches the authenticated user's ID and the resource exists.
+      function isExistingOwner(userId) {
+        return isOwner(userId) && resource != null;
+      }
+      allow get: if isOwner(userId);
+      allow list: if isOwner(userId);
+      allow create: if isOwner(userId);
+      allow update: if isExistingOwner(userId);
+      allow delete: if isExistingOwner(userId);
+    }
+
+    /**
+     * @description Allows public read access to card data, but restricts write access.
+     * @path /cards/{cardId}
+     * @allow (get) Any user can retrieve card data.
+     * @allow (list) Any user can list card data.
+     * @deny (create) No user can create card data in this prototype (admin-only write access is not implemented).
+     * @deny (update) No user can update card data in this prototype (admin-only write access is not implemented).
+     * @deny (delete) No user can delete card data in this prototype (admin-only write access is not implemented).
+     * @principle Allows public read access while restricting write access.
+     */
     match /cards/{cardId} {
       allow get: if true;
       allow list: if true;
-      allow create: if isSignedIn();
-      allow update: if isSignedIn();
-      allow delete: if isSignedIn();
+      allow create: if false;
+      allow update: if false;
+      allow delete: if false;
     }
   }
 }
