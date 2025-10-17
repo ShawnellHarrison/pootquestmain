@@ -1,6 +1,7 @@
+
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, use } from 'react';
 import { useFirebase, useCollection, useDoc, useMemoFirebase } from '@/firebase';
 import { doc, collection, writeBatch } from 'firebase/firestore';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -47,8 +48,9 @@ const DraggableCard = ({ card, inDeck }: DraggableCardProps) => {
     );
 };
 
-export default function DeckManagerPage({ params }: { params: { characterId: string } }) {
-    const { characterId } = params;
+
+export default function DeckManagerPage({ params }: { params: Promise<{ characterId: string }> }) {
+    const { characterId } = use(params);
     const { firestore, user, isUserLoading } = useFirebase();
     const { toast } = useToast();
 
