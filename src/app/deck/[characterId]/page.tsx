@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -94,8 +93,6 @@ export default function DeckManagerPage({ params }: { params: { characterId: str
         const inDeck = deck.includes(cardName);
         const inCollection = collectionPool.includes(cardName);
 
-        // This logic handles moving cards between the deck and the collection pool
-        // It's a bit simplified; a real implementation would be more robust.
         if (over) {
              if (over.id === 'deck-droppable' && inCollection) {
                 if (deck.length < DECK_SIZE) {
@@ -106,8 +103,7 @@ export default function DeckManagerPage({ params }: { params: { characterId: str
             } else if (over.id === 'collection-droppable' && inDeck) {
                  setDeck((prev) => prev.filter(c => c !== cardName));
             } else {
-                // Reordering logic
-                if (inDeck && deck.includes(over.id as string)) {
+                if (inDeck && over.id && deck.includes(over.id as string)) {
                     setDeck((items) => {
                         const oldIndex = items.indexOf(active.id as string);
                         const newIndex = items.indexOf(over.id as string);
