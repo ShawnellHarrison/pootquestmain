@@ -5,15 +5,20 @@ import { GameContainer } from "@/components/game/GameContainer";
 import { Header } from "@/components/game/Header";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { Lock, BookOpen, ArrowLeft, Loader2, Trophy, Skull } from "lucide-react";
+import { Lock, BookOpen, ArrowLeft, Loader2, Trophy, Skull, Share2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { useCollection, useFirebase, useMemoFirebase } from "@/firebase";
 import { collection, query, orderBy } from "firebase/firestore";
 import { formatDistanceToNow } from 'date-fns';
+import { generateRunSummary } from "@/ai/flows/generate-run-summary";
+import { useToast } from "@/hooks/use-toast";
+import { useState } from "react";
+import { getStorage, ref, uploadString } from 'firebase/storage';
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
-const RunCard = ({ run }: { run: any }) => (
-    <Card className="bg-card/80 border border-border/50">
+const RunCard = ({ run, onExport, isExporting }: { run: any, onExport: (run: any) => void, isExporting: boolean }) => (
+    <Card className="bg-card/80 border border-border/50 flex flex-col">
         <CardHeader>
             <div className="flex justify-between items-start">
                 <div>
@@ -31,15 +36,24 @@ const RunCard = ({ run }: { run: any }) => (
                 </div>
             </div>
         </CardHeader>
-        <CardContent>
+        <CardContent className="flex-grow">
              <p className="font-serif italic text-foreground/90">&quot;{run.ending}&quot;</p>
              <p className="font-serif text-sm text-muted-foreground mt-2">&mdash; {run.uniqueDiscovery}</p>
         </CardContent>
+        <div className="p-4 pt-0">
+            <Button className="w-full" variant="secondary" onClick={() => onExport(run)} disabled={isExporting}>
+                {isExporting ? <Loader2 className="animate-spin" /> : <Share2 />}
+                Export to Fart Journal
+            </Button>
+        </div>
     </Card>
 );
 
 export default function ChroniclePage() {
     const { firestore, user } = useFirebase();
+    const { toast } = useToast();
+    const [isExporting, setIsExporting] = useState<string | null>(null);
+    const [exportedUrl, setExportedUrl] = useState<string | null>(null);
 
     const runsQuery = useMemoFirebase(() => {
         if (!firestore || !user) return null;
@@ -49,6 +63,45 @@ export default function ChroniclePage() {
     }, [firestore, user]);
 
     const { data: runs, isLoading } = useCollection(runsQuery);
+    
+    const handleExport = async (run: any) => {
+        if (!user) return;
+        setIsExporting(run.id);
+        setExportedUrl(null);
+
+        try {
+            const summaryResult = await generateRunSummary({
+                characterClass: run.characterClass,
+                moralAlignment: run.moralAlignment,
+                enemiesKilled: run.enemiesKilled,
+                enemiesSpared: run.enemiesSpared,
+                ending: run.ending,
+                uniqueDiscovery: run.uniqueDiscovery,
+            });
+
+            const summaryText = `${summaryResult.title}\n\n${summaryResult.summary}`;
+            const storage = getStorage();
+            const storageRef = ref(storage, `user_uploads/${user.uid}/runs/${run.id}.txt`);
+            
+            await uploadString(storageRef, summaryText, 'raw', { contentType: 'text/plain;charset=utf-8' });
+
+            const url = `https://storage.googleapis.com/${storage.app.options.storageBucket}/${storageRef.fullPath}`;
+            setExportedUrl(url);
+
+            toast({
+                title: "Legend Exported!",
+                description: "Your epic tale has been saved to the Fart Journal.",
+                className: 'bg-primary text-primary-foreground',
+            });
+
+        } catch (error) {
+            console.error("Failed to export run:", error);
+            toast({ title: "Export Failed", description: "The Chronicler is busy. Please try again.", variant: "destructive" });
+        } finally {
+            setIsExporting(null);
+        }
+    };
+
 
     const renderRuns = () => {
         if (isLoading) {
@@ -59,7 +112,14 @@ export default function ChroniclePage() {
         }
         return (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {runs.map((run) => <RunCard key={run.id} run={run} />)}
+                {runs.map((run) => (
+                    <RunCard 
+                        key={run.id} 
+                        run={run}
+                        onExport={handleExport}
+                        isExporting={isExporting === run.id}
+                    />
+                ))}
             </div>
         );
     }
@@ -85,6 +145,14 @@ export default function ChroniclePage() {
                             <CardDescription>Your legend, etched in the annals of absurdity.</CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-8 p-4 sm:p-6">
+                            {exportedUrl && (
+                                <Alert className="border-green-500/50 bg-green-900/30">
+                                    <AlertTitle className="text-green-300">Journal Entry Saved!</AlertTitle>
+                                    <AlertDescription>
+                                        Your legend is now saved. <a href={exportedUrl} target="_blank" rel="noopener noreferrer" className="underline font-bold">View your story</a> or share it with your friends!
+                                    </AlertDescription>
+                                </Alert>
+                            )}
                             <div>
                                 <h3 className="font-headline text-2xl mb-4">Completed Runs</h3>
                                 {renderRuns()}
