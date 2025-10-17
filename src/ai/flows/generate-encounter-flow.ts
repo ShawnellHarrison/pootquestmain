@@ -34,19 +34,21 @@ const generateEncounterPrompt = ai.definePrompt({
       -   If **Stealth** is high, design an encounter that challenges that skill. The enemies could be highly perceptive (e.g., "Sharp-Eared Guard"), use traps, or be positioned in a way that makes a stealthy approach difficult.
       -   If **Diplomacy** is high, the enemies might be a faction that is less likely to be reasoned with, forcing a fight where words won't work. Or perhaps their leader is arrogant and dismisses the player's attempts at talk.
       -   The enemies MUST be thematically appropriate for the location and quest. If it's a quest-related battle (e.g., 'rat_king_quest'), one enemy MUST be the main boss. Each enemy needs a unique ID.
-  2.  **Loot**: Generate one piece of loot that is thematically tied to the encounter. A stealth-challenging encounter might drop boots of silence; a combat-heavy one might drop a sturdier shield.
+  2.  **Loot**: The loot awarded MUST be a "Mystery Scroll". This is a magical item that can later be identified to reveal a new card. Set the loot name to "Mystery Scroll", type to "scroll", and give it a mysterious description.
   3.  **Intro Text**: Write a short, engaging introductory text (1-2 sentences) that hints at why this encounter is happening. It should reflect the adaptive nature of the challenge.
 
   **Example (High Combat Reputation):**
   {
     "introText": "The goblin grunts, pointing at you. 'That's the one! The brawler! Get the big shields, lads!' They form a defensive wall, ready for a long fight.",
-    ...
+    "enemies": [...],
+    "loot": { "name": "Mystery Scroll", "description": "A dusty scroll radiating a faint magical aura. What secrets does it hold?", "type": "scroll" }
   }
   
   **Example (High Stealth Reputation):**
   {
     "introText": "As you sneak forward, a tripwire you barely notice snaps taut. Bells jingle down the hall and heavily armored guards turn, their eyes already scanning the shadows you occupy.",
-    ...
+    "enemies": [...],
+    "loot": { "name": "Mystery Scroll", "description": "A dusty scroll radiating a faint magical aura. What secrets does it hold?", "type": "scroll" }
   }`,
 });
 

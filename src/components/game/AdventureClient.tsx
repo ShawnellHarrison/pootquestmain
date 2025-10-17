@@ -13,7 +13,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Loader2, BookOpen, Forward, ChevronRight, HelpCircle, Briefcase } from "lucide-react";
+import { Loader2, BookOpen, Forward, ChevronRight, HelpCircle, Briefcase, Scroll } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import Link from "next/link";
 import { Separator } from "@/components/ui/separator";
@@ -388,6 +388,11 @@ export function AdventureClient({ characterId, initialBattleState }: AdventureCl
              <Button asChild variant="outline" size="lg">
                 <Link href={`/deck/${characterId}`}>
                     <Briefcase className="mr-2 h-4 w-4" /> Manage Deck
+                </Link>
+            </Button>
+            <Button asChild variant="outline" size="lg">
+                <Link href={`/inventory/${characterId}`}>
+                    <Scroll className="mr-2 h-4 w-4" /> Inspect Inventory
                 </Link>
             </Button>
           </div>

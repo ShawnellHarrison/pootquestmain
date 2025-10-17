@@ -18,17 +18,19 @@ import { useToast } from '@/hooks/use-toast';
 
 const DECK_SIZE = 15;
 
-const DraggableCard = ({ cardName, inDeck }: { cardName: string, inDeck: boolean }) => {
-    const card = CARD_DATA[cardName];
-    const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id: cardName });
+type DraggableCardProps = {
+    card: CardData;
+    inDeck: boolean;
+};
+
+const DraggableCard = ({ card, inDeck }: DraggableCardProps) => {
+    const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id: card.name });
 
     const style = {
         transform: CSS.Transform.toString(transform),
         transition,
     };
-
-    if (!card) return null;
-
+    
     return (
         <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
             <Card className={`w-36 h-52 flex flex-col p-2 text-center select-none ${inDeck ? 'bg-secondary' : 'bg-muted'}`}>
@@ -51,7 +53,7 @@ export default function DeckManagerPage({ params }: { params: { characterId: str
     const { toast } = useToast();
 
     const [deck, setDeck] = useState<string[]>([]);
-    const [collectionState, setCollectionState] = useState<string[]>([]);
+    const [collectionState, setCollectionState] = useState<CardData[]>([]);
     const [isSaving, setIsSaving] = useState(false);
 
     const deckRef = useMemoFirebase(() => {
@@ -68,21 +70,55 @@ export default function DeckManagerPage({ params }: { params: { characterId: str
     const { data: inventoryData, isLoading: isInventoryLoading } = useCollection(inventoryRef);
 
     useEffect(() => {
-        if (deckData) {
-            setDeck(deckData.cards || []);
+        if (deckData?.cards) {
+            setDeck(deckData.cards);
         }
     }, [deckData]);
 
     useEffect(() => {
-        if (inventoryData && deckData) {
-            const allCards = new Set([...(deckData.cards || []), ...inventoryData.map(item => item.name)]);
-            setCollectionState(Array.from(allCards));
-        } else if (deckData) {
-            setCollectionState(deckData.cards || []);
+        if (inventoryData && deckData?.cards) {
+            const allCardsMap = new Map<string, CardData>();
+            
+            // Add starter cards
+            Object.values(CARD_DATA).forEach(card => allCardsMap.set(card.name, card));
+
+            // Add cards from inventory (which are newly generated)
+            inventoryData.forEach(item => {
+                if (item.type === 'card') {
+                    allCardsMap.set(item.name, {
+                        name: item.name,
+                        description: item.description,
+                        manaCost: item.manaCost,
+                        attack: item.attack,
+                        defense: item.defense,
+                        healing: item.healing,
+                    });
+                }
+            });
+            
+            // Add cards from the current deck if they aren't already in the map
+            deckData.cards.forEach((cardName: string) => {
+                if (!allCardsMap.has(cardName) && CARD_DATA[cardName]) {
+                    allCardsMap.set(cardName, CARD_DATA[cardName]);
+                }
+            });
+
+            setCollectionState(Array.from(allCardsMap.values()));
+        } else if (deckData?.cards) {
+            // Fallback if inventory is empty
+            const starterAndDeckCards = new Map<string, CardData>();
+            Object.values(CARD_DATA).forEach(card => starterAndDeckCards.set(card.name, card));
+            deckData.cards.forEach((cardName: string) => {
+                 if (CARD_DATA[cardName]) {
+                    starterAndDeckCards.set(cardName, CARD_DATA[cardName]);
+                }
+            });
+            setCollectionState(Array.from(starterAndDeckCards.values()));
         }
     }, [inventoryData, deckData]);
 
-    const collectionPool = collectionState.filter(cardName => !deck.includes(cardName));
+
+    const collectionPool = collectionState.filter(card => !deck.includes(card.name));
 
     const handleDragEnd = (event: DragEndEvent) => {
         const { active, over } = event;
@@ -91,10 +127,9 @@ export default function DeckManagerPage({ params }: { params: { characterId: str
 
         const cardName = active.id as string;
         const inDeck = deck.includes(cardName);
-        const inCollection = collectionPool.includes(cardName);
 
         if (over) {
-             if (over.id === 'deck-droppable' && inCollection) {
+             if (over.id === 'deck-droppable' && !inDeck) {
                 if (deck.length < DECK_SIZE) {
                     setDeck((prev) => [...prev, cardName]);
                 } else {
@@ -102,14 +137,13 @@ export default function DeckManagerPage({ params }: { params: { characterId: str
                 }
             } else if (over.id === 'collection-droppable' && inDeck) {
                  setDeck((prev) => prev.filter(c => c !== cardName));
-            } else {
-                if (inDeck && over.id && deck.includes(over.id as string)) {
-                    setDeck((items) => {
-                        const oldIndex = items.indexOf(active.id as string);
-                        const newIndex = items.indexOf(over.id as string);
-                        return arrayMove(items, oldIndex, newIndex);
-                    });
-                }
+            } else if (inDeck && over.id && deck.includes(over.id as string)) {
+                // Reordering within the deck
+                setDeck((items) => {
+                    const oldIndex = items.indexOf(active.id as string);
+                    const newIndex = items.indexOf(over.id as string);
+                    return arrayMove(items, oldIndex, newIndex);
+                });
             }
         }
     };
@@ -122,9 +156,7 @@ export default function DeckManagerPage({ params }: { params: { characterId: str
         }
         setIsSaving(true);
         try {
-            const batch = writeBatch(firestore);
-            batch.update(deckRef, { cards: deck });
-            await batch.commit();
+            await writeBatch(firestore).update(deckRef, { cards: deck }).commit();
             toast({ title: "Deck Saved!", description: "Your changes have been saved successfully." });
         } catch (error) {
             console.error("Failed to save deck:", error);
@@ -181,7 +213,10 @@ export default function DeckManagerPage({ params }: { params: { characterId: str
                     </CardHeader>
                     <CardContent className="flex flex-wrap gap-4 p-4 bg-muted/20 rounded-lg">
                         <SortableContext items={deck} strategy={rectSortingStrategy}>
-                            {deck.map(cardName => <DraggableCard key={cardName} cardName={cardName} inDeck={true} />)}
+                            {deck.map(cardName => {
+                                const cardData = collectionState.find(c => c.name === cardName);
+                                return cardData ? <DraggableCard key={cardName} card={cardData} inDeck={true} /> : null;
+                            })}
                         </SortableContext>
                     </CardContent>
                 </Card>
@@ -192,8 +227,8 @@ export default function DeckManagerPage({ params }: { params: { characterId: str
                         <CardDescription>These are all the cards you own. Drag cards from here into your deck.</CardDescription>
                     </CardHeader>
                     <CardContent className="flex flex-wrap gap-4 p-4 bg-muted/20 rounded-lg min-h-64">
-                         <SortableContext items={collectionPool} strategy={rectSortingStrategy}>
-                            {collectionPool.map(cardName => <DraggableCard key={cardName} cardName={cardName} inDeck={false} />)}
+                         <SortableContext items={collectionPool.map(c => c.name)} strategy={rectSortingStrategy}>
+                            {collectionPool.map(card => <DraggableCard key={card.name} card={card} inDeck={false} />)}
                         </SortableContext>
                     </CardContent>
                 </Card>
