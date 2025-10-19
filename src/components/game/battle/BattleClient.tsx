@@ -247,19 +247,18 @@ export function BattleClient({ characterId, encounter }: BattleClientProps) {
                     return { ...prev, playerHealth: 0, turn: 'defeat', isProcessing: true };
                 }
 
-                let newDeck = [...prev.deck];
-                let newDiscard = [...prev.discard];
+                let deck = [...prev.deck];
+                let discard = [...prev.discard];
                 const cardsToDrawCount = 5;
-
                 let drawnCards: string[] = [];
 
                 for (let i = 0; i < cardsToDrawCount; i++) {
-                    if (newDeck.length === 0) {
-                        newDeck = shuffle(newDiscard);
-                        newDiscard = [];
+                    if (deck.length === 0) {
+                        deck = shuffle(discard);
+                        discard = [];
                     }
-                    if (newDeck.length > 0) {
-                        const card = newDeck.pop();
+                    if (deck.length > 0) {
+                        const card = deck.pop();
                         if (card) drawnCards.push(card);
                     }
                 }
@@ -268,8 +267,8 @@ export function BattleClient({ characterId, encounter }: BattleClientProps) {
                     ...prev,
                     playerHealth: newPlayerHealth,
                     hand: drawnCards,
-                    deck: newDeck,
-                    discard: newDiscard,
+                    deck: deck,
+                    discard: discard,
                     turn: 'player',
                     playerMana: character?.maxMana || 10,
                     isProcessing: false,
@@ -371,8 +370,14 @@ export function BattleClient({ characterId, encounter }: BattleClientProps) {
   }
   
   const fullCardData = (cardName: string) => {
-    const card = Object.values(CARD_DATA).find(c => c.name === cardName);
-    return card ? { ...card, id: cardName, class: '' } : null;
+    // Find card in CARD_DATA first
+    let card = Object.values(CARD_DATA).find(c => c.name === cardName);
+    if (card) {
+        return { ...card, id: cardName, class: '' };
+    }
+    // This part is tricky because inventory isn't loaded here. 
+    // For now, we assume all cards are in CARD_DATA
+    return null;
   }
 
   return (
@@ -384,7 +389,7 @@ export function BattleClient({ characterId, encounter }: BattleClientProps) {
                 key={enemy.id} 
                 enemy={enemy} 
                 onClick={() => handleEnemyClick(enemy.id)} 
-                isTarget={!!(battleState.selectedCard && CARD_DATA[battleState.selectedCard]?.attack > 0)}
+                isTarget={!!(battleState.selectedCard && fullCardData(battleState.selectedCard)?.attack ?? 0 > 0)}
             />
           ))}
         </div>
@@ -429,5 +434,3 @@ export function BattleClient({ characterId, encounter }: BattleClientProps) {
     </Card>
   );
 }
-
-    
