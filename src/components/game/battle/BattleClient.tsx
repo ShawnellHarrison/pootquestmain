@@ -74,6 +74,7 @@ export function BattleClient({ characterId, encounter }: BattleClientProps) {
   const [character, setCharacter] = useState<CharacterData | null>(null);
   const [deck, setDeck] = useState<DeckData | null>(null);
   const [battleState, setBattleState] = useState<BattleState | null>(null);
+  const [collectionState, setCollectionState] = useState<CardData[]>([]);
 
   const characterClass = useMemo(() => character ? getClass(character.class) : null, [character]);
   
@@ -83,15 +84,48 @@ export function BattleClient({ characterId, encounter }: BattleClientProps) {
         try {
             const characterDocRef = doc(firestore, `users/${user.uid}/characters/${characterId}`);
             const deckRef = doc(firestore, `users/${user.uid}/characters/${characterId}/decks`, "main");
+            const inventoryRef = collection(firestore, `users/${user.uid}/characters/${characterId}/inventory`);
 
-            const [characterSnap, deckSnap] = await Promise.all([
+            const [characterSnap, deckSnap, inventorySnap] = await Promise.all([
                 getDoc(characterDocRef),
                 getDoc(deckRef),
+                getDoc(inventoryRef),
             ]);
 
             if (characterSnap.exists() && deckSnap.exists()) {
                 const characterData = characterSnap.data() as CharacterData;
                 const deckData = deckSnap.data() as DeckData;
+                const inventoryData = inventorySnap.docs.map(d => ({...d.data(), id: d.id}));
+
+                const charClass = getClass(characterData.class);
+                if (!charClass) {
+                    throw new Error("Character class not found");
+                }
+                
+                const allCardsMap = new Map<string, CardData>();
+                charClass.starterDeck.forEach(starter => {
+                    const cardDetails = Object.values(CARD_DATA).find(c => c.name === starter.name);
+                    if (cardDetails) {
+                        allCardsMap.set(starter.name, { ...cardDetails, id: starter.name, class: charClass.name });
+                    }
+                });
+
+                inventoryData.forEach((item: any) => {
+                    if ((item.type === 'card' || Object.values(CARD_DATA).some(c => c.name === item.name))) {
+                        allCardsMap.set(item.name, {
+                            id: item.id || item.name,
+                            name: item.name,
+                            description: item.description,
+                            manaCost: item.manaCost,
+                            attack: item.attack,
+                            defense: item.defense,
+                            healing: item.healing,
+                            class: charClass.name,
+                        } as CardData);
+                    }
+                });
+                
+                setCollectionState(Array.from(allCardsMap.values()));
                 setCharacter(characterData);
                 setDeck(deckData);
 
@@ -120,6 +154,7 @@ export function BattleClient({ characterId, encounter }: BattleClientProps) {
                 router.push('/');
             }
         } catch (e) {
+            console.error("Failed to fetch battle data:", e);
             toast({ title: "Error", description: "Failed to fetch battle data.", variant: "destructive" });
             router.push('/');
         }
@@ -127,10 +162,27 @@ export function BattleClient({ characterId, encounter }: BattleClientProps) {
     fetchInitialData();
   }, [firestore, user, characterId, encounter, router, toast]);
 
+    const fullCardData = (cardName: string): CardData | null => {
+        let card = Object.values(CARD_DATA).find(c => c.name === cardName);
+        if (card) {
+            return { ...card, id: cardName, class: '' };
+        }
+        let collectionCard = collectionState.find(c => c.name === cardName);
+        if (collectionCard) {
+            return collectionCard;
+        }
+        return null;
+    }
+
   const handleCardClick = (cardName: string) => {
     if (!battleState || battleState.turn !== 'player' || battleState.isProcessing) return;
-    const cardData = Object.values(CARD_DATA).find(c => c.name === cardName);
-    if (!cardData) return;
+    const cardData = fullCardData(cardName);
+    if (!cardData) {
+        console.error(`Card data for ${cardName} not found!`);
+        toast({ title: "Card Error", description: `Could not find data for ${cardName}.`, variant: "destructive" });
+        return;
+    };
+
     if (cardData.manaCost > battleState.playerMana) {
         toast({ title: "Not enough mana!", variant: "destructive" });
         return;
@@ -165,7 +217,7 @@ export function BattleClient({ characterId, encounter }: BattleClientProps) {
   const handleEnemyClick = (enemyId: string) => {
     if (!battleState || !battleState.selectedCard || battleState.turn !== 'player' || battleState.isProcessing) return;
 
-    const cardData = Object.values(CARD_DATA).find(c => c.name === battleState.selectedCard);
+    const cardData = fullCardData(battleState.selectedCard);
     if (!cardData || cardData.attack === 0) return;
 
     setBattleState(prev => {
@@ -247,18 +299,18 @@ export function BattleClient({ characterId, encounter }: BattleClientProps) {
                     return { ...prev, playerHealth: 0, turn: 'defeat', isProcessing: true };
                 }
 
-                let deck = [...prev.deck];
-                let discard = [...prev.discard];
+                let newDeck = [...prev.deck];
+                let newDiscard = [...prev.discard];
                 const cardsToDrawCount = 5;
                 let drawnCards: string[] = [];
 
                 for (let i = 0; i < cardsToDrawCount; i++) {
-                    if (deck.length === 0 && discard.length > 0) {
-                        deck = shuffle(discard);
-                        discard = [];
+                    if (newDeck.length === 0 && newDiscard.length > 0) {
+                        newDeck = shuffle(newDiscard);
+                        newDiscard = [];
                     }
-                    if (deck.length > 0) {
-                        const card = deck.pop();
+                    if (newDeck.length > 0) {
+                        const card = newDeck.pop();
                         if (card) drawnCards.push(card);
                     }
                 }
@@ -267,8 +319,8 @@ export function BattleClient({ characterId, encounter }: BattleClientProps) {
                     ...prev,
                     playerHealth: newPlayerHealth,
                     hand: drawnCards,
-                    deck: deck,
-                    discard: discard,
+                    deck: newDeck,
+                    discard: newDiscard,
                     turn: 'player',
                     playerMana: character?.maxMana || 10,
                     isProcessing: false,
@@ -369,17 +421,6 @@ export function BattleClient({ characterId, encounter }: BattleClientProps) {
     return <div className="flex justify-center items-center h-96"><Loader2 className="h-16 w-16 animate-spin text-primary" /></div>;
   }
   
-  const fullCardData = (cardName: string) => {
-    // Find card in CARD_DATA first
-    let card = Object.values(CARD_DATA).find(c => c.name === cardName);
-    if (card) {
-        return { ...card, id: cardName, class: '' };
-    }
-    // This part is tricky because inventory isn't loaded here. 
-    // For now, we assume all cards are in CARD_DATA
-    return null;
-  }
-
   return (
     <Card className="bg-card/50">
       <CardContent className="p-4 space-y-4">
@@ -389,7 +430,7 @@ export function BattleClient({ characterId, encounter }: BattleClientProps) {
                 key={enemy.id} 
                 enemy={enemy} 
                 onClick={() => handleEnemyClick(enemy.id)} 
-                isTarget={!!(battleState.selectedCard && fullCardData(battleState.selectedCard)?.attack ?? 0 > 0)}
+                isTarget={!!(battleState.selectedCard && (fullCardData(battleState.selectedCard)?.attack ?? 0) > 0)}
             />
           ))}
         </div>
@@ -425,7 +466,7 @@ export function BattleClient({ characterId, encounter }: BattleClientProps) {
             <div className="flex items-end gap-4 min-h-40">
               {battleState.hand.map((cardName, index) => {
                   const card = fullCardData(cardName);
-                  return card ? <PlayerCard key={`${cardName}-${index}`} card={card} onClick={() => handleCardClick(cardName)} isSelected={battleste.selectedCard === cardName} /> : null;
+                  return card ? <PlayerCard key={`${cardName}-${index}`} card={card} onClick={() => handleCardClick(cardName)} isSelected={battleState.selectedCard === cardName} /> : null;
               })}
             </div>
           </div>
