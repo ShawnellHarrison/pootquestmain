@@ -79,7 +79,11 @@ export default function DeckManagerPage({ params }: { params: { characterId: str
     const { data: deckData, isLoading: isDeckLoading } = useDoc(deckRef);
     const { data: inventoryData, isLoading: isInventoryLoading } = useCollection(inventoryRef);
     
-    const characterClass = useMemo(() => characterData ? getClass(characterData.class) : null, [characterData]);
+    const characterClass = useMemo(() => {
+        if (!characterData) return null;
+        return getClass(characterData.class);
+    }, [characterData]);
+
 
     useEffect(() => {
         if (deckData?.cards) {
@@ -98,7 +102,7 @@ export default function DeckManagerPage({ params }: { params: { characterId: str
             if (cardDetails) {
                 allCardsMap.set(starter.name, {
                     ...cardDetails,
-                    id: starter.name,
+                    id: starter.name, // Ensure ID is set
                     class: characterClass.name,
                 });
             }
@@ -107,9 +111,10 @@ export default function DeckManagerPage({ params }: { params: { characterId: str
         // Add cards from inventory (which are newly generated)
         if (inventoryData) {
             inventoryData.forEach(item => {
-                if (item.type === 'card' || Object.values(CARD_DATA).some(c => c.name === item.name)) {
+                // Ensure item is a card and not already in the map from starter deck
+                if ((item.type === 'card' || Object.values(CARD_DATA).some(c => c.name === item.name))) {
                     allCardsMap.set(item.name, {
-                        id: item.id, // Keep original id if possible
+                        id: item.id || item.name,
                         name: item.name,
                         description: item.description,
                         manaCost: item.manaCost,
@@ -125,13 +130,15 @@ export default function DeckManagerPage({ params }: { params: { characterId: str
         // Add cards from the current deck if they aren't already in the map
         if (deckData?.cards) {
             deckData.cards.forEach((cardName: string) => {
-                const cardDetails = Object.values(CARD_DATA).find(c => c.name === cardName);
-                if (cardDetails && !allCardsMap.has(cardName)) {
-                    allCardsMap.set(cardName, {
-                        ...cardDetails,
-                        id: cardName,
-                        class: characterClass.name,
-                    });
+                if (!allCardsMap.has(cardName)) {
+                    const cardDetails = Object.values(CARD_DATA).find(c => c.name === cardName);
+                    if (cardDetails) {
+                        allCardsMap.set(cardName, {
+                            ...cardDetails,
+                            id: cardName,
+                            class: characterClass.name,
+                        });
+                    }
                 }
             });
         }
@@ -234,7 +241,7 @@ export default function DeckManagerPage({ params }: { params: { characterId: str
                 <Card id="deck-droppable" className="min-h-96">
                     <CardHeader>
                         <CardTitle>Your Deck ({deck.length}/{DECK_SIZE})</CardTitle>
-                        <CardDescription>Drag cards from your collection to add them to your deck. Drag cards out to remove them.</CardDescription>
+                        <CardDescription>This is your active deck for battles. You can reorder the cards by dragging them.</CardDescription>
                     </CardHeader>
                     <CardContent className="flex flex-wrap gap-4 p-4 bg-muted/20 rounded-lg">
                         <SortableContext items={deck} strategy={rectSortingStrategy}>
@@ -242,18 +249,6 @@ export default function DeckManagerPage({ params }: { params: { characterId: str
                                 const cardData = collectionState.find(c => c.name === cardName);
                                 return cardData ? <DraggableCard key={cardName} card={cardData} inDeck={true} /> : null;
                             })}
-                        </SortableContext>
-                    </CardContent>
-                </Card>
-
-                <Card id="collection-droppable">
-                    <CardHeader>
-                        <CardTitle>Your Collection ({collectionPool.length})</CardTitle>
-                        <CardDescription>These are all the cards you own. Drag cards from here into your deck.</CardDescription>
-                    </CardHeader>
-                    <CardContent className="flex flex-wrap gap-4 p-4 bg-muted/20 rounded-lg min-h-64">
-                         <SortableContext items={collectionPool.map(c => c.name)} strategy={rectSortingStrategy}>
-                            {collectionPool.map(card => <DraggableCard key={card.name} card={card} inDeck={false} />)}
                         </SortableContext>
                     </CardContent>
                 </Card>
