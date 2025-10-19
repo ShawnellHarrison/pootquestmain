@@ -2,7 +2,7 @@
 
 'use client';
 
-import { useState, useEffect, use, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useFirebase, useCollection, useDoc, useMemoFirebase } from '@/firebase';
 import { doc, collection, writeBatch } from 'firebase/firestore';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -51,7 +51,7 @@ const DraggableCard = ({ card, inDeck }: DraggableCardProps) => {
 
 
 export default function DeckManagerPage({ params }: { params: { characterId: string } }) {
-    const { characterId } = use(params);
+    const { characterId } = params;
     const { firestore, user, isUserLoading } = useFirebase();
     const { toast } = useToast();
 
@@ -102,7 +102,7 @@ export default function DeckManagerPage({ params }: { params: { characterId: str
             if (cardDetails) {
                 allCardsMap.set(starter.name, {
                     ...cardDetails,
-                    id: starter.name, // Ensure ID is set
+                    id: starter.name,
                     class: characterClass.name,
                 });
             }
@@ -241,14 +241,28 @@ export default function DeckManagerPage({ params }: { params: { characterId: str
                 <Card id="deck-droppable" className="min-h-96">
                     <CardHeader>
                         <CardTitle>Your Deck ({deck.length}/{DECK_SIZE})</CardTitle>
-                        <CardDescription>This is your active deck for battles. You can reorder the cards by dragging them.</CardDescription>
+                        <CardDescription>This is your active deck for battles. Drag and drop cards to customize it.</CardDescription>
                     </CardHeader>
-                    <CardContent className="flex flex-wrap gap-4 p-4 bg-muted/20 rounded-lg">
+                    <CardContent className="flex flex-wrap gap-4 p-4 bg-muted/20 rounded-lg min-h-[22rem]">
                         <SortableContext items={deck} strategy={rectSortingStrategy}>
                             {deck.map(cardName => {
                                 const cardData = collectionState.find(c => c.name === cardName);
                                 return cardData ? <DraggableCard key={cardName} card={cardData} inDeck={true} /> : null;
                             })}
+                        </SortableContext>
+                    </CardContent>
+                </Card>
+
+                 <Card id="collection-droppable" className="min-h-96">
+                    <CardHeader>
+                        <CardTitle>Your Collection</CardTitle>
+                        <CardDescription>These are all the cards you own. Drag cards into your deck above.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="flex flex-wrap gap-4 p-4 bg-background/50 rounded-lg">
+                        <SortableContext items={collectionPool.map(c => c.name)} strategy={rectSortingStrategy}>
+                            {collectionPool.map(card => (
+                               <DraggableCard key={card.id} card={card} inDeck={false} />
+                            ))}
                         </SortableContext>
                     </CardContent>
                 </Card>
