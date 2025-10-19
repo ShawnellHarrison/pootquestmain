@@ -79,7 +79,7 @@ export default function InventoryPage({ params }: { params: Promise<{ characterI
     const { data: deckData, isLoading: isDeckLoading } = useDoc(deckRef);
 
     const handleIdentifyScroll = async (itemId: string) => {
-        if (!firestore || !user || !characterData || !deckData) return;
+        if (!firestore || !user || !characterData || !deckData || !inventoryData) return;
         setIsIdentifying(itemId);
         setNewlyCreatedCard(null);
 
@@ -92,7 +92,8 @@ export default function InventoryPage({ params }: { params: Promise<{ characterI
         }
 
         try {
-            const allOwnedCards = Array.from(new Set([...deckData.cards, ...Object.keys(CARD_DATA)]));
+            const inventoryCardNames = inventoryData.filter(item => item.type === 'card').map(item => item.name);
+            const allOwnedCards = Array.from(new Set([...deckData.cards, ...Object.keys(CARD_DATA), ...inventoryCardNames]));
             
             const newCard = await generateCard({
                 playerClass: characterClass.name,
