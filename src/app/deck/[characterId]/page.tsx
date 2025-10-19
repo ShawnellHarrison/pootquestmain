@@ -50,7 +50,7 @@ const DraggableCard = ({ card, inDeck }: DraggableCardProps) => {
 };
 
 
-export default function DeckManagerPage({ params }: { params: Promise<{ characterId: string }> }) {
+export default function DeckManagerPage({ params }: { params: { characterId: string } }) {
     const { characterId } = use(params);
     const { firestore, user, isUserLoading } = useFirebase();
     const { toast } = useToast();
@@ -95,7 +95,11 @@ export default function DeckManagerPage({ params }: { params: Promise<{ characte
             characterClass.starterDeck.forEach(starter => {
                 const cardDetails = Object.values(CARD_DATA).find(c => c.name === starter.name);
                 if (cardDetails) {
-                    allCardsMap.set(starter.name, cardDetails);
+                    allCardsMap.set(starter.name, {
+                        ...cardDetails,
+                        id: starter.name,
+                        class: characterClass.name,
+                    });
                 }
             });
 
@@ -119,7 +123,11 @@ export default function DeckManagerPage({ params }: { params: Promise<{ characte
             deckData.cards.forEach((cardName: string) => {
                 const cardDetails = Object.values(CARD_DATA).find(c => c.name === cardName);
                 if (cardDetails && !allCardsMap.has(cardName)) {
-                    allCardsMap.set(cardName, cardDetails);
+                    allCardsMap.set(cardName, {
+                        ...cardDetails,
+                        id: cardName,
+                        class: characterClass.name,
+                    });
                 }
             });
 
@@ -130,13 +138,21 @@ export default function DeckManagerPage({ params }: { params: Promise<{ characte
             characterClass.starterDeck.forEach(starter => {
                 const cardDetails = Object.values(CARD_DATA).find(c => c.name === starter.name);
                 if (cardDetails) {
-                    starterAndDeckCards.set(starter.name, cardDetails);
+                    starterAndDeckCards.set(starter.name, {
+                        ...cardDetails,
+                        id: starter.name,
+                        class: characterClass.name
+                    });
                 }
             });
             deckData.cards.forEach((cardName: string) => {
                 const cardDetails = Object.values(CARD_DATA).find(c => c.name === cardName);
                  if (cardDetails) {
-                    starterAndDeckCards.set(cardName, cardDetails);
+                    starterAndDeckCards.set(cardName, {
+                        ...cardDetails,
+                        id: cardName,
+                        class: characterClass.name
+                    });
                 }
             });
             setCollectionState(Array.from(starterAndDeckCards.values()));
@@ -267,5 +283,3 @@ export default function DeckManagerPage({ params }: { params: Promise<{ characte
         </>
     );
 }
-
-    
