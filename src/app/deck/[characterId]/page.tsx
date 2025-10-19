@@ -88,24 +88,26 @@ export default function DeckManagerPage({ params }: { params: { characterId: str
     }, [deckData]);
 
     useEffect(() => {
-        if (inventoryData && deckData?.cards && characterClass) {
-            const allCardsMap = new Map<string, CardData>();
-            
-            // Add starter cards for the character's class
-            characterClass.starterDeck.forEach(starter => {
-                const cardDetails = Object.values(CARD_DATA).find(c => c.name === starter.name);
-                if (cardDetails) {
-                    allCardsMap.set(starter.name, {
-                        ...cardDetails,
-                        id: starter.name,
-                        class: characterClass.name,
-                    });
-                }
-            });
-
-            // Add cards from inventory (which are newly generated)
+        if (!characterClass) return;
+    
+        const allCardsMap = new Map<string, CardData>();
+    
+        // Add starter cards for the character's class
+        characterClass.starterDeck.forEach(starter => {
+            const cardDetails = Object.values(CARD_DATA).find(c => c.name === starter.name);
+            if (cardDetails) {
+                allCardsMap.set(starter.name, {
+                    ...cardDetails,
+                    id: starter.name,
+                    class: characterClass.name,
+                });
+            }
+        });
+    
+        // Add cards from inventory (which are newly generated)
+        if (inventoryData) {
             inventoryData.forEach(item => {
-                if (item.type === 'card' || Object.values(CARD_DATA).some(c => c.name === item.name)) { // also add starter cards if they appear in inventory
+                if (item.type === 'card' || Object.values(CARD_DATA).some(c => c.name === item.name)) {
                     allCardsMap.set(item.name, {
                         id: item.id, // Keep original id if possible
                         name: item.name,
@@ -118,8 +120,10 @@ export default function DeckManagerPage({ params }: { params: { characterId: str
                     } as CardData);
                 }
             });
-            
-            // Add cards from the current deck if they aren't already in the map
+        }
+    
+        // Add cards from the current deck if they aren't already in the map
+        if (deckData?.cards) {
             deckData.cards.forEach((cardName: string) => {
                 const cardDetails = Object.values(CARD_DATA).find(c => c.name === cardName);
                 if (cardDetails && !allCardsMap.has(cardName)) {
@@ -130,33 +134,10 @@ export default function DeckManagerPage({ params }: { params: { characterId: str
                     });
                 }
             });
-
-            setCollectionState(Array.from(allCardsMap.values()));
-        } else if (deckData?.cards && characterClass) {
-            // Fallback if inventory is empty
-            const starterAndDeckCards = new Map<string, CardData>();
-            characterClass.starterDeck.forEach(starter => {
-                const cardDetails = Object.values(CARD_DATA).find(c => c.name === starter.name);
-                if (cardDetails) {
-                    starterAndDeckCards.set(starter.name, {
-                        ...cardDetails,
-                        id: starter.name,
-                        class: characterClass.name
-                    });
-                }
-            });
-            deckData.cards.forEach((cardName: string) => {
-                const cardDetails = Object.values(CARD_DATA).find(c => c.name === cardName);
-                 if (cardDetails) {
-                    starterAndDeckCards.set(cardName, {
-                        ...cardDetails,
-                        id: cardName,
-                        class: characterClass.name
-                    });
-                }
-            });
-            setCollectionState(Array.from(starterAndDeckCards.values()));
         }
+    
+        setCollectionState(Array.from(allCardsMap.values()));
+    
     }, [inventoryData, deckData, characterClass]);
 
 
