@@ -1,14 +1,16 @@
 
 export type CardData = {
+    id: string;
     name: string;
     description: string;
     manaCost: number;
     attack: number;
     defense: number;
     healing: number;
+    class: string;
 };
 
-export const CARD_DATA: { [key: string]: CardData } = {
+export const CARD_DATA: Record<string, Omit<CardData, 'id' | 'class'>> = {
     "Backstab": { name: "Backstab", description: "A swift, high-damage attack.", manaCost: 2, attack: 10, defense: 0, healing: 0 },
     "Silent But Deadly": { name: "Silent But Deadly", description: "A moderate attack that ignores some defense.", manaCost: 3, attack: 5, defense: 0, healing: 0 },
     "Smoke Bomb": { name: "Smoke Bomb", description: "Gain a small amount of defense.", manaCost: 1, attack: 0, defense: 5, healing: 0 },
@@ -141,7 +143,7 @@ export const CLASSES: CharacterClass[] = [
     weaknessesToKnow: ["Attacks can miss frequently", "Vulnerable to magic", "May attack allies in rage mode"],
     signatureCard: "Bean Rage (Massive AOE, self-damage over time)",
     specialAbility: "Unstoppable Charge (breaks through defenses)",
-    playstyle: "Berserk aggro, high-risk/reward",
+playstyle: "Berserk aggro, high-risk/reward",
   },
   {
     id: "cleric",

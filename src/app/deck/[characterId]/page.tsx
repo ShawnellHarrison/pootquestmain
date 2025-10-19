@@ -93,14 +93,15 @@ export default function DeckManagerPage({ params }: { params: Promise<{ characte
             
             // Add starter cards for the character's class
             characterClass.starterDeck.forEach(starter => {
-                if (CARD_DATA[starter.name]) {
-                    allCardsMap.set(starter.name, CARD_DATA[starter.name]);
+                const cardDetails = Object.values(CARD_DATA).find(c => c.name === starter.name);
+                if (cardDetails) {
+                    allCardsMap.set(starter.name, cardDetails);
                 }
             });
 
             // Add cards from inventory (which are newly generated)
             inventoryData.forEach(item => {
-                if (item.type === 'card' || CARD_DATA[item.name]) { // also add starter cards if they appear in inventory
+                if (item.type === 'card' || Object.values(CARD_DATA).some(c => c.name === item.name)) { // also add starter cards if they appear in inventory
                     allCardsMap.set(item.name, {
                         id: item.id, // Keep original id if possible
                         name: item.name,
@@ -116,7 +117,7 @@ export default function DeckManagerPage({ params }: { params: Promise<{ characte
             
             // Add cards from the current deck if they aren't already in the map
             deckData.cards.forEach((cardName: string) => {
-                const cardDetails = CARD_DATA[cardName];
+                const cardDetails = Object.values(CARD_DATA).find(c => c.name === cardName);
                 if (cardDetails && !allCardsMap.has(cardName)) {
                     allCardsMap.set(cardName, cardDetails);
                 }
@@ -127,13 +128,15 @@ export default function DeckManagerPage({ params }: { params: Promise<{ characte
             // Fallback if inventory is empty
             const starterAndDeckCards = new Map<string, CardData>();
             characterClass.starterDeck.forEach(starter => {
-                if (CARD_DATA[starter.name]) {
-                    starterAndDeckCards.set(starter.name, CARD_DATA[starter.name]);
+                const cardDetails = Object.values(CARD_DATA).find(c => c.name === starter.name);
+                if (cardDetails) {
+                    starterAndDeckCards.set(starter.name, cardDetails);
                 }
             });
             deckData.cards.forEach((cardName: string) => {
-                 if (CARD_DATA[cardName]) {
-                    starterAndDeckCards.set(cardName, CARD_DATA[cardName]);
+                const cardDetails = Object.values(CARD_DATA).find(c => c.name === cardName);
+                 if (cardDetails) {
+                    starterAndDeckCards.set(cardName, cardDetails);
                 }
             });
             setCollectionState(Array.from(starterAndDeckCards.values()));

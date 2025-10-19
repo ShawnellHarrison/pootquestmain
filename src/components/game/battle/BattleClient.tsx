@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
@@ -14,7 +15,7 @@ import { PlayerCard } from './PlayerCard';
 import { Enemy } from './Enemy';
 import { Button } from '@/components/ui/button';
 import { PlayerStats } from './PlayerStats';
-import { CARD_DATA, CharacterClass, getClass } from '@/lib/game-data';
+import { CARD_DATA, CardData, CharacterClass, getClass } from '@/lib/game-data';
 
 // Fisher-Yates shuffle algorithm
 const shuffle = <T,>(array: T[]): T[] => {
@@ -128,7 +129,8 @@ export function BattleClient({ characterId, encounter }: BattleClientProps) {
 
   const handleCardClick = (cardName: string) => {
     if (!battleState || battleState.turn !== 'player' || battleState.isProcessing) return;
-    const cardData = CARD_DATA[cardName];
+    const cardData = Object.values(CARD_DATA).find(c => c.name === cardName);
+    if (!cardData) return;
     if (cardData.manaCost > battleState.playerMana) {
         toast({ title: "Not enough mana!", variant: "destructive" });
         return;
@@ -163,7 +165,7 @@ export function BattleClient({ characterId, encounter }: BattleClientProps) {
   const handleEnemyClick = (enemyId: string) => {
     if (!battleState || !battleState.selectedCard || battleState.turn !== 'player' || battleState.isProcessing) return;
 
-    const cardData = CARD_DATA[battleState.selectedCard];
+    const cardData = Object.values(CARD_DATA).find(c => c.name === battleState.selectedCard);
     if (!cardData || cardData.attack === 0) return;
 
     setBattleState(prev => {
@@ -196,7 +198,7 @@ export function BattleClient({ characterId, encounter }: BattleClientProps) {
             playerMana: prev.playerMana - cardData.manaCost,
             enemies: newEnemies,
             hand: newHand,
-            discard: [...prev.discard, prev!.selectedCard],
+            discard: [...prev.discard, prev!.selectedCard!],
             selectedCard: null,
             selectedTarget: null,
             turn: isVictory ? 'victory' : prev.turn,
@@ -368,6 +370,11 @@ export function BattleClient({ characterId, encounter }: BattleClientProps) {
     return <div className="flex justify-center items-center h-96"><Loader2 className="h-16 w-16 animate-spin text-primary" /></div>;
   }
   
+  const fullCardData = (cardName: string) => {
+    const card = Object.values(CARD_DATA).find(c => c.name === cardName);
+    return card ? { ...card, id: cardName, class: '' } : null;
+  }
+
   return (
     <Card className="bg-card/50">
       <CardContent className="p-4 space-y-4">
@@ -377,7 +384,7 @@ export function BattleClient({ characterId, encounter }: BattleClientProps) {
                 key={enemy.id} 
                 enemy={enemy} 
                 onClick={() => handleEnemyClick(enemy.id)} 
-                isTarget={battleState.selectedCard ? CARD_DATA[battleState.selectedCard]?.attack > 0 : false}
+                isTarget={!!(battleState.selectedCard && CARD_DATA[battleState.selectedCard]?.attack > 0)}
             />
           ))}
         </div>
@@ -411,9 +418,10 @@ export function BattleClient({ characterId, encounter }: BattleClientProps) {
 
           <div className="flex flex-col items-center gap-4">
             <div className="flex items-end gap-4 min-h-40">
-              {battleState.hand.map((cardName, index) => (
-                  <PlayerCard key={`${cardName}-${index}`} card={CARD_DATA[cardName]} onClick={() => handleCardClick(cardName)} isSelected={battleState.selectedCard === cardName} />
-              ))}
+              {battleState.hand.map((cardName, index) => {
+                  const card = fullCardData(cardName);
+                  return card ? <PlayerCard key={`${cardName}-${index}`} card={card} onClick={() => handleCardClick(cardName)} isSelected={battleState.selectedCard === cardName} /> : null;
+              })}
             </div>
           </div>
         </div>
