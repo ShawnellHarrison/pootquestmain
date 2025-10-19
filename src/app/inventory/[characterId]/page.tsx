@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect, useMemo, use } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useFirebase, useCollection, useDoc, useMemoFirebase } from '@/firebase';
 import { collection, writeBatch, doc, addDoc, deleteDoc } from 'firebase/firestore';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -50,8 +50,8 @@ const NewCard = ({ card }: { card: GenerateCardOutput }) => (
     </Card>
 )
 
-export default function InventoryPage({ params }: { params: Promise<{ characterId: string }> }) {
-    const { characterId } = use(params);
+export default function InventoryPage({ params }: { params: { characterId: string } }) {
+    const { characterId } = params;
     const { firestore, user, isUserLoading } = useFirebase();
     const { toast } = useToast();
 
