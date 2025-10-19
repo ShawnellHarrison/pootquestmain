@@ -104,7 +104,7 @@ export const CLASSES: CharacterClass[] = [
   {
     id: "wizard",
     name: "Goddess of Wind",
-    image: "https://storage.googleapis.com/character_poot/3.jpg",
+    image: "https://picsum.photos/seed/goddess/600/800",
     imageHint: "wind goddess",
     attributes: {
       strengths: ["AOE Damage +95%", "Elemental Mastery +85%", "Mana +100%"],
@@ -194,5 +194,3 @@ playstyle: "Berserk aggro, high-risk/reward",
 export const getClass = (id: string) => {
     return CLASSES.find(c => c.id === id);
 }
-
-    
