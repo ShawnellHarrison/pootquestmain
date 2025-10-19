@@ -253,7 +253,7 @@ export function BattleClient({ characterId, encounter }: BattleClientProps) {
                 let drawnCards: string[] = [];
 
                 for (let i = 0; i < cardsToDrawCount; i++) {
-                    if (deck.length === 0) {
+                    if (deck.length === 0 && discard.length > 0) {
                         deck = shuffle(discard);
                         discard = [];
                     }
@@ -425,7 +425,7 @@ export function BattleClient({ characterId, encounter }: BattleClientProps) {
             <div className="flex items-end gap-4 min-h-40">
               {battleState.hand.map((cardName, index) => {
                   const card = fullCardData(cardName);
-                  return card ? <PlayerCard key={`${cardName}-${index}`} card={card} onClick={() => handleCardClick(cardName)} isSelected={battleState.selectedCard === cardName} /> : null;
+                  return card ? <PlayerCard key={`${cardName}-${index}`} card={card} onClick={() => handleCardClick(cardName)} isSelected={battleste.selectedCard === cardName} /> : null;
               })}
             </div>
           </div>
