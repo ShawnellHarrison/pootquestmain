@@ -133,11 +133,19 @@ export function BattleClient({ characterId, encounter }: BattleClientProps) {
                 const initialHand = shuffledDeck.slice(0, 5);
                 const remainingDeck = shuffledDeck.slice(5);
 
+                const initialEnemies = encounter.enemies.map(e => {
+                    let initialDefense = 0;
+                    if (e.modifier?.type === 'Shielded') {
+                        initialDefense = e.modifier.value || 0;
+                    }
+                    return {...e, hp: e.maxHp, defense: initialDefense}; // Ensure enemies have full HP and set initial defense
+                });
+
                 setBattleState({
                     playerHealth: characterData.health,
                     playerMana: characterData.maxMana,
                     playerDefense: 0,
-                    enemies: encounter.enemies.map(e => ({...e, hp: e.maxHp})), // Ensure enemies have full HP
+                    enemies: initialEnemies,
                     deck: remainingDeck,
                     hand: initialHand,
                     discard: [],
@@ -163,13 +171,9 @@ export function BattleClient({ characterId, encounter }: BattleClientProps) {
   }, [firestore, user, characterId, encounter, router, toast]);
 
     const fullCardData = (cardName: string): CardData | null => {
-        let card = Object.values(CARD_DATA).find(c => c.name === cardName);
+        const card = collectionState.find(c => c.name === cardName);
         if (card) {
-            return { ...card, id: cardName, class: '' };
-        }
-        let collectionCard = collectionState.find(c => c.name === cardName);
-        if (collectionCard) {
-            return collectionCard;
+            return card;
         }
         return null;
     }
@@ -226,15 +230,22 @@ export function BattleClient({ characterId, encounter }: BattleClientProps) {
         let isVictory = false;
         let enemiesKilledThisTurn = 0;
         let xpGainedThisTurn = 0;
+        let playerDamageTaken = 0;
         
         const newEnemies = prev.enemies.map(e => {
             if (e.id === enemyId) {
-                const newHp = Math.max(0, e.hp - cardData.attack);
+                const damageDealt = Math.max(0, cardData.attack - (e.defense || 0));
+                const newHp = Math.max(0, e.hp - damageDealt);
+
+                if (e.modifier?.type === 'Retaliator') {
+                    playerDamageTaken += e.modifier.value || 0;
+                }
+
                 if (newHp === 0 && e.hp > 0) { // Check if it was alive before
                     enemiesKilledThisTurn++;
                     xpGainedThisTurn += e.attack * 5;
                 }
-                return { ...e, hp: newHp };
+                return { ...e, hp: newHp, defense: Math.max(0, (e.defense || 0) - cardData.attack) };
             }
             return e;
         }).filter(e => e.hp > 0);
@@ -243,10 +254,20 @@ export function BattleClient({ characterId, encounter }: BattleClientProps) {
             isVictory = true;
         }
 
+        const newPlayerHealth = Math.max(0, prev.playerHealth - playerDamageTaken);
+        if (playerDamageTaken > 0) {
+            toast({ title: "Retaliation!", description: `You take ${playerDamageTaken} damage from spikes!`, variant: "destructive" });
+        }
+
+        if (newPlayerHealth === 0) {
+            return { ...prev, playerHealth: 0, turn: 'defeat', isProcessing: true };
+        }
+
         const newHand = prev.hand.filter(c => c !== prev!.selectedCard);
         
         return {
             ...prev,
+            playerHealth: newPlayerHealth,
             playerMana: prev.playerMana - cardData.manaCost,
             enemies: newEnemies,
             hand: newHand,
@@ -286,8 +307,20 @@ export function BattleClient({ characterId, encounter }: BattleClientProps) {
                 if (!prev) return null;
 
                 let totalEnemyAttack = 0;
+                let commanderBonus = 0;
+
                 prev.enemies.forEach(enemy => {
-                    totalEnemyAttack += enemy.attack;
+                    if (enemy.modifier?.type === 'Commander') {
+                        commanderBonus += enemy.modifier.value || 0;
+                    }
+                });
+
+                let newEnemies = [...prev.enemies];
+                newEnemies.forEach(enemy => {
+                    totalEnemyAttack += enemy.attack + commanderBonus;
+                    if (enemy.modifier?.type === 'Regenerator') {
+                        enemy.hp = Math.min(enemy.maxHp, enemy.hp + (enemy.modifier.value || 0));
+                    }
                 });
 
                 const damageTaken = Math.max(0, totalEnemyAttack - prev.playerDefense);
@@ -318,6 +351,7 @@ export function BattleClient({ characterId, encounter }: BattleClientProps) {
                 return {
                     ...prev,
                     playerHealth: newPlayerHealth,
+                    enemies: newEnemies,
                     hand: drawnCards,
                     deck: newDeck,
                     discard: newDiscard,

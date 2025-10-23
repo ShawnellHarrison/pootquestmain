@@ -13,6 +13,11 @@ export const EncounterInputSchema = z.object({
 });
 export type EncounterInput = z.infer<typeof EncounterInputSchema>;
 
+const EnemyModifierSchema = z.object({
+    type: z.enum(["Retaliator", "Regenerator", "Commander", "Shielded"]).describe("The type of modifier."),
+    value: z.number().optional().describe("The power of the modifier (e.g., damage for Retaliator, heal amount for Regenerator).")
+}).describe("A special modifier that makes an enemy elite or unique.");
+
 const EnemySchema = z.object({
     id: z.string().describe("A unique ID for this enemy instance, e.g., 'goblin-1'"),
     name: z.string().describe('The name of the enemy.'),
@@ -20,6 +25,8 @@ const EnemySchema = z.object({
     maxHp: z.number().describe('The maximum health points of the enemy.'),
     imageUrl: z.string().describe('A public URL for an image of the enemy. Use a placeholder from picsum.photos.'),
     attack: z.number().describe('The base attack power of the enemy.'),
+    defense: z.number().optional().describe('The current defense points of the enemy, if any.'),
+    modifier: EnemyModifierSchema.optional(),
 });
 
 const LootSchema = z.object({
