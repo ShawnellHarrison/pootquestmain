@@ -23,7 +23,7 @@ const NpcInputSchema = z.object({
     })).describe('The choices the player has made so far.'),
     reputation: z.object({
       stealth: z.number(),
-      combat: znumber(),
+      combat: z.number(),
       diplomacy: z.number()
     }).describe('The player reputation scores.'),
     questFlags: z.record(z.string(), z.object({
