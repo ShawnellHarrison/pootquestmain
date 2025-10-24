@@ -7,7 +7,7 @@ import { useSearchParams } from 'next/navigation';
 import { Suspense } from "react";
 
 type Props = {
-  params: { class: string }; // 'class' is the characterId from the URL
+  params: { class: string };
 };
 
 function AdventurePageContent({ params }: Props) {

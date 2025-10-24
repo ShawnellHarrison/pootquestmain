@@ -13,7 +13,6 @@ import { Loader2, BookOpen, Forward, ChevronRight, HelpCircle, Briefcase, Scroll
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import Link from "next/link";
 import { Separator } from "@/components/ui/separator";
-import { CLASSES } from "@/lib/game-data";
 import {
   Tooltip,
   TooltipContent,
@@ -39,11 +38,11 @@ export function AdventureClient({ characterId, initialBattleState }: AdventureCl
     isLoading: isNarrativeLoading 
   } = useNarrative(characterId, character, characterClassData, initialBattleState);
   
-  const isLoading = isCharacterLoading || isNarrativeLoading || !character || !narrativeContext;
+  const isLoading = isCharacterLoading || isNarrativeLoading;
   const currentScenario = narrativeContext?.currentScenario;
 
   const renderContent = () => {
-    if (isLoading) {
+    if (isLoading && gameState === 'loading') {
       return (
         <div className="flex flex-col items-center justify-center text-center h-64">
           <Loader2 className="h-16 w-16 animate-spin text-primary mb-4" />
@@ -134,8 +133,9 @@ export function AdventureClient({ characterId, initialBattleState }: AdventureCl
     }
     
     return (
-      <div className="flex justify-center">
-         <Button asChild><Link href="/character-creation">Start New Adventure</Link></Button>
+      <div className="flex flex-col items-center justify-center text-center h-64">
+        <Loader2 className="h-16 w-16 animate-spin text-primary mb-4" />
+        <p className="text-xl text-muted-foreground font-headline">Loading your legend...</p>
       </div>
     );
   };

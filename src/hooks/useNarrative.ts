@@ -84,7 +84,7 @@ export function useNarrative(
         } else {
             setGameState("awaiting_continue");
         }
-    }, [narrativeContext, character]);
+    }, [character, narrativeContext]);
 
 
     const handleContinue = async () => {
