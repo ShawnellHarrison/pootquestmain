@@ -57,7 +57,7 @@ const generateNpcPrompt = ai.definePrompt({
   name: 'generateNpcPrompt',
   input: {schema: NpcInputSchema},
   output: {schema: NpcOutputSchema},
-  prompt: `You are the AI Dungeon Master for Poot Quest. Your job is to create a living, breathing NPC that feels like a real part of the world.
+  prompt: `You are the AI Dungeon Master for Poot Quest. Your job is to create a living, breathing NPC that feels like a real part of the world and offers quests that align with the player's reputation.
 
   **Player Context:**
   - Class: {{playerClass}}
@@ -71,7 +71,7 @@ const generateNpcPrompt = ai.definePrompt({
   Create an NPC that is a direct reflection of the world and the player's journey.
   1.  **Personality:** Give them a distinct personality that fits the {{location}}.
   2.  **Reactive Dialogue:** The NPC's dialogue **must** reflect the player's reputation and past actions. They should not be generic. If combat reputation is high, they might be fearful, aggressive, or admiring. If diplomacy is high, they might be trusting or manipulative. They might even mention a specific past deed.
-  3.  **Quest Generation:** The NPC should offer a simple, actionable quest that makes sense for the location, their personality, and the player's class. The quest MUST have a simple, snake_case 'questId'.
+  3.  **Reputation-Aligned Quest Generation:** The NPC should offer a simple, actionable quest that is **thematically appropriate for the player's highest reputation score**. A player known for combat should get combat quests. A sneaky player should get stealth quests. The quest MUST have a simple, snake_case 'questId'.
   4.  **Reputation-Gated Quests (Important!):** You MUST frequently create quests that require a minimum reputation score to accept. For example, a sneaky quest might require 50 stealth points. If you create such a quest, you MUST set the \`reputationCheck\` field with the required stat and threshold. This is a hard requirement for the player.
 
   **Example (for a player with high Combat reputation who recently cleared a goblin camp):**
@@ -81,7 +81,7 @@ const generateNpcPrompt = ai.definePrompt({
   - questId: "clear_rat_king"
   - Reward: "A Rusty Key"
 
-  **Example (Reputation-Gated Quest):**
+  **Example (Reputation-Gated Stealth Quest):**
   - Name: "Whispering Willow"
   - Dialogue: "I've heard whispers of your silent deeds. Not many can move through these shadows as you do."
   - Quest: "The Shadow Syndicate has a new ledger in their safehouse. I need a ghost to acquire it. This is not a job for a clumsy oaf."
@@ -103,4 +103,5 @@ const generateNpcFlow = ai.defineFlow(
     return output!;
   }
 );
+
     
