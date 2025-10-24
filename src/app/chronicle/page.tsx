@@ -14,7 +14,7 @@ import { formatDistanceToNow } from 'date-fns';
 import { generateRunSummary } from "@/ai/flows/generate-run-summary";
 import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
-import { getStorage, ref, uploadString } from 'firebase/storage';
+import { getStorage, ref, uploadString, getDownloadURL } from 'firebase/storage';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 const RunCard = ({ run, onExport, isExporting }: { run: any, onExport: (run: any) => void, isExporting: boolean }) => (
@@ -85,7 +85,7 @@ export default function ChroniclePage() {
             
             await uploadString(storageRef, summaryText, 'raw', { contentType: 'text/plain;charset=utf-8' });
 
-            const url = `https://storage.googleapis.com/${storage.app.options.storageBucket}/${storageRef.fullPath}`;
+            const url = await getDownloadURL(storageRef);
             setExportedUrl(url);
 
             toast({
@@ -164,3 +164,5 @@ export default function ChroniclePage() {
         </>
     );
 }
+
+    

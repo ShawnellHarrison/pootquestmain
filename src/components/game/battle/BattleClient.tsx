@@ -509,3 +509,5 @@ export function BattleClient({ characterId, encounter }: BattleClientProps) {
     </Card>
   );
 }
+
+    
