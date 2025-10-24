@@ -43,7 +43,7 @@ const NpcOutputSchema = z.object({
   reputationCheck: z.object({
       stat: z.enum(['stealth', 'combat', 'diplomacy']),
       threshold: z.number(),
-  }).optional().describe('If this quest requires a certain reputation, specify it here.'),
+  }).optional().describe('If this quest requires a certain reputation, specify it here. This is a HARD requirement.'),
   reward: z.string().optional().describe('The reward for completing the quest, if any.')
 });
 
@@ -71,8 +71,8 @@ const generateNpcPrompt = ai.definePrompt({
   Create an NPC that is a direct reflection of the world and the player's journey.
   1.  **Personality:** Give them a distinct personality that fits the {{location}}.
   2.  **Reactive Dialogue:** The NPC's dialogue **must** reflect the player's reputation and past actions. They should not be generic. If combat reputation is high, they might be fearful, aggressive, or admiring. If diplomacy is high, they might be trusting or manipulative. They might even mention a specific past deed.
-  3.  **Quest Generation:** The NPC should offer a simple, actionable quest that makes sense for the location, their personality, and the player's class. The quest MUST have a simple, snake_case 'questId'. The quest should be a multi-step quest.
-  4.  **Reputation-Gated Quests:** Occasionally, create a quest that requires a minimum reputation score to accept. For example, a sneaky quest might require 50 stealth points. If you create such a quest, set the \`reputationCheck\` field.
+  3.  **Quest Generation:** The NPC should offer a simple, actionable quest that makes sense for the location, their personality, and the player's class. The quest MUST have a simple, snake_case 'questId'.
+  4.  **Reputation-Gated Quests (Important!):** You MUST frequently create quests that require a minimum reputation score to accept. For example, a sneaky quest might require 50 stealth points. If you create such a quest, you MUST set the \`reputationCheck\` field with the required stat and threshold. This is a hard requirement for the player.
 
   **Example (for a player with high Combat reputation who recently cleared a goblin camp):**
   - Name: "Grizelda the Grim"
@@ -103,5 +103,4 @@ const generateNpcFlow = ai.defineFlow(
     return output!;
   }
 );
-
     

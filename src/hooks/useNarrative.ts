@@ -208,16 +208,24 @@ export function useNarrative(
                 
                 if (npcResult.quest && npcResult.questId) {
                     const repCheck = npcResult.reputationCheck;
-                    const canAccept = !repCheck || 
-                        (repCheck.stat === 'stealth' && newNarrativeContext.reputationStealth >= repCheck.threshold) ||
-                        (repCheck.stat === 'combat' && newNarrativeContext.reputationCombat >= repCheck.threshold) ||
-                        (repCheck.stat === 'diplomacy' && newNarrativeContext.reputationDiplomacy >= repCheck.threshold);
+                    let canAccept = !repCheck;
+
+                    if (repCheck) {
+                        const currentRep = {
+                            stealth: newNarrativeContext.reputationStealth,
+                            combat: newNarrativeContext.reputationCombat,
+                            diplomacy: newNarrativeContext.reputationDiplomacy,
+                        };
+                        if (currentRep[repCheck.stat] >= repCheck.threshold) {
+                            canAccept = true;
+                        }
+                    }
     
                     if (canAccept) {
                         newNarrativeContext.questFlags[npcResult.questId] = { status: "started", currentStep: 1 };
                         npcNarration += `\n\n**New Quest:** ${npcResult.quest}`;
                     } else {
-                        npcNarration += `\n\n*You feel you are not yet reputable enough to accept this task.*`;
+                        npcNarration += `\n\n*You feel you are not yet reputable enough for this task. (${repCheck.stat} ${repCheck.threshold} required)*`;
                     }
                 }
                 newNarrativeContext.lastNarration = npcNarration;
