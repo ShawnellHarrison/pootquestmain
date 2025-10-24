@@ -4,14 +4,14 @@ import { AdventureClient } from "@/components/game/AdventureClient";
 import { GameContainer } from "@/components/game/GameContainer";
 import { Header } from "@/components/game/Header";
 import { useSearchParams } from 'next/navigation';
-import { Suspense } from "react";
+import { Suspense, use } from "react";
 
 type Props = {
-  params: { class: string };
+  params: Promise<{ class: string }>;
 };
 
 function AdventurePageContent({ params }: Props) {
-  const characterId = params.class;
+  const { class: characterId } = use(params);
   const searchParams = useSearchParams();
   const battleStateString = searchParams.get('battleState');
   const initialBattleState = battleStateString ? JSON.parse(battleStateString) : null;
