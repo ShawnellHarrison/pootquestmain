@@ -9,7 +9,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Loader2, BookOpen, Forward, ChevronRight, HelpCircle, Briefcase, Scroll } from "lucide-react";
+import { Loader2, BookOpen, Forward, ChevronRight, Briefcase, Scroll, Shield, Swords, Ghost } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import Link from "next/link";
 import { Separator } from "@/components/ui/separator";
@@ -147,21 +147,31 @@ export function AdventureClient({ characterId, initialBattleState }: AdventureCl
         <CardTitle className="font-headline text-3xl text-glow">
           {characterClassData?.name || "The Adventure"}
         </CardTitle>
-        <div className="flex justify-center items-center gap-4 text-muted-foreground">
+        <div className="flex justify-center items-center gap-6 text-muted-foreground">
             <span>{narrativeContext?.location || "A mysterious place..."}</span>
             <Separator orientation="vertical" className="h-4" />
-            <TooltipProvider>
-                <Tooltip>
-                    <TooltipTrigger className="flex items-center gap-1">
-                        <HelpCircle className="h-4 w-4" /> Reputations
-                    </TooltipTrigger>
-                    <TooltipContent>
-                        <p>Stealth: {narrativeContext?.reputationStealth || 0}</p>
-                        <p>Combat: {narrativeContext?.reputationCombat || 0}</p>
-                        <p>Diplomacy: {narrativeContext?.reputationDiplomacy || 0}</p>
-                    </TooltipContent>
-                </Tooltip>
-            </TooltipProvider>
+             <div className="flex items-center gap-4">
+                <TooltipProvider>
+                    <Tooltip>
+                        <TooltipTrigger className="flex items-center gap-1">
+                            <Ghost className="h-4 w-4 text-gray-400" /> {narrativeContext?.reputationStealth || 0}
+                        </TooltipTrigger>
+                        <TooltipContent><p>Stealth Reputation</p></TooltipContent>
+                    </Tooltip>
+                    <Tooltip>
+                        <TooltipTrigger className="flex items-center gap-1">
+                            <Swords className="h-4 w-4 text-red-400" /> {narrativeContext?.reputationCombat || 0}
+                        </TooltipTrigger>
+                        <TooltipContent><p>Combat Reputation</p></TooltipContent>
+                    </Tooltip>
+                    <Tooltip>
+                        <TooltipTrigger className="flex items-center gap-1">
+                            <Shield className="h-4 w-4 text-blue-400" /> {narrativeContext?.reputationDiplomacy || 0}
+                        </TooltipTrigger>
+                        <TooltipContent><p>Diplomacy Reputation</p></TooltipContent>
+                    </Tooltip>
+                </TooltipProvider>
+            </div>
         </div>
       </CardHeader>
       <Separator />
