@@ -23,7 +23,7 @@ const NpcInputSchema = z.object({
     })).describe('The choices the player has made so far.'),
     reputation: z.object({
       stealth: z.number(),
-      combat: z.number(),
+      combat: znumber(),
       diplomacy: z.number()
     }).describe('The player reputation scores.'),
     questFlags: z.record(z.string(), z.object({
@@ -75,19 +75,23 @@ const generateNpcPrompt = ai.definePrompt({
   4.  **Reputation-Gated Quests (Important!):** You MUST frequently create quests that require a minimum reputation score to accept. For example, a sneaky quest might require 50 stealth points. If you create such a quest, you MUST set the \`reputationCheck\` field with the required stat and threshold. This is a hard requirement for the player.
 
   **Example (for a player with high Combat reputation who recently cleared a goblin camp):**
-  - Name: "Grizelda the Grim"
-  - Dialogue: "Easy there, killer. I saw what you did to Gassy's goons at the camp. I want no trouble. State your business and be on your way."
-  - Quest: "If you're so tough, maybe you can clear out the Rat King deeper in. There's a rusty key in it for you."
-  - questId: "clear_rat_king"
-  - Reward: "A Rusty Key"
+  {
+    "name": "Grizelda the Grim",
+    "dialogue": "Easy there, killer. I saw what you did to Gassy's goons at the camp. I want no trouble. State your business and be on your way.",
+    "quest": "If you're so tough, maybe you can clear out the Rat King deeper in. There's a rusty key in it for you.",
+    "questId": "clear_rat_king",
+    "Reward": "A Rusty Key"
+  }
 
   **Example (Reputation-Gated Stealth Quest):**
-  - Name: "Whispering Willow"
-  - Dialogue: "I've heard whispers of your silent deeds. Not many can move through these shadows as you do."
-  - Quest: "The Shadow Syndicate has a new ledger in their safehouse. I need a ghost to acquire it. This is not a job for a clumsy oaf."
-  - questId: "shadow_ledger_heist"
-  - reputationCheck: { "stat": "stealth", "threshold": 50 }
-  - Reward: "A set of masterwork lockpicks"
+  {
+    "name": "Whispering Willow",
+    "dialogue": "I've heard whispers of your silent deeds. Not many can move through these shadows as you do.",
+    "quest": "The Shadow Syndicate has a new ledger in their safehouse. I need a ghost to acquire it. This is not a job for a clumsy oaf.",
+    "questId": "shadow_ledger_heist",
+    "reputationCheck": { "stat": "stealth", "threshold": 50 },
+    "Reward": "A set of masterwork lockpicks"
+  }
 
   Return the NPC in the specified JSON format. If you offer a quest, you MUST provide a questId.`
 });
@@ -103,5 +107,3 @@ const generateNpcFlow = ai.defineFlow(
     return output!;
   }
 );
-
-    
