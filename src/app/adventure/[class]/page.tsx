@@ -10,7 +10,8 @@ type Props = {
   params: { class: string }; // 'class' is the characterId from the URL
 };
 
-function AdventurePageContent({ params: { class: characterId } }: Props) {
+function AdventurePageContent({ params }: Props) {
+  const characterId = params.class;
   const searchParams = useSearchParams();
   const battleStateString = searchParams.get('battleState');
   const initialBattleState = battleStateString ? JSON.parse(battleStateString) : null;
@@ -28,10 +29,10 @@ function AdventurePageContent({ params: { class: characterId } }: Props) {
 }
 
 
-export default function AdventurePage(props: Props) {
+export default function AdventurePage({ params }: Props) {
   return (
     <Suspense fallback={<div>Loading...</div>}>
-      <AdventurePageContent {...props} />
+      <AdventurePageContent params={params} />
     </Suspense>
   )
 }
