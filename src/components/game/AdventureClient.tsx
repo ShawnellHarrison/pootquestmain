@@ -287,7 +287,7 @@ export function AdventureClient({ characterId, initialBattleState }: AdventureCl
                 }
             }
             newNarrativeContext.lastNarration = npcNarration;
-            newNarrativeContext.triggerNextScenario = false; // We want to show the NPC text, then let user continue
+            newNarrativeContext.triggerNextScenario = true; 
 
         } else {
           newNarrativeContext.triggerNextScenario = true;
@@ -436,3 +436,5 @@ export function AdventureClient({ characterId, initialBattleState }: AdventureCl
     </Card>
   );
 }
+
+    
