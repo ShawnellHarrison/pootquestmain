@@ -1,0 +1,6 @@
+{
+  "version": 3,
+  "sources": [],
+  "sections": [
+    {"offset": {"line": 7, "column": 0}, "map": {"version":3,"sources":["file:///home/user/studio/src/components/ui/StatBar.tsx"],"sourcesContent":["\"use client\";\n\nimport { cn } from \"@/lib/utils\";\n\ninterface StatBarProps {\n  value: number; // 0-100\n  className?: string;\n}\n\nconst StatBar = ({ value, className }: StatBarProps) => {\n  const filledSegments = Math.round(value / 10);\n  const emptySegments = 10 - filledSegments;\n\n  return (\n    <div className={cn(\"flex font-code text-sm\", className)}>\n      <span className=\"text-primary\">\n        {\"█\".repeat(filledSegments)}\n      </span>\n      <span className=\"text-primary/30\">\n        {\"░\".repeat(emptySegments)}\n      </span>\n      <span className=\"ml-2 w-10 text-left text-foreground\">{value}%</span>\n    </div>\n  );\n};\n\nexport default StatBar;\n"],"names":[],"mappings":";;;;AAEA;AAFA;;;AASA,MAAM,UAAU,CAAC,EAAE,KAAK,EAAE,SAAS,EAAgB;IACjD,MAAM,iBAAiB,KAAK,KAAK,CAAC,QAAQ;IAC1C,MAAM,gBAAgB,KAAK;IAE3B,qBACE,6LAAC;QAAI,WAAW,CAAA,GAAA,sHAAA,CAAA,KAAE,AAAD,EAAE,0BAA0B;;0BAC3C,6LAAC;gBAAK,WAAU;0BACb,IAAI,MAAM,CAAC;;;;;;0BAEd,6LAAC;gBAAK,WAAU;0BACb,IAAI,MAAM,CAAC;;;;;;0BAEd,6LAAC;gBAAK,WAAU;;oBAAuC;oBAAM;;;;;;;;;;;;;AAGnE;KAfM;uCAiBS","debugId":null}}]
+}
