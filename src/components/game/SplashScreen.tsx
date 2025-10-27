@@ -17,7 +17,7 @@ const Bubble = ({ id }: { id: number }) => {
   const [style, setStyle] = React.useState({});
 
   useEffect(() => {
-    // This code can cause hydration errors if not handled carefully client-side.
+    // This code runs only on the client, after the initial render.
     const size = 2 + Math.random() * 4;
     const left = Math.random() * 100;
     const duration = 5 + Math.random() * 10;
