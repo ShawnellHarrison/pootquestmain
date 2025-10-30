@@ -1296,7 +1296,7 @@ function DeckManagerSheet({ characterId }) {
     (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useEffect"])(()=>{
         if (!characterClass) return;
         const allCardsMap = new Map();
-        // Add starter cards for the character's class
+        // 1. Add starter cards for the character's class
         characterClass.starterDeck.forEach((starter)=>{
             const cardDetails = Object.values(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$game$2d$data$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["CARD_DATA"]).find((c)=>c.name === starter.name);
             if (cardDetails) {
@@ -1307,39 +1307,37 @@ function DeckManagerSheet({ characterId }) {
                 });
             }
         });
-        // Add cards from inventory (which are newly generated)
-        if (inventoryData) {
-            inventoryData.forEach((item)=>{
-                // Ensure item is a card and not already in the map from starter deck
-                if (item.type === 'card' || Object.values(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$game$2d$data$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["CARD_DATA"]).some((c)=>c.name === item.name)) {
-                    allCardsMap.set(item.name, {
-                        id: item.id || item.name,
-                        name: item.name,
-                        description: item.description,
-                        manaCost: item.manaCost,
-                        attack: item.attack,
-                        defense: item.defense,
-                        healing: item.healing,
+        // 2. Add cards from inventory (which are newly generated or transmuted)
+        inventoryData?.forEach((item)=>{
+            if (item.type === 'card') {
+                allCardsMap.set(item.name, {
+                    id: item.id || item.name,
+                    name: item.name,
+                    description: item.description,
+                    manaCost: item.manaCost,
+                    attack: item.attack,
+                    defense: item.defense,
+                    healing: item.healing,
+                    class: characterClass.name
+                });
+            }
+        });
+        // 3. Add cards from the current deck if they aren't already in the map,
+        // this covers cards that were in the deck but not starter or inventory.
+        deckData?.cards?.forEach((cardName)=>{
+            if (!allCardsMap.has(cardName)) {
+                // Find it in the master card list or assume it's a generated one
+                // This case is less likely with the new inventory logic but acts as a fallback
+                const cardDetails = Object.values(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$game$2d$data$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["CARD_DATA"]).find((c)=>c.name === cardName);
+                if (cardDetails) {
+                    allCardsMap.set(cardName, {
+                        ...cardDetails,
+                        id: cardName,
                         class: characterClass.name
                     });
                 }
-            });
-        }
-        // Add cards from the current deck if they aren't already in the map
-        if (deckData?.cards) {
-            deckData.cards.forEach((cardName)=>{
-                if (!allCardsMap.has(cardName)) {
-                    const cardDetails = Object.values(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$game$2d$data$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["CARD_DATA"]).find((c)=>c.name === cardName);
-                    if (cardDetails) {
-                        allCardsMap.set(cardName, {
-                            ...cardDetails,
-                            id: cardName,
-                            class: characterClass.name
-                        });
-                    }
-                }
-            });
-        }
+            }
+        });
         setCollectionState(Array.from(allCardsMap.values()));
     }, [
         inventoryData,
@@ -1349,11 +1347,21 @@ function DeckManagerSheet({ characterId }) {
     const collectionPool = collectionState.filter((card)=>!deck.includes(card.name));
     const handleDragEnd = (event)=>{
         const { active, over } = event;
-        if (active.id === over?.id) return;
+        if (!active || !over || active.id === over.id) return;
         const cardName = active.id;
         const inDeck = deck.includes(cardName);
-        if (over) {
-            if (over.id === 'deck-droppable' && !inDeck) {
+        const targetIsDeck = over.id === 'deck-droppable' || deck.includes(over.id);
+        const targetIsCollection = over.id === 'collection-droppable' || collectionPool.some((c)=>c.name === over.id);
+        if (targetIsDeck) {
+            if (inDeck) {
+                // Reordering within the deck
+                const oldIndex = deck.indexOf(active.id);
+                const newIndex = deck.indexOf(over.id);
+                if (oldIndex !== -1 && newIndex !== -1) {
+                    setDeck((items)=>(0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$dnd$2d$kit$2f$sortable$2f$dist$2f$sortable$2e$esm$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["arrayMove"])(items, oldIndex, newIndex));
+                }
+            } else {
+                // Moving from collection to deck
                 if (deck.length < DECK_SIZE) {
                     setDeck((prev)=>[
                             ...prev,
@@ -1366,15 +1374,11 @@ function DeckManagerSheet({ characterId }) {
                         variant: "destructive"
                     });
                 }
-            } else if (over.id === 'collection-droppable' && inDeck) {
+            }
+        } else if (targetIsCollection) {
+            if (inDeck) {
+                // Moving from deck to collection
                 setDeck((prev)=>prev.filter((c)=>c !== cardName));
-            } else if (inDeck && over.id && deck.includes(over.id)) {
-                // Reordering within the deck
-                setDeck((items)=>{
-                    const oldIndex = items.indexOf(active.id);
-                    const newIndex = items.indexOf(over.id);
-                    return (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$dnd$2d$kit$2f$sortable$2f$dist$2f$sortable$2e$esm$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["arrayMove"])(items, oldIndex, newIndex);
-                });
             }
         }
     };
@@ -1418,12 +1422,12 @@ function DeckManagerSheet({ characterId }) {
                 className: "h-16 w-16 animate-spin text-primary"
             }, void 0, false, {
                 fileName: "[project]/src/components/game/sheets/DeckManagerSheet.tsx",
-                lineNumber: 202,
+                lineNumber: 208,
                 columnNumber: 17
             }, this)
         }, void 0, false, {
             fileName: "[project]/src/components/game/sheets/DeckManagerSheet.tsx",
-            lineNumber: 201,
+            lineNumber: 207,
             columnNumber: 13
         }, this);
     }
@@ -1445,23 +1449,23 @@ function DeckManagerSheet({ characterId }) {
                                     className: "animate-spin"
                                 }, void 0, false, {
                                     fileName: "[project]/src/components/game/sheets/DeckManagerSheet.tsx",
-                                    lineNumber: 213,
+                                    lineNumber: 219,
                                     columnNumber: 41
                                 }, this) : /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$save$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__$3c$export__default__as__Save$3e$__["Save"], {}, void 0, false, {
                                     fileName: "[project]/src/components/game/sheets/DeckManagerSheet.tsx",
-                                    lineNumber: 213,
+                                    lineNumber: 219,
                                     columnNumber: 80
                                 }, this),
                                 " Save Deck"
                             ]
                         }, void 0, true, {
                             fileName: "[project]/src/components/game/sheets/DeckManagerSheet.tsx",
-                            lineNumber: 212,
+                            lineNumber: 218,
                             columnNumber: 25
                         }, this)
                     }, void 0, false, {
                         fileName: "[project]/src/components/game/sheets/DeckManagerSheet.tsx",
-                        lineNumber: 211,
+                        lineNumber: 217,
                         columnNumber: 21
                     }, this),
                     deck.length !== DECK_SIZE && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$alert$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Alert"], {
@@ -1471,14 +1475,14 @@ function DeckManagerSheet({ characterId }) {
                                 className: "h-4 w-4"
                             }, void 0, false, {
                                 fileName: "[project]/src/components/game/sheets/DeckManagerSheet.tsx",
-                                lineNumber: 219,
+                                lineNumber: 225,
                                 columnNumber: 29
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$alert$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["AlertTitle"], {
                                 children: "Deck Invalid"
                             }, void 0, false, {
                                 fileName: "[project]/src/components/game/sheets/DeckManagerSheet.tsx",
-                                lineNumber: 220,
+                                lineNumber: 226,
                                 columnNumber: 29
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$alert$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["AlertDescription"], {
@@ -1491,13 +1495,13 @@ function DeckManagerSheet({ characterId }) {
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/src/components/game/sheets/DeckManagerSheet.tsx",
-                                lineNumber: 221,
+                                lineNumber: 227,
                                 columnNumber: 29
                             }, this)
                         ]
                     }, void 0, true, {
                         fileName: "[project]/src/components/game/sheets/DeckManagerSheet.tsx",
-                        lineNumber: 218,
+                        lineNumber: 224,
                         columnNumber: 25
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$card$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Card"], {
@@ -1516,20 +1520,20 @@ function DeckManagerSheet({ characterId }) {
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/src/components/game/sheets/DeckManagerSheet.tsx",
-                                        lineNumber: 229,
+                                        lineNumber: 235,
                                         columnNumber: 29
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$card$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["CardDescription"], {
                                         children: "This is your active deck for battles. Drag and drop cards to customize it."
                                     }, void 0, false, {
                                         fileName: "[project]/src/components/game/sheets/DeckManagerSheet.tsx",
-                                        lineNumber: 230,
+                                        lineNumber: 236,
                                         columnNumber: 29
                                     }, this)
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/src/components/game/sheets/DeckManagerSheet.tsx",
-                                lineNumber: 228,
+                                lineNumber: 234,
                                 columnNumber: 25
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$card$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["CardContent"], {
@@ -1544,24 +1548,24 @@ function DeckManagerSheet({ characterId }) {
                                             inDeck: true
                                         }, cardName, false, {
                                             fileName: "[project]/src/components/game/sheets/DeckManagerSheet.tsx",
-                                            lineNumber: 236,
+                                            lineNumber: 242,
                                             columnNumber: 55
                                         }, this) : null;
                                     })
                                 }, void 0, false, {
                                     fileName: "[project]/src/components/game/sheets/DeckManagerSheet.tsx",
-                                    lineNumber: 233,
+                                    lineNumber: 239,
                                     columnNumber: 29
                                 }, this)
                             }, void 0, false, {
                                 fileName: "[project]/src/components/game/sheets/DeckManagerSheet.tsx",
-                                lineNumber: 232,
+                                lineNumber: 238,
                                 columnNumber: 25
                             }, this)
                         ]
                     }, void 0, true, {
                         fileName: "[project]/src/components/game/sheets/DeckManagerSheet.tsx",
-                        lineNumber: 227,
+                        lineNumber: 233,
                         columnNumber: 21
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$card$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Card"], {
@@ -1574,20 +1578,20 @@ function DeckManagerSheet({ characterId }) {
                                         children: "Your Collection"
                                     }, void 0, false, {
                                         fileName: "[project]/src/components/game/sheets/DeckManagerSheet.tsx",
-                                        lineNumber: 244,
+                                        lineNumber: 250,
                                         columnNumber: 29
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$card$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["CardDescription"], {
                                         children: "These are all the cards you own. Drag cards into your deck above."
                                     }, void 0, false, {
                                         fileName: "[project]/src/components/game/sheets/DeckManagerSheet.tsx",
-                                        lineNumber: 245,
+                                        lineNumber: 251,
                                         columnNumber: 29
                                     }, this)
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/src/components/game/sheets/DeckManagerSheet.tsx",
-                                lineNumber: 243,
+                                lineNumber: 249,
                                 columnNumber: 25
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$card$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["CardContent"], {
@@ -1600,39 +1604,39 @@ function DeckManagerSheet({ characterId }) {
                                             inDeck: false
                                         }, card.id, false, {
                                             fileName: "[project]/src/components/game/sheets/DeckManagerSheet.tsx",
-                                            lineNumber: 250,
+                                            lineNumber: 256,
                                             columnNumber: 33
                                         }, this))
                                 }, void 0, false, {
                                     fileName: "[project]/src/components/game/sheets/DeckManagerSheet.tsx",
-                                    lineNumber: 248,
+                                    lineNumber: 254,
                                     columnNumber: 29
                                 }, this)
                             }, void 0, false, {
                                 fileName: "[project]/src/components/game/sheets/DeckManagerSheet.tsx",
-                                lineNumber: 247,
+                                lineNumber: 253,
                                 columnNumber: 25
                             }, this)
                         ]
                     }, void 0, true, {
                         fileName: "[project]/src/components/game/sheets/DeckManagerSheet.tsx",
-                        lineNumber: 242,
+                        lineNumber: 248,
                         columnNumber: 21
                     }, this)
                 ]
             }, void 0, true, {
                 fileName: "[project]/src/components/game/sheets/DeckManagerSheet.tsx",
-                lineNumber: 210,
+                lineNumber: 216,
                 columnNumber: 17
             }, this)
         }, void 0, false, {
             fileName: "[project]/src/components/game/sheets/DeckManagerSheet.tsx",
-            lineNumber: 209,
+            lineNumber: 215,
             columnNumber: 13
         }, this)
     }, void 0, false, {
         fileName: "[project]/src/components/game/sheets/DeckManagerSheet.tsx",
-        lineNumber: 208,
+        lineNumber: 214,
         columnNumber: 9
     }, this);
 }
@@ -1897,10 +1901,12 @@ function InventorySheet({ characterId }) {
         }
         try {
             const inventoryCardNames = inventoryData.filter((item)=>item.type === 'card').map((item)=>item.name);
+            const starterCardNames = characterClass.starterDeck.map((c)=>c.name);
             const allOwnedCards = Array.from(new Set([
                 ...deckData.cards,
                 ...Object.keys(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$game$2d$data$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["CARD_DATA"]),
-                ...inventoryCardNames
+                ...inventoryCardNames,
+                ...starterCardNames
             ]));
             const newCard = await (0, __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$ai$2f$flows$2f$data$3a$5f8a07__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__$3c$text$2f$javascript$3e$__["transmuteItemToCard"])({
                 playerClass: characterClass.name,
@@ -1914,8 +1920,8 @@ function InventorySheet({ characterId }) {
             const itemToDeleteRef = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$firebase$2f$firestore$2f$dist$2f$index$2e$node$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["doc"])(inventoryRef, itemToTransmute.id);
             batch.delete(itemToDeleteRef);
             // Add the new card to the inventory (it is now an item of type 'card')
-            const newCardItemRef = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$firebase$2f$firestore$2f$dist$2f$index$2e$node$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["collection"])(firestore, `users/${user.uid}/characters/${characterId}/inventory`);
-            batch.set((0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$firebase$2f$firestore$2f$dist$2f$index$2e$node$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["doc"])(newCardItemRef), {
+            const newCardItemRef = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$firebase$2f$firestore$2f$dist$2f$index$2e$node$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["doc"])((0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$firebase$2f$firestore$2f$dist$2f$index$2e$node$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["collection"])(firestore, `users/${user.uid}/characters/${characterId}/inventory`));
+            batch.set(newCardItemRef, {
                 ...newCard,
                 type: 'card'
             });
@@ -1945,16 +1951,16 @@ function InventorySheet({ characterId }) {
                 className: "h-16 w-16 animate-spin text-primary"
             }, void 0, false, {
                 fileName: "[project]/src/components/game/sheets/InventorySheet.tsx",
-                lineNumber: 130,
+                lineNumber: 131,
                 columnNumber: 17
             }, this)
         }, void 0, false, {
             fileName: "[project]/src/components/game/sheets/InventorySheet.tsx",
-            lineNumber: 129,
+            lineNumber: 130,
             columnNumber: 13
         }, this);
     }
-    const junkItems = inventoryData?.filter((item)=>item.type !== 'card') || [];
+    const junkItems = inventoryData?.filter((item)=>item.type === 'junk') || [];
     const cardItems = inventoryData?.filter((item)=>item.type === 'card') || [];
     return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
         className: "py-4",
@@ -1969,7 +1975,7 @@ function InventorySheet({ characterId }) {
                             className: "h-4 w-4 text-green-400"
                         }, void 0, false, {
                             fileName: "[project]/src/components/game/sheets/InventorySheet.tsx",
-                            lineNumber: 143,
+                            lineNumber: 144,
                             columnNumber: 25
                         }, this),
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$alert$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["AlertTitle"], {
@@ -1977,7 +1983,7 @@ function InventorySheet({ characterId }) {
                             children: "New Card Created!"
                         }, void 0, false, {
                             fileName: "[project]/src/components/game/sheets/InventorySheet.tsx",
-                            lineNumber: 144,
+                            lineNumber: 145,
                             columnNumber: 25
                         }, this),
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$alert$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["AlertDescription"], {
@@ -1991,26 +1997,26 @@ function InventorySheet({ characterId }) {
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/src/components/game/sheets/InventorySheet.tsx",
-                                    lineNumber: 146,
+                                    lineNumber: 147,
                                     columnNumber: 28
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(NewCard, {
                                     card: newlyCreatedCard
                                 }, void 0, false, {
                                     fileName: "[project]/src/components/game/sheets/InventorySheet.tsx",
-                                    lineNumber: 147,
+                                    lineNumber: 148,
                                     columnNumber: 28
                                 }, this)
                             ]
                         }, void 0, true, {
                             fileName: "[project]/src/components/game/sheets/InventorySheet.tsx",
-                            lineNumber: 145,
+                            lineNumber: 146,
                             columnNumber: 25
                         }, this)
                     ]
                 }, void 0, true, {
                     fileName: "[project]/src/components/game/sheets/InventorySheet.tsx",
-                    lineNumber: 142,
+                    lineNumber: 143,
                     columnNumber: 21
                 }, this),
                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$card$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Card"], {
@@ -2021,20 +2027,20 @@ function InventorySheet({ characterId }) {
                                     children: "Your Junk"
                                 }, void 0, false, {
                                     fileName: "[project]/src/components/game/sheets/InventorySheet.tsx",
-                                    lineNumber: 154,
+                                    lineNumber: 155,
                                     columnNumber: 25
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$card$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["CardDescription"], {
                                     children: "These are the useless but potentially magical items you've collected. Try transmuting them!"
                                 }, void 0, false, {
                                     fileName: "[project]/src/components/game/sheets/InventorySheet.tsx",
-                                    lineNumber: 155,
+                                    lineNumber: 156,
                                     columnNumber: 25
                                 }, this)
                             ]
                         }, void 0, true, {
                             fileName: "[project]/src/components/game/sheets/InventorySheet.tsx",
-                            lineNumber: 153,
+                            lineNumber: 154,
                             columnNumber: 21
                         }, this),
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$card$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["CardContent"], {
@@ -2045,25 +2051,25 @@ function InventorySheet({ characterId }) {
                                     isTransmuting: isTransmuting === item.id
                                 }, item.id, false, {
                                     fileName: "[project]/src/components/game/sheets/InventorySheet.tsx",
-                                    lineNumber: 160,
+                                    lineNumber: 161,
                                     columnNumber: 32
                                 }, this)) : /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
                                 className: "text-muted-foreground p-4",
                                 children: "You have no junk to transmute. Go find some!"
                             }, void 0, false, {
                                 fileName: "[project]/src/components/game/sheets/InventorySheet.tsx",
-                                lineNumber: 168,
+                                lineNumber: 169,
                                 columnNumber: 28
                             }, this)
                         }, void 0, false, {
                             fileName: "[project]/src/components/game/sheets/InventorySheet.tsx",
-                            lineNumber: 157,
+                            lineNumber: 158,
                             columnNumber: 21
                         }, this)
                     ]
                 }, void 0, true, {
                     fileName: "[project]/src/components/game/sheets/InventorySheet.tsx",
-                    lineNumber: 152,
+                    lineNumber: 153,
                     columnNumber: 17
                 }, this),
                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$card$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Card"], {
@@ -2074,20 +2080,20 @@ function InventorySheet({ characterId }) {
                                     children: "Your Discovered Cards"
                                 }, void 0, false, {
                                     fileName: "[project]/src/components/game/sheets/InventorySheet.tsx",
-                                    lineNumber: 175,
+                                    lineNumber: 176,
                                     columnNumber: 25
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$card$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["CardDescription"], {
                                     children: "These are cards you have transmuted. Manage them in your deck."
                                 }, void 0, false, {
                                     fileName: "[project]/src/components/game/sheets/InventorySheet.tsx",
-                                    lineNumber: 176,
+                                    lineNumber: 177,
                                     columnNumber: 25
                                 }, this)
                             ]
                         }, void 0, true, {
                             fileName: "[project]/src/components/game/sheets/InventorySheet.tsx",
-                            lineNumber: 174,
+                            lineNumber: 175,
                             columnNumber: 21
                         }, this),
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$card$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["CardContent"], {
@@ -2096,36 +2102,36 @@ function InventorySheet({ characterId }) {
                                     card: item
                                 }, item.id, false, {
                                     fileName: "[project]/src/components/game/sheets/InventorySheet.tsx",
-                                    lineNumber: 181,
+                                    lineNumber: 182,
                                     columnNumber: 32
                                 }, this)) : /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
                                 className: "text-muted-foreground p-4",
                                 children: "You haven't transmuted any cards yet."
                             }, void 0, false, {
                                 fileName: "[project]/src/components/game/sheets/InventorySheet.tsx",
-                                lineNumber: 187,
+                                lineNumber: 188,
                                 columnNumber: 28
                             }, this)
                         }, void 0, false, {
                             fileName: "[project]/src/components/game/sheets/InventorySheet.tsx",
-                            lineNumber: 178,
+                            lineNumber: 179,
                             columnNumber: 21
                         }, this)
                     ]
                 }, void 0, true, {
                     fileName: "[project]/src/components/game/sheets/InventorySheet.tsx",
-                    lineNumber: 173,
+                    lineNumber: 174,
                     columnNumber: 18
                 }, this)
             ]
         }, void 0, true, {
             fileName: "[project]/src/components/game/sheets/InventorySheet.tsx",
-            lineNumber: 140,
+            lineNumber: 141,
             columnNumber: 13
         }, this)
     }, void 0, false, {
         fileName: "[project]/src/components/game/sheets/InventorySheet.tsx",
-        lineNumber: 139,
+        lineNumber: 140,
         columnNumber: 9
     }, this);
 }
