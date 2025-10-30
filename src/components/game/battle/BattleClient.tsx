@@ -137,9 +137,31 @@ export function BattleClient({ characterId, needsEncounter }: BattleClientProps)
                 const cardDetails = Object.values(CARD_DATA).find(c => c.name === starter.name);
                 if (cardDetails) allCardsMap.set(starter.name, { ...cardDetails, id: starter.name, class: charClass.name });
             });
-            inventoryData.forEach((item: any) => {
-                if ((item.type === 'card' || Object.values(CARD_DATA).some(c => c.name === item.name))) {
-                    allCardsMap.set(item.name, { id: item.id || item.name, ...item } as CardData);
+            inventoryData?.forEach((item: any) => {
+                // Ensure item has a name and is a card before adding
+                if (item.name && item.type === 'card') {
+                    allCardsMap.set(item.name, {
+                        id: item.id || item.name,
+                        name: item.name,
+                        description: item.description,
+                        manaCost: item.manaCost,
+                        attack: item.attack,
+                        defense: item.defense,
+                        healing: item.healing,
+                        class: charClass.name,
+                    } as CardData);
+                }
+            });
+            deckData?.cards?.forEach((cardName: string) => {
+                if (!allCardsMap.has(cardName)) {
+                    const cardDetails = Object.values(CARD_DATA).find(c => c.name === cardName);
+                    if (cardDetails) {
+                        allCardsMap.set(cardName, {
+                            ...cardDetails,
+                            id: cardName,
+                            class: charClass.name,
+                        });
+                    }
                 }
             });
             
