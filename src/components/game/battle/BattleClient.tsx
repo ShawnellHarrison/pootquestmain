@@ -44,6 +44,7 @@ type BattleState = {
     enemiesKilled: number;
     xpGained: number;
     introText: string;
+    loot: EncounterOutput['loot'] | null;
 };
 
 type CharacterData = {
@@ -138,7 +139,6 @@ export function BattleClient({ characterId, needsEncounter }: BattleClientProps)
                 if (cardDetails) allCardsMap.set(starter.name, { ...cardDetails, id: starter.name, class: charClass.name });
             });
             inventoryData?.forEach((item: any) => {
-                // Ensure item has a name and is a card before adding
                 if (item.name && item.type === 'card') {
                     allCardsMap.set(item.name, {
                         id: item.id || item.name,
@@ -189,6 +189,7 @@ export function BattleClient({ characterId, needsEncounter }: BattleClientProps)
                 enemiesKilled: 0,
                 xpGained: 0,
                 introText: encounter.introText,
+                loot: encounter.loot
             });
 
         } catch (e: any) {
@@ -266,7 +267,6 @@ export function BattleClient({ characterId, needsEncounter }: BattleClientProps)
         let enemiesKilledThisTurn = 0;
         let xpGainedThisTurn = 0;
         let playerDamageTaken = 0;
-        let loot: any = null;
         
         const newEnemies = prev.enemies.map(e => {
             if (e.id === enemyId) {
@@ -296,7 +296,7 @@ export function BattleClient({ characterId, needsEncounter }: BattleClientProps)
         }
 
         if (newPlayerHealth === 0) {
-            return { ...prev, playerHealth: 0, turn: 'defeat', isProcessing: true, introText: prev.introText };
+            return { ...prev, playerHealth: 0, turn: 'defeat', isProcessing: true, introText: prev.introText, loot: prev.loot };
         }
 
         const newHand = prev.hand.filter(c => c !== prev!.selectedCard);
@@ -404,13 +404,9 @@ export function BattleClient({ characterId, needsEncounter }: BattleClientProps)
   
   useEffect(() => {
       const processVictory = async () => {
-        if (!battleState || battleState.turn !== 'victory' || !character) return;
+        if (!battleState || battleState.turn !== 'victory' || !character || !battleState.loot) return;
         
-        // This is a bit of a hack to get the loot which should be part of the encounter state
-        const encounterRef = doc(firestore!, `users/${user!.uid}/characters/${characterId}/narrativeContexts`, 'main');
-        const encounterSnap = await getDoc(encounterRef);
-        const loot = encounterSnap.data()?.currentEncounter?.loot || { name: 'some junk' };
-
+        const loot = battleState.loot;
         toast({ title: "Victory!", description: `You found: ${loot.name}`, duration: 5000 });
 
         if(firestore && user) {
