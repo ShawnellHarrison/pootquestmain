@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Card,
   CardContent,
@@ -23,11 +23,72 @@ import { useNarrative } from "@/hooks/useNarrative";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { DeckManagerSheet } from "./sheets/DeckManagerSheet";
 import { InventorySheet } from "./sheets/InventorySheet";
+import { cn } from "@/lib/utils";
 
 interface AdventureClientProps {
   characterId: string;
   initialBattleState?: any;
 }
+
+const GeneratingState = () => {
+    const icons = [Swords, Shield, Ghost, BookOpen];
+    const [animatedIcons, setAnimatedIcons] = useState<any[]>([]);
+
+    useEffect(() => {
+        const interval = setInterval(() => {
+            setAnimatedIcons(prev => {
+                const newIcon = {
+                    id: Date.now() + Math.random(),
+                    Icon: icons[Math.floor(Math.random() * icons.length)],
+                    style: {
+                        left: `${Math.random() * 90 + 5}%`,
+                        animationDuration: `${Math.random() * 5 + 3}s`,
+                    },
+                };
+                return [...prev, newIcon].slice(-15); // Keep the last 15 icons
+            });
+        }, 500);
+
+        return () => clearInterval(interval);
+    }, []);
+
+    return (
+        <div className="flex flex-col items-center justify-center text-center h-64 relative overflow-hidden">
+            <style jsx>{`
+                @keyframes float-up {
+                    from {
+                        transform: translateY(100px);
+                        opacity: 0;
+                    }
+                    to {
+                        transform: translateY(-100px);
+                        opacity: 1;
+                    }
+                }
+                .floating-icon {
+                    position: absolute;
+                    animation-name: float-up;
+                    animation-timing-function: ease-in-out;
+                    animation-iteration-count: 1;
+                    opacity: 0;
+                    animation-fill-mode: forwards;
+                }
+            `}</style>
+            
+            {animatedIcons.map(({ id, Icon, style }) => (
+                <Icon key={id} className="floating-icon text-primary/30" style={style} />
+            ))}
+
+            <div className="z-10 bg-background/50 p-4 rounded-lg">
+                <Loader2 className="h-12 w-12 animate-spin text-primary mb-4 mx-auto" />
+                <p className="text-xl text-muted-foreground font-headline">
+                    The Fartmaster is weaving your fate...
+                </p>
+            </div>
+        </div>
+    );
+};
+
 
 export function AdventureClient({ characterId, initialBattleState }: AdventureClientProps) {
   const { character, characterClassData, isLoading: isCharacterLoading } = useCharacter(characterId);
@@ -63,14 +124,7 @@ export function AdventureClient({ characterId, initialBattleState }: AdventureCl
     }
     
     if (gameState === 'generating') {
-         return (
-          <div className="flex flex-col items-center justify-center text-center h-64">
-            <Loader2 className="h-16 w-16 animate-spin text-primary mb-4" />
-            <p className="text-xl text-muted-foreground font-headline">
-              The Fartmaster is weaving your fate...
-            </p>
-          </div>
-        );
+         return <GeneratingState />;
     }
     
     if (gameState === "ready" && currentScenario) {

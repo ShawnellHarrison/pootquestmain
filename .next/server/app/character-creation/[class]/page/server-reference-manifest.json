@@ -1,16 +1,4 @@
 {
-  "node": {
-    "40f67ba68d208ae14390160cd4713e7b6e313b2cd9": {
-      "workers": {
-        "app/character-creation/[class]/page": {
-          "moduleId": "[project]/.next-internal/server/app/character-creation/[class]/page/actions.js { ACTIONS_MODULE0 => \"[project]/src/ai/flows/class-specific-ai-narration.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
-          "async": false
-        }
-      },
-      "layer": {
-        "app/character-creation/[class]/page": "action-browser"
-      }
-    }
-  },
+  "node": {},
   "edge": {}
 }
