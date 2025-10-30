@@ -13,6 +13,7 @@ import { arrayMove, SortableContext, useSortable, rectSortingStrategy } from '@d
 import { CSS } from '@dnd-kit/utilities';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { useToast } from '@/hooks/use-toast';
+import { DeckStats } from './DeckStats';
 
 const DECK_SIZE = 15;
 
@@ -142,6 +143,10 @@ export function DeckManagerSheet({ characterId }: { characterId: string }) {
 
 
     const collectionPool = collectionState.filter(card => !deck.includes(card.name));
+    const deckCardsData = useMemo(() => 
+        deck.map(cardName => collectionState.find(c => c.name === cardName)).filter(Boolean) as CardData[],
+        [deck, collectionState]
+    );
 
     const handleDragEnd = (event: DragEndEvent) => {
         const { active, over } = event;
@@ -214,21 +219,26 @@ export function DeckManagerSheet({ characterId }: { characterId: string }) {
         <div className="py-4">
             <DndContext onDragEnd={handleDragEnd} collisionDetection={closestCenter}>
                 <div className="space-y-8">
-                    <div className="flex justify-end items-center">
-                        <Button onClick={handleSaveDeck} disabled={isSaving || deck.length !== DECK_SIZE}>
-                            {isSaving ? <Loader2 className="animate-spin" /> : <Save />} Save Deck
-                        </Button>
+                     <div>
+                        <div className="flex justify-between items-center mb-4">
+                           <h2 className="font-headline text-2xl text-glow">Deck Analysis</h2>
+                           <Button onClick={handleSaveDeck} disabled={isSaving || deck.length !== DECK_SIZE}>
+                                {isSaving ? <Loader2 className="animate-spin" /> : <Save />} Save Deck
+                            </Button>
+                        </div>
+                        
+                        {deck.length !== DECK_SIZE && (
+                            <Alert variant="destructive" className="mb-4">
+                                <AlertCircle className="h-4 w-4" />
+                                <AlertTitle>Deck Invalid</AlertTitle>
+                                <AlertDescription>
+                                    Your deck has {deck.length} cards. It must have exactly {DECK_SIZE} cards to be valid.
+                                </AlertDescription>
+                            </Alert>
+                        )}
+                        <DeckStats cards={deckCardsData} />
                     </div>
 
-                    {deck.length !== DECK_SIZE && (
-                        <Alert variant="destructive">
-                            <AlertCircle className="h-4 w-4" />
-                            <AlertTitle>Deck Invalid</AlertTitle>
-                            <AlertDescription>
-                                Your deck has {deck.length} cards. It must have exactly {DECK_SIZE} cards to be valid.
-                            </AlertDescription>
-                        </Alert>
-                    )}
 
                     <Card id="deck-droppable" className="min-h-96">
                         <CardHeader>

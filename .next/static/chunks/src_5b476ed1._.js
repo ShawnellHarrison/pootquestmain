@@ -2356,6 +2356,8 @@ __turbopack_context__.s({
     "AdventureClient": (()=>AdventureClient)
 });
 var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/next/dist/compiled/react/jsx-dev-runtime.js [app-client] (ecmascript)");
+var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$styled$2d$jsx$2f$style$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/styled-jsx/style.js [app-client] (ecmascript)");
+var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/next/dist/compiled/react/index.js [app-client] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$card$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/components/ui/card.tsx [app-client] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/components/ui/button.tsx [app-client] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$loader$2d$circle$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__Loader2$3e$__ = __turbopack_context__.i("[project]/node_modules/lucide-react/dist/esm/icons/loader-circle.js [app-client] (ecmascript) <export default as Loader2>");
@@ -2376,7 +2378,7 @@ var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$s
 var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$game$2f$sheets$2f$DeckManagerSheet$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/components/game/sheets/DeckManagerSheet.tsx [app-client] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$game$2f$sheets$2f$InventorySheet$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/components/game/sheets/InventorySheet.tsx [app-client] (ecmascript)");
 ;
-var _s = __turbopack_context__.k.signature();
+var _s = __turbopack_context__.k.signature(), _s1 = __turbopack_context__.k.signature();
 "use client";
 ;
 ;
@@ -2389,8 +2391,94 @@ var _s = __turbopack_context__.k.signature();
 ;
 ;
 ;
-function AdventureClient({ characterId, initialBattleState }) {
+;
+;
+const GeneratingState = ()=>{
     _s();
+    const icons = [
+        __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$swords$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__Swords$3e$__["Swords"],
+        __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$shield$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__Shield$3e$__["Shield"],
+        __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$ghost$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__Ghost$3e$__["Ghost"],
+        __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$book$2d$open$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__BookOpen$3e$__["BookOpen"]
+    ];
+    const [animatedIcons, setAnimatedIcons] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useState"])([]);
+    (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useEffect"])({
+        "GeneratingState.useEffect": ()=>{
+            const interval = setInterval({
+                "GeneratingState.useEffect.interval": ()=>{
+                    setAnimatedIcons({
+                        "GeneratingState.useEffect.interval": (prev)=>{
+                            const newIcon = {
+                                id: Date.now() + Math.random(),
+                                Icon: icons[Math.floor(Math.random() * icons.length)],
+                                style: {
+                                    left: `${Math.random() * 90 + 5}%`,
+                                    animationDuration: `${Math.random() * 5 + 3}s`
+                                }
+                            };
+                            return [
+                                ...prev,
+                                newIcon
+                            ].slice(-15); // Keep the last 15 icons
+                        }
+                    }["GeneratingState.useEffect.interval"]);
+                }
+            }["GeneratingState.useEffect.interval"], 500);
+            return ({
+                "GeneratingState.useEffect": ()=>clearInterval(interval)
+            })["GeneratingState.useEffect"];
+        }
+    }["GeneratingState.useEffect"], []);
+    return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+        className: "jsx-71b8bb87a85cbe48" + " " + "flex flex-col items-center justify-center text-center h-64 relative overflow-hidden",
+        children: [
+            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$styled$2d$jsx$2f$style$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["default"], {
+                id: "71b8bb87a85cbe48",
+                children: "@keyframes float-up{0%{opacity:0;transform:translateY(100px)}to{opacity:1;transform:translateY(-100px)}}.floating-icon.jsx-71b8bb87a85cbe48{opacity:0;animation-name:float-up;animation-timing-function:ease-in-out;animation-iteration-count:1;animation-fill-mode:forwards;position:absolute}"
+            }, void 0, false, void 0, this),
+            animatedIcons.map(({ id, Icon, style })=>/*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(Icon, {
+                    style: style,
+                    className: "jsx-71b8bb87a85cbe48" + " " + "floating-icon text-primary/30"
+                }, id, false, {
+                    fileName: "[project]/src/components/game/AdventureClient.tsx",
+                    lineNumber: 79,
+                    columnNumber: 17
+                }, this)),
+            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                className: "jsx-71b8bb87a85cbe48" + " " + "z-10 bg-background/50 p-4 rounded-lg",
+                children: [
+                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$loader$2d$circle$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__Loader2$3e$__["Loader2"], {
+                        className: "h-12 w-12 animate-spin text-primary mb-4 mx-auto"
+                    }, void 0, false, {
+                        fileName: "[project]/src/components/game/AdventureClient.tsx",
+                        lineNumber: 83,
+                        columnNumber: 17
+                    }, this),
+                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
+                        className: "jsx-71b8bb87a85cbe48" + " " + "text-xl text-muted-foreground font-headline",
+                        children: "The Fartmaster is weaving your fate..."
+                    }, void 0, false, {
+                        fileName: "[project]/src/components/game/AdventureClient.tsx",
+                        lineNumber: 84,
+                        columnNumber: 17
+                    }, this)
+                ]
+            }, void 0, true, {
+                fileName: "[project]/src/components/game/AdventureClient.tsx",
+                lineNumber: 82,
+                columnNumber: 13
+            }, this)
+        ]
+    }, void 0, true, {
+        fileName: "[project]/src/components/game/AdventureClient.tsx",
+        lineNumber: 56,
+        columnNumber: 9
+    }, this);
+};
+_s(GeneratingState, "UHE177Xb+9j5+uOW+0k5XCUvTKA=");
+_c = GeneratingState;
+function AdventureClient({ characterId, initialBattleState }) {
+    _s1();
     const { character, characterClassData, isLoading: isCharacterLoading } = (0, __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$hooks$2f$useCharacter$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useCharacter"])(characterId);
     const { narrativeContext, gameState, error, handleContinue, handleChoice, isLoading: isNarrativeLoading } = (0, __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$hooks$2f$useNarrative$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useNarrative"])(characterId, character, characterClassData, initialBattleState);
     const isLoading = isCharacterLoading || isNarrativeLoading;
@@ -2404,7 +2492,7 @@ function AdventureClient({ characterId, initialBattleState }) {
                         className: "h-16 w-16 animate-spin text-primary mb-4"
                     }, void 0, false, {
                         fileName: "[project]/src/components/game/AdventureClient.tsx",
-                        lineNumber: 50,
+                        lineNumber: 111,
                         columnNumber: 11
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -2412,13 +2500,13 @@ function AdventureClient({ characterId, initialBattleState }) {
                         children: "Loading your legend..."
                     }, void 0, false, {
                         fileName: "[project]/src/components/game/AdventureClient.tsx",
-                        lineNumber: 51,
+                        lineNumber: 112,
                         columnNumber: 11
                     }, this)
                 ]
             }, void 0, true, {
                 fileName: "[project]/src/components/game/AdventureClient.tsx",
-                lineNumber: 49,
+                lineNumber: 110,
                 columnNumber: 9
             }, this);
         }
@@ -2430,47 +2518,28 @@ function AdventureClient({ characterId, initialBattleState }) {
                         children: "AI Error"
                     }, void 0, false, {
                         fileName: "[project]/src/components/game/AdventureClient.tsx",
-                        lineNumber: 59,
+                        lineNumber: 120,
                         columnNumber: 13
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$alert$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["AlertDescription"], {
                         children: error
                     }, void 0, false, {
                         fileName: "[project]/src/components/game/AdventureClient.tsx",
-                        lineNumber: 60,
+                        lineNumber: 121,
                         columnNumber: 13
                     }, this)
                 ]
             }, void 0, true, {
                 fileName: "[project]/src/components/game/AdventureClient.tsx",
-                lineNumber: 58,
+                lineNumber: 119,
                 columnNumber: 11
             }, this);
         }
         if (gameState === 'generating') {
-            return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                className: "flex flex-col items-center justify-center text-center h-64",
-                children: [
-                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$loader$2d$circle$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__Loader2$3e$__["Loader2"], {
-                        className: "h-16 w-16 animate-spin text-primary mb-4"
-                    }, void 0, false, {
-                        fileName: "[project]/src/components/game/AdventureClient.tsx",
-                        lineNumber: 68,
-                        columnNumber: 13
-                    }, this),
-                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
-                        className: "text-xl text-muted-foreground font-headline",
-                        children: "The Fartmaster is weaving your fate..."
-                    }, void 0, false, {
-                        fileName: "[project]/src/components/game/AdventureClient.tsx",
-                        lineNumber: 69,
-                        columnNumber: 13
-                    }, this)
-                ]
-            }, void 0, true, {
+            return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(GeneratingState, {}, void 0, false, {
                 fileName: "[project]/src/components/game/AdventureClient.tsx",
-                lineNumber: 67,
-                columnNumber: 11
+                lineNumber: 127,
+                columnNumber: 17
             }, this);
         }
         if (gameState === "ready" && currentScenario) {
@@ -2482,7 +2551,7 @@ function AdventureClient({ characterId, initialBattleState }) {
                         children: currentScenario.scenarioText
                     }, void 0, false, {
                         fileName: "[project]/src/components/game/AdventureClient.tsx",
-                        lineNumber: 79,
+                        lineNumber: 133,
                         columnNumber: 11
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -2493,7 +2562,7 @@ function AdventureClient({ characterId, initialBattleState }) {
                                 children: "What do you do?"
                             }, void 0, false, {
                                 fileName: "[project]/src/components/game/AdventureClient.tsx",
-                                lineNumber: 83,
+                                lineNumber: 137,
                                 columnNumber: 13
                             }, this),
                             currentScenario.choices.map((choice)=>/*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Button"], {
@@ -2510,7 +2579,7 @@ function AdventureClient({ characterId, initialBattleState }) {
                                             ]
                                         }, void 0, true, {
                                             fileName: "[project]/src/components/game/AdventureClient.tsx",
-                                            lineNumber: 92,
+                                            lineNumber: 146,
                                             columnNumber: 17
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -2518,32 +2587,32 @@ function AdventureClient({ characterId, initialBattleState }) {
                                             children: choice.text
                                         }, void 0, false, {
                                             fileName: "[project]/src/components/game/AdventureClient.tsx",
-                                            lineNumber: 93,
+                                            lineNumber: 147,
                                             columnNumber: 17
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$chevron$2d$right$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__ChevronRight$3e$__["ChevronRight"], {
                                             className: "h-5 w-5 ml-4"
                                         }, void 0, false, {
                                             fileName: "[project]/src/components/game/AdventureClient.tsx",
-                                            lineNumber: 94,
+                                            lineNumber: 148,
                                             columnNumber: 17
                                         }, this)
                                     ]
                                 }, choice.id, true, {
                                     fileName: "[project]/src/components/game/AdventureClient.tsx",
-                                    lineNumber: 85,
+                                    lineNumber: 139,
                                     columnNumber: 15
                                 }, this))
                         ]
                     }, void 0, true, {
                         fileName: "[project]/src/components/game/AdventureClient.tsx",
-                        lineNumber: 82,
+                        lineNumber: 136,
                         columnNumber: 11
                     }, this)
                 ]
             }, void 0, true, {
                 fileName: "[project]/src/components/game/AdventureClient.tsx",
-                lineNumber: 78,
+                lineNumber: 132,
                 columnNumber: 9
             }, this);
         }
@@ -2559,14 +2628,14 @@ function AdventureClient({ characterId, initialBattleState }) {
                                 children: [
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$book$2d$open$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__BookOpen$3e$__["BookOpen"], {}, void 0, false, {
                                         fileName: "[project]/src/components/game/AdventureClient.tsx",
-                                        lineNumber: 107,
+                                        lineNumber: 161,
                                         columnNumber: 15
                                     }, this),
                                     " Your Story Arc"
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/src/components/game/AdventureClient.tsx",
-                                lineNumber: 106,
+                                lineNumber: 160,
                                 columnNumber: 13
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -2578,13 +2647,13 @@ function AdventureClient({ characterId, initialBattleState }) {
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/src/components/game/AdventureClient.tsx",
-                                lineNumber: 109,
+                                lineNumber: 163,
                                 columnNumber: 13
                             }, this)
                         ]
                     }, void 0, true, {
                         fileName: "[project]/src/components/game/AdventureClient.tsx",
-                        lineNumber: 105,
+                        lineNumber: 159,
                         columnNumber: 11
                     }, this),
                     narrativeContext.lastNarration && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -2592,7 +2661,7 @@ function AdventureClient({ characterId, initialBattleState }) {
                         children: narrativeContext.lastNarration
                     }, void 0, false, {
                         fileName: "[project]/src/components/game/AdventureClient.tsx",
-                        lineNumber: 114,
+                        lineNumber: 168,
                         columnNumber: 13
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -2608,13 +2677,13 @@ function AdventureClient({ characterId, initialBattleState }) {
                                         className: "ml-2 h-4 w-4"
                                     }, void 0, false, {
                                         fileName: "[project]/src/components/game/AdventureClient.tsx",
-                                        lineNumber: 120,
+                                        lineNumber: 174,
                                         columnNumber: 39
                                     }, this)
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/src/components/game/AdventureClient.tsx",
-                                lineNumber: 119,
+                                lineNumber: 173,
                                 columnNumber: 13
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$sheet$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Sheet"], {
@@ -2629,19 +2698,19 @@ function AdventureClient({ characterId, initialBattleState }) {
                                                     className: "mr-2 h-4 w-4"
                                                 }, void 0, false, {
                                                     fileName: "[project]/src/components/game/AdventureClient.tsx",
-                                                    lineNumber: 125,
+                                                    lineNumber: 179,
                                                     columnNumber: 25
                                                 }, this),
                                                 " Manage Deck"
                                             ]
                                         }, void 0, true, {
                                             fileName: "[project]/src/components/game/AdventureClient.tsx",
-                                            lineNumber: 124,
+                                            lineNumber: 178,
                                             columnNumber: 21
                                         }, this)
                                     }, void 0, false, {
                                         fileName: "[project]/src/components/game/AdventureClient.tsx",
-                                        lineNumber: 123,
+                                        lineNumber: 177,
                                         columnNumber: 17
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$sheet$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["SheetContent"], {
@@ -2654,31 +2723,31 @@ function AdventureClient({ characterId, initialBattleState }) {
                                                     children: "Deck Manager"
                                                 }, void 0, false, {
                                                     fileName: "[project]/src/components/game/AdventureClient.tsx",
-                                                    lineNumber: 130,
+                                                    lineNumber: 184,
                                                     columnNumber: 25
                                                 }, this)
                                             }, void 0, false, {
                                                 fileName: "[project]/src/components/game/AdventureClient.tsx",
-                                                lineNumber: 129,
+                                                lineNumber: 183,
                                                 columnNumber: 21
                                             }, this),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$game$2f$sheets$2f$DeckManagerSheet$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["DeckManagerSheet"], {
                                                 characterId: characterId
                                             }, void 0, false, {
                                                 fileName: "[project]/src/components/game/AdventureClient.tsx",
-                                                lineNumber: 132,
+                                                lineNumber: 186,
                                                 columnNumber: 21
                                             }, this)
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/src/components/game/AdventureClient.tsx",
-                                        lineNumber: 128,
+                                        lineNumber: 182,
                                         columnNumber: 17
                                     }, this)
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/src/components/game/AdventureClient.tsx",
-                                lineNumber: 122,
+                                lineNumber: 176,
                                 columnNumber: 13
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$sheet$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Sheet"], {
@@ -2693,19 +2762,19 @@ function AdventureClient({ characterId, initialBattleState }) {
                                                     className: "mr-2 h-4 w-4"
                                                 }, void 0, false, {
                                                     fileName: "[project]/src/components/game/AdventureClient.tsx",
-                                                    lineNumber: 138,
+                                                    lineNumber: 192,
                                                     columnNumber: 25
                                                 }, this),
                                                 " Inspect Inventory"
                                             ]
                                         }, void 0, true, {
                                             fileName: "[project]/src/components/game/AdventureClient.tsx",
-                                            lineNumber: 137,
+                                            lineNumber: 191,
                                             columnNumber: 21
                                         }, this)
                                     }, void 0, false, {
                                         fileName: "[project]/src/components/game/AdventureClient.tsx",
-                                        lineNumber: 136,
+                                        lineNumber: 190,
                                         columnNumber: 17
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$sheet$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["SheetContent"], {
@@ -2718,43 +2787,43 @@ function AdventureClient({ characterId, initialBattleState }) {
                                                     children: "Inventory"
                                                 }, void 0, false, {
                                                     fileName: "[project]/src/components/game/AdventureClient.tsx",
-                                                    lineNumber: 143,
+                                                    lineNumber: 197,
                                                     columnNumber: 25
                                                 }, this)
                                             }, void 0, false, {
                                                 fileName: "[project]/src/components/game/AdventureClient.tsx",
-                                                lineNumber: 142,
+                                                lineNumber: 196,
                                                 columnNumber: 21
                                             }, this),
                                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$game$2f$sheets$2f$InventorySheet$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["InventorySheet"], {
                                                 characterId: characterId
                                             }, void 0, false, {
                                                 fileName: "[project]/src/components/game/AdventureClient.tsx",
-                                                lineNumber: 145,
+                                                lineNumber: 199,
                                                 columnNumber: 21
                                             }, this)
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/src/components/game/AdventureClient.tsx",
-                                        lineNumber: 141,
+                                        lineNumber: 195,
                                         columnNumber: 18
                                     }, this)
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/src/components/game/AdventureClient.tsx",
-                                lineNumber: 135,
+                                lineNumber: 189,
                                 columnNumber: 13
                             }, this)
                         ]
                     }, void 0, true, {
                         fileName: "[project]/src/components/game/AdventureClient.tsx",
-                        lineNumber: 118,
+                        lineNumber: 172,
                         columnNumber: 11
                     }, this)
                 ]
             }, void 0, true, {
                 fileName: "[project]/src/components/game/AdventureClient.tsx",
-                lineNumber: 104,
+                lineNumber: 158,
                 columnNumber: 9
             }, this);
         }
@@ -2765,7 +2834,7 @@ function AdventureClient({ characterId, initialBattleState }) {
                     className: "h-16 w-16 animate-spin text-primary mb-4"
                 }, void 0, false, {
                     fileName: "[project]/src/components/game/AdventureClient.tsx",
-                    lineNumber: 155,
+                    lineNumber: 209,
                     columnNumber: 9
                 }, this),
                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -2773,13 +2842,13 @@ function AdventureClient({ characterId, initialBattleState }) {
                     children: "Loading your legend..."
                 }, void 0, false, {
                     fileName: "[project]/src/components/game/AdventureClient.tsx",
-                    lineNumber: 156,
+                    lineNumber: 210,
                     columnNumber: 9
                 }, this)
             ]
         }, void 0, true, {
             fileName: "[project]/src/components/game/AdventureClient.tsx",
-            lineNumber: 154,
+            lineNumber: 208,
             columnNumber: 7
         }, this);
     };
@@ -2794,7 +2863,7 @@ function AdventureClient({ characterId, initialBattleState }) {
                         children: characterClassData?.name || "The Adventure"
                     }, void 0, false, {
                         fileName: "[project]/src/components/game/AdventureClient.tsx",
-                        lineNumber: 165,
+                        lineNumber: 219,
                         columnNumber: 9
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -2804,7 +2873,7 @@ function AdventureClient({ characterId, initialBattleState }) {
                                 children: narrativeContext?.location || "A mysterious place..."
                             }, void 0, false, {
                                 fileName: "[project]/src/components/game/AdventureClient.tsx",
-                                lineNumber: 169,
+                                lineNumber: 223,
                                 columnNumber: 13
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$separator$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Separator"], {
@@ -2812,7 +2881,7 @@ function AdventureClient({ characterId, initialBattleState }) {
                                 className: "h-4"
                             }, void 0, false, {
                                 fileName: "[project]/src/components/game/AdventureClient.tsx",
-                                lineNumber: 170,
+                                lineNumber: 224,
                                 columnNumber: 13
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -2828,7 +2897,7 @@ function AdventureClient({ characterId, initialBattleState }) {
                                                             className: "h-4 w-4 text-gray-400"
                                                         }, void 0, false, {
                                                             fileName: "[project]/src/components/game/AdventureClient.tsx",
-                                                            lineNumber: 175,
+                                                            lineNumber: 229,
                                                             columnNumber: 29
                                                         }, this),
                                                         " ",
@@ -2836,7 +2905,7 @@ function AdventureClient({ characterId, initialBattleState }) {
                                                     ]
                                                 }, void 0, true, {
                                                     fileName: "[project]/src/components/game/AdventureClient.tsx",
-                                                    lineNumber: 174,
+                                                    lineNumber: 228,
                                                     columnNumber: 25
                                                 }, this),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$tooltip$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["TooltipContent"], {
@@ -2844,18 +2913,18 @@ function AdventureClient({ characterId, initialBattleState }) {
                                                         children: "Stealth Reputation"
                                                     }, void 0, false, {
                                                         fileName: "[project]/src/components/game/AdventureClient.tsx",
-                                                        lineNumber: 177,
+                                                        lineNumber: 231,
                                                         columnNumber: 41
                                                     }, this)
                                                 }, void 0, false, {
                                                     fileName: "[project]/src/components/game/AdventureClient.tsx",
-                                                    lineNumber: 177,
+                                                    lineNumber: 231,
                                                     columnNumber: 25
                                                 }, this)
                                             ]
                                         }, void 0, true, {
                                             fileName: "[project]/src/components/game/AdventureClient.tsx",
-                                            lineNumber: 173,
+                                            lineNumber: 227,
                                             columnNumber: 21
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$tooltip$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Tooltip"], {
@@ -2867,7 +2936,7 @@ function AdventureClient({ characterId, initialBattleState }) {
                                                             className: "h-4 w-4 text-red-400"
                                                         }, void 0, false, {
                                                             fileName: "[project]/src/components/game/AdventureClient.tsx",
-                                                            lineNumber: 181,
+                                                            lineNumber: 235,
                                                             columnNumber: 29
                                                         }, this),
                                                         " ",
@@ -2875,7 +2944,7 @@ function AdventureClient({ characterId, initialBattleState }) {
                                                     ]
                                                 }, void 0, true, {
                                                     fileName: "[project]/src/components/game/AdventureClient.tsx",
-                                                    lineNumber: 180,
+                                                    lineNumber: 234,
                                                     columnNumber: 25
                                                 }, this),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$tooltip$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["TooltipContent"], {
@@ -2883,18 +2952,18 @@ function AdventureClient({ characterId, initialBattleState }) {
                                                         children: "Combat Reputation"
                                                     }, void 0, false, {
                                                         fileName: "[project]/src/components/game/AdventureClient.tsx",
-                                                        lineNumber: 183,
+                                                        lineNumber: 237,
                                                         columnNumber: 41
                                                     }, this)
                                                 }, void 0, false, {
                                                     fileName: "[project]/src/components/game/AdventureClient.tsx",
-                                                    lineNumber: 183,
+                                                    lineNumber: 237,
                                                     columnNumber: 25
                                                 }, this)
                                             ]
                                         }, void 0, true, {
                                             fileName: "[project]/src/components/game/AdventureClient.tsx",
-                                            lineNumber: 179,
+                                            lineNumber: 233,
                                             columnNumber: 21
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$tooltip$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Tooltip"], {
@@ -2906,7 +2975,7 @@ function AdventureClient({ characterId, initialBattleState }) {
                                                             className: "h-4 w-4 text-blue-400"
                                                         }, void 0, false, {
                                                             fileName: "[project]/src/components/game/AdventureClient.tsx",
-                                                            lineNumber: 187,
+                                                            lineNumber: 241,
                                                             columnNumber: 29
                                                         }, this),
                                                         " ",
@@ -2914,7 +2983,7 @@ function AdventureClient({ characterId, initialBattleState }) {
                                                     ]
                                                 }, void 0, true, {
                                                     fileName: "[project]/src/components/game/AdventureClient.tsx",
-                                                    lineNumber: 186,
+                                                    lineNumber: 240,
                                                     columnNumber: 25
                                                 }, this),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$tooltip$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["TooltipContent"], {
@@ -2922,46 +2991,46 @@ function AdventureClient({ characterId, initialBattleState }) {
                                                         children: "Diplomacy Reputation"
                                                     }, void 0, false, {
                                                         fileName: "[project]/src/components/game/AdventureClient.tsx",
-                                                        lineNumber: 189,
+                                                        lineNumber: 243,
                                                         columnNumber: 41
                                                     }, this)
                                                 }, void 0, false, {
                                                     fileName: "[project]/src/components/game/AdventureClient.tsx",
-                                                    lineNumber: 189,
+                                                    lineNumber: 243,
                                                     columnNumber: 25
                                                 }, this)
                                             ]
                                         }, void 0, true, {
                                             fileName: "[project]/src/components/game/AdventureClient.tsx",
-                                            lineNumber: 185,
+                                            lineNumber: 239,
                                             columnNumber: 21
                                         }, this)
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/src/components/game/AdventureClient.tsx",
-                                    lineNumber: 172,
+                                    lineNumber: 226,
                                     columnNumber: 17
                                 }, this)
                             }, void 0, false, {
                                 fileName: "[project]/src/components/game/AdventureClient.tsx",
-                                lineNumber: 171,
+                                lineNumber: 225,
                                 columnNumber: 14
                             }, this)
                         ]
                     }, void 0, true, {
                         fileName: "[project]/src/components/game/AdventureClient.tsx",
-                        lineNumber: 168,
+                        lineNumber: 222,
                         columnNumber: 9
                     }, this)
                 ]
             }, void 0, true, {
                 fileName: "[project]/src/components/game/AdventureClient.tsx",
-                lineNumber: 164,
+                lineNumber: 218,
                 columnNumber: 7
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$separator$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Separator"], {}, void 0, false, {
                 fileName: "[project]/src/components/game/AdventureClient.tsx",
-                lineNumber: 195,
+                lineNumber: 249,
                 columnNumber: 7
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$card$2e$tsx__$5b$app$2d$client$5d$__$28$ecmascript$29$__["CardContent"], {
@@ -2969,25 +3038,26 @@ function AdventureClient({ characterId, initialBattleState }) {
                 children: renderContent()
             }, void 0, false, {
                 fileName: "[project]/src/components/game/AdventureClient.tsx",
-                lineNumber: 196,
+                lineNumber: 250,
                 columnNumber: 7
             }, this)
         ]
     }, void 0, true, {
         fileName: "[project]/src/components/game/AdventureClient.tsx",
-        lineNumber: 163,
+        lineNumber: 217,
         columnNumber: 5
     }, this);
 }
-_s(AdventureClient, "pyPITgEj/n09ps0cAnXoGa/MGes=", false, function() {
+_s1(AdventureClient, "pyPITgEj/n09ps0cAnXoGa/MGes=", false, function() {
     return [
         __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$hooks$2f$useCharacter$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useCharacter"],
         __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$hooks$2f$useNarrative$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useNarrative"]
     ];
 });
-_c = AdventureClient;
-var _c;
-__turbopack_context__.k.register(_c, "AdventureClient");
+_c1 = AdventureClient;
+var _c, _c1;
+__turbopack_context__.k.register(_c, "GeneratingState");
+__turbopack_context__.k.register(_c1, "AdventureClient");
 if (typeof globalThis.$RefreshHelpers$ === 'object' && globalThis.$RefreshHelpers !== null) {
     __turbopack_context__.k.registerExports(module, globalThis.$RefreshHelpers$);
 }
