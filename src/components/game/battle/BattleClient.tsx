@@ -4,7 +4,7 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { useFirebase } from '@/firebase';
-import { doc, getDoc, writeBatch, increment, collection, addDoc } from 'firebase/firestore';
+import { doc, getDoc, writeBatch, increment, collection, addDoc, getDocs } from 'firebase/firestore';
 import { Loader2, Flag, ArrowRightCircle } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
@@ -89,7 +89,7 @@ export function BattleClient({ characterId, encounter }: BattleClientProps) {
             const [characterSnap, deckSnap, inventorySnap] = await Promise.all([
                 getDoc(characterDocRef),
                 getDoc(deckRef),
-                getDoc(inventoryRef),
+                getDocs(inventoryRef),
             ]);
 
             if (characterSnap.exists() && deckSnap.exists()) {
@@ -509,5 +509,3 @@ export function BattleClient({ characterId, encounter }: BattleClientProps) {
     </Card>
   );
 }
-
-    
