@@ -622,7 +622,7 @@ function ChroniclePage() {
             await (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$firebase$2f$storage$2f$dist$2f$node$2d$esm$2f$index$2e$node$2e$esm$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["uploadString"])(storageRef, summaryText, 'raw', {
                 contentType: 'text/plain;charset=utf-8'
             });
-            const url = `https://storage.googleapis.com/${storage.app.options.storageBucket}/${storageRef.fullPath}`;
+            const url = await (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$firebase$2f$storage$2f$dist$2f$node$2d$esm$2f$index$2e$node$2e$esm$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["getDownloadURL"])(storageRef);
             setExportedUrl(url);
             toast({
                 title: "Legend Exported!",

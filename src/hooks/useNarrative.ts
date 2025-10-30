@@ -8,9 +8,7 @@ import { useRouter } from 'next/navigation';
 import { 
     generateNextScenario, 
     NarrativeOutput,
-    NarrativeInput
 } from '@/ai/flows/branching-narrative-system';
-import { generateEncounter } from '@/ai/flows/generate-encounter-flow';
 import { generateNpc, NpcOutput } from "@/ai/flows/ai-dungeon-master-npc";
 import { generateClassNarration } from '@/ai/flows/class-specific-ai-narration';
 import type { CharacterState } from './useCharacter';
@@ -55,10 +53,11 @@ export function useNarrative(
 
     const { data: narrativeContextData, isLoading: isNarrativeDocLoading } = useDoc(narrativeContextRef);
 
+    // Effect to set initial narrative state from Firestore
     useEffect(() => {
         if (narrativeContextData) {
             const narrativeData = narrativeContextData as NarrativeContextState;
-             if (initialBattleState && character) {
+            if (initialBattleState && character) {
                 // Coming back from a battle
                 setNarrativeContext({
                     ...narrativeData,
@@ -70,7 +69,8 @@ export function useNarrative(
                 setNarrativeContext(narrativeData);
             }
         }
-    }, [narrativeContextData, initialBattleState, character]);
+    }, [narrativeContextData]);
+
 
     const handleContinue = useCallback(async () => {
         if (!narrativeContext || !firestore || !user || !characterClassData || !character || !narrativeContextRef) return;
@@ -90,7 +90,7 @@ export function useNarrative(
                 };
                 batch.update(narrativeContextRef, firstTimeUpdates);
                 await batch.commit();
-                setNarrativeContext(prev => prev ? ({ ...prev, ...firstTimeUpdates }) : null);
+                // No need to setNarrativeContext here, the hook will pick it up
                 setGameState("awaiting_continue"); // Go back to showing the new narration
                 return; // Stop here, user will click continue again
             }
@@ -115,12 +115,10 @@ export function useNarrative(
             const updates = {
                 currentScenario: result,
                 triggerNextScenario: false,
-                lastNarration: narrativeContext.lastNarration,
             };
             batch.update(narrativeContextRef!, updates);
             await batch.commit();
-    
-            setNarrativeContext(prev => prev ? ({ ...prev, ...updates }) : null);
+            // No need to setNarrativeContext, hook will update
             setGameState("ready");
           } else {
             throw new Error("The AI Dungeon Fartmaster is confused. No scenario received.");
@@ -132,8 +130,9 @@ export function useNarrative(
       }, [narrativeContext, firestore, user, characterClassData, character, narrativeContextRef]);
 
 
+    // This effect determines the overall game state based on the narrative context.
     useEffect(() => {
-        if (!character || !narrativeContext) {
+        if (isNarrativeDocLoading || !narrativeContext) {
             setGameState("loading");
             return;
         }
@@ -141,11 +140,14 @@ export function useNarrative(
         if (narrativeContext.currentScenario) {
             setGameState("ready");
         } else if (narrativeContext.triggerNextScenario) {
-            handleContinue();
+            // Only trigger continue if we have character data to prevent race conditions
+            if (character && characterClassData) {
+                handleContinue();
+            }
         } else {
             setGameState("awaiting_continue");
         }
-    }, [character, narrativeContext, handleContinue]);
+    }, [narrativeContext, isNarrativeDocLoading, character, characterClassData, handleContinue]);
     
       const handleChoice = async (choice: Choice) => {
         if (!firestore || !user || !characterClassData || !character || !narrativeContext || !narrativeContextRef) return;
@@ -164,9 +166,7 @@ export function useNarrative(
         
         // Optimistically navigate for combat
         if (choice.tags.includes("COMBAT")) {
-            // Don't wait for AI. Just go to battle page.
-            // The battle page will be responsible for generating its own encounter.
-            setGameState("loading"); // Show loading on adventure screen while navigating
+            setGameState("loading"); 
             router.push(`/battle?characterId=${characterId}&needsEncounter=true`);
             return; 
         }
@@ -230,7 +230,7 @@ export function useNarrative(
                         newNarrativeContext.questFlags[npcResult.questId] = { status: "started", currentStep: 1 };
                         npcNarration += `\n\n**New Quest:** ${npcResult.quest}`;
                     } else {
-                        npcNarration += `\n\n*You feel you are not yet reputable enough for this task. (${repCheck.stat} ${repCheck.threshold} required)*`;
+                        npcNarration += `\n\n*You feel you are not yet reputable enough for this task. (${repCheck?.stat} ${repCheck?.threshold} required)*`;
                     }
                 }
                 newNarrativeContext.lastNarration = npcNarration;
@@ -241,10 +241,18 @@ export function useNarrative(
             }
             
             const batch = writeBatch(firestore);
-            batch.update(narrativeContextRef, newNarrativeContext);
-await batch.commit();
-    
-            setNarrativeContext(newNarrativeContext);
+            // We only need to write the final state of the context
+            batch.update(narrativeContextRef, {
+                playerChoices: newNarrativeContext.playerChoices,
+                currentScenario: null,
+                reputationStealth: newNarrativeContext.reputationStealth,
+                reputationCombat: newNarrativeContext.reputationCombat,
+                reputationDiplomacy: newNarrativeContext.reputationDiplomacy,
+                questFlags: newNarrativeContext.questFlags,
+                lastNarration: newNarrativeContext.lastNarration,
+                triggerNextScenario: newNarrativeContext.triggerNextScenario,
+            });
+            await batch.commit();
     
         } catch (e: any) {
             setError(e.message || "An unknown error occurred while processing your choice.");
@@ -252,7 +260,7 @@ await batch.commit();
         }
       };
 
-    const isLoading = isUserLoading || isNarrativeDocLoading;
+    const isLoading = isUserLoading || isNarrativeDocLoading || !character || !narrativeContext;
 
     return { narrativeContext, gameState, error, handleContinue, handleChoice, isLoading };
 }
