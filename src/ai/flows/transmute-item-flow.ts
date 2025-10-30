@@ -9,7 +9,7 @@
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
 
-export const TransmuteItemInputSchema = z.object({
+const TransmuteItemInputSchema = z.object({
     playerClass: z.string().describe('The class of the player character (e.g., "Sneaky Rogue").'),
     playerLevel: z.number().describe('The current level of the player.'),
     existingCards: z.array(z.string()).describe('A list of card names the player already owns to ensure variety.'),
@@ -17,7 +17,7 @@ export const TransmuteItemInputSchema = z.object({
     itemDescription: z.string().describe('The description of the junk item being transmuted.'),
 });
 
-export const TransmuteItemOutputSchema = z.object({
+const TransmuteItemOutputSchema = z.object({
     name: z.string().describe('The creative and thematic name of the new card. Should be unique and inspired by the item.'),
     description: z.string().describe("A flavorful and clear description of what the card does."),
     manaCost: z.number().min(0).max(8).describe('The mana cost to play the card. Should be balanced with its effect.'),

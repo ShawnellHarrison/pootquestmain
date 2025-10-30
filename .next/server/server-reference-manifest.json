@@ -14,7 +14,7 @@
     "4011378f80c37ba99068f177bd7b0eecf62137152f": {
       "workers": {
         "app/adventure/[class]/page": {
-          "moduleId": "[project]/.next-internal/server/app/adventure/[class]/page/actions.js { ACTIONS_MODULE0 => \"[project]/src/ai/flows/branching-narrative-system.ts [app-rsc] (ecmascript)\", ACTIONS_MODULE1 => \"[project]/src/ai/flows/generate-encounter-flow.ts [app-rsc] (ecmascript)\", ACTIONS_MODULE2 => \"[project]/src/ai/flows/ai-dungeon-master-npc.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "moduleId": "[project]/.next-internal/server/app/adventure/[class]/page/actions.js { ACTIONS_MODULE0 => \"[project]/src/ai/flows/branching-narrative-system.ts [app-rsc] (ecmascript)\", ACTIONS_MODULE1 => \"[project]/src/ai/flows/generate-encounter-flow.ts [app-rsc] (ecmascript)\", ACTIONS_MODULE2 => \"[project]/src/ai/flows/ai-dungeon-master-npc.ts [app-rsc] (ecmascript)\", ACTIONS_MODULE3 => \"[project]/src/ai/flows/transmute-item-flow.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
           "async": false
         }
       },
@@ -25,7 +25,7 @@
     "406f825516d0ff63673568bbefb64c469386655af9": {
       "workers": {
         "app/adventure/[class]/page": {
-          "moduleId": "[project]/.next-internal/server/app/adventure/[class]/page/actions.js { ACTIONS_MODULE0 => \"[project]/src/ai/flows/branching-narrative-system.ts [app-rsc] (ecmascript)\", ACTIONS_MODULE1 => \"[project]/src/ai/flows/generate-encounter-flow.ts [app-rsc] (ecmascript)\", ACTIONS_MODULE2 => \"[project]/src/ai/flows/ai-dungeon-master-npc.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "moduleId": "[project]/.next-internal/server/app/adventure/[class]/page/actions.js { ACTIONS_MODULE0 => \"[project]/src/ai/flows/branching-narrative-system.ts [app-rsc] (ecmascript)\", ACTIONS_MODULE1 => \"[project]/src/ai/flows/generate-encounter-flow.ts [app-rsc] (ecmascript)\", ACTIONS_MODULE2 => \"[project]/src/ai/flows/ai-dungeon-master-npc.ts [app-rsc] (ecmascript)\", ACTIONS_MODULE3 => \"[project]/src/ai/flows/transmute-item-flow.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
           "async": false
         }
       },
@@ -36,7 +36,18 @@
     "40d6521b635685790e625cdc513bc709fe4fd56730": {
       "workers": {
         "app/adventure/[class]/page": {
-          "moduleId": "[project]/.next-internal/server/app/adventure/[class]/page/actions.js { ACTIONS_MODULE0 => \"[project]/src/ai/flows/branching-narrative-system.ts [app-rsc] (ecmascript)\", ACTIONS_MODULE1 => \"[project]/src/ai/flows/generate-encounter-flow.ts [app-rsc] (ecmascript)\", ACTIONS_MODULE2 => \"[project]/src/ai/flows/ai-dungeon-master-npc.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "moduleId": "[project]/.next-internal/server/app/adventure/[class]/page/actions.js { ACTIONS_MODULE0 => \"[project]/src/ai/flows/branching-narrative-system.ts [app-rsc] (ecmascript)\", ACTIONS_MODULE1 => \"[project]/src/ai/flows/generate-encounter-flow.ts [app-rsc] (ecmascript)\", ACTIONS_MODULE2 => \"[project]/src/ai/flows/ai-dungeon-master-npc.ts [app-rsc] (ecmascript)\", ACTIONS_MODULE3 => \"[project]/src/ai/flows/transmute-item-flow.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": false
+        }
+      },
+      "layer": {
+        "app/adventure/[class]/page": "action-browser"
+      }
+    },
+    "40633d6ff1781541735f1880d28789992778f2320f": {
+      "workers": {
+        "app/adventure/[class]/page": {
+          "moduleId": "[project]/.next-internal/server/app/adventure/[class]/page/actions.js { ACTIONS_MODULE0 => \"[project]/src/ai/flows/branching-narrative-system.ts [app-rsc] (ecmascript)\", ACTIONS_MODULE1 => \"[project]/src/ai/flows/generate-encounter-flow.ts [app-rsc] (ecmascript)\", ACTIONS_MODULE2 => \"[project]/src/ai/flows/ai-dungeon-master-npc.ts [app-rsc] (ecmascript)\", ACTIONS_MODULE3 => \"[project]/src/ai/flows/transmute-item-flow.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
           "async": false
         }
       },
