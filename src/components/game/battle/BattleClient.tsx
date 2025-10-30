@@ -241,6 +241,7 @@ export function BattleClient({ characterId, needsEncounter }: BattleClientProps)
             if (!prev || !character) return null;
             const newHand = prev.hand.filter(c => c !== cardName);
             const newPlayerHealth = Math.min(character.maxHealth, prev.playerHealth + cardData.healing);
+            
             if (cardData.healing > 0) {
                 setLastDamageToast({ title: cardData.name, description: `You heal for ${cardData.healing}!` });
             }
