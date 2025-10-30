@@ -51,7 +51,7 @@ export function ConfirmationScreen({ character }: ConfirmationScreenProps) {
                 attack: character.stats.attack,
                 defense: character.stats.defense,
                 speed: character.stats.speed,
-                createdAt: new Date(),
+                createdAt: new Date().toISOString(),
             });
 
             // 2. Create initial NarrativeContext document with placeholder text
