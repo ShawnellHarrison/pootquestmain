@@ -2,7 +2,7 @@
 
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useFirebase } from '@/firebase';
 import { doc, getDoc, writeBatch, increment, collection, addDoc, getDocs } from 'firebase/firestore';
 import { Loader2, Flag, ArrowRightCircle } from 'lucide-react';
@@ -90,121 +90,121 @@ export function BattleClient({ characterId, needsEncounter }: BattleClientProps)
   
   const characterClass = useMemo(() => character ? getClass(character.class) : null, [character]);
   
-  useEffect(() => {
-    const fetchInitialData = async () => {
-        if (!firestore || !user || !characterId) return;
+  const fetchInitialData = useCallback(async () => {
+    if (!firestore || !user || !characterId || !needsEncounter) return;
 
-        setIsLoading(true);
+    setIsLoading(true);
 
-        try {
-            const characterDocRef = doc(firestore, `users/${user.uid}/characters/${characterId}`);
-            const deckRef = doc(firestore, `users/${user.uid}/characters/${characterId}/decks`, "main");
-            const inventoryRef = collection(firestore, `users/${user.uid}/characters/${characterId}/inventory`);
-            const narrativeRef = doc(firestore, `users/${user.uid}/characters/${characterId}/narrativeContexts`, "main");
+    try {
+        const characterDocRef = doc(firestore, `users/${user.uid}/characters/${characterId}`);
+        const deckRef = doc(firestore, `users/${user.uid}/characters/${characterId}/decks`, "main");
+        const inventoryRef = collection(firestore, `users/${user.uid}/characters/${characterId}/inventory`);
+        const narrativeRef = doc(firestore, `users/${user.uid}/characters/${characterId}/narrativeContexts`, "main");
 
-            const [characterSnap, deckSnap, inventorySnap, narrativeSnap] = await Promise.all([
-                getDoc(characterDocRef),
-                getDoc(deckRef),
-                getDocs(inventoryRef),
-                getDoc(narrativeRef)
-            ]);
+        const [characterSnap, deckSnap, inventorySnap, narrativeSnap] = await Promise.all([
+            getDoc(characterDocRef),
+            getDoc(deckRef),
+            getDocs(inventoryRef),
+            getDoc(narrativeRef)
+        ]);
 
-            if (!characterSnap.exists() || !deckSnap.exists() || !narrativeSnap.exists()) {
-                throw new Error("Could not load all required data for battle.");
-            }
-
-            const characterData = characterSnap.data() as CharacterData;
-            const deckData = deckSnap.data() as DeckData;
-            const narrativeData = narrativeSnap.data() as NarrativeContextData;
-            const inventoryData = inventorySnap.docs.map(d => ({...d.data(), id: d.id}));
-
-            const charClass = getClass(characterData.class);
-            if (!charClass) throw new Error("Character class not found");
-            
-            const encounter: EncounterOutput = await generateEncounter({
-                playerClass: charClass.name,
-                playerLevel: characterData.level,
-                location: narrativeData.location,
-                questId: Object.keys(narrativeData.questFlags).find(q => narrativeData.questFlags[q].status === 'started'),
-                reputation: {
-                    stealth: narrativeData.reputationStealth,
-                    combat: narrativeData.reputationCombat,
-                    diplomacy: narrativeData.reputationDiplomacy,
-                },
-            });
-
-            const allCardsMap = new Map<string, CardData>();
-            charClass.starterDeck.forEach(starter => {
-                const cardDetails = Object.values(CARD_DATA).find(c => c.name === starter.name);
-                if (cardDetails) allCardsMap.set(starter.name, { ...cardDetails, id: starter.name, class: charClass.name });
-            });
-            inventoryData?.forEach((item: any) => {
-                if (item.name && item.type === 'card') {
-                    allCardsMap.set(item.name, {
-                        id: item.id || item.name,
-                        name: item.name,
-                        description: item.description,
-                        manaCost: item.manaCost,
-                        attack: item.attack,
-                        defense: item.defense,
-                        healing: item.healing,
-                        class: charClass.name,
-                    } as CardData);
-                }
-            });
-            deckData?.cards?.forEach((cardName: string) => {
-                if (!allCardsMap.has(cardName)) {
-                    const cardDetails = Object.values(CARD_DATA).find(c => c.name === cardName);
-                    if (cardDetails) {
-                        allCardsMap.set(cardName, {
-                            ...cardDetails,
-                            id: cardName,
-                            class: charClass.name,
-                        });
-                    }
-                }
-            });
-            
-            setCollectionState(Array.from(allCardsMap.values()));
-            setCharacter(characterData);
-            setDeck(deckData);
-
-            const shuffledDeck = shuffle(deckData.cards);
-            const initialHand = shuffledDeck.slice(0, 5);
-            const remainingDeck = shuffledDeck.slice(5);
-            const initialEnemies = encounter.enemies.map(e => ({ ...e, hp: e.maxHp, defense: e.modifier?.type === 'Shielded' ? e.modifier.value || 0 : 0 }));
-
-            setBattleState({
-                playerHealth: characterData.health,
-                playerMana: characterData.maxMana,
-                playerDefense: 0,
-                enemies: initialEnemies,
-                deck: remainingDeck,
-                hand: initialHand,
-                discard: [],
-                turn: 'player',
-                selectedCard: null,
-                selectedTarget: null,
-                isProcessing: false,
-                enemiesKilled: 0,
-                xpGained: 0,
-                introText: encounter.introText,
-                loot: encounter.loot
-            });
-
-        } catch (e: any) {
-            console.error("Failed to fetch battle data:", e);
-            toast({ title: "Error", description: e.message || "Failed to fetch battle data.", variant: "destructive" });
-            router.push('/');
-        } finally {
-            setIsLoading(false);
+        if (!characterSnap.exists() || !deckSnap.exists() || !narrativeSnap.exists()) {
+            throw new Error("Could not load all required data for battle.");
         }
-    };
 
+        const characterData = characterSnap.data() as CharacterData;
+        const deckData = deckSnap.data() as DeckData;
+        const narrativeData = narrativeSnap.data() as NarrativeContextData;
+        const inventoryData = inventorySnap.docs.map(d => ({...d.data(), id: d.id}));
+
+        const charClass = getClass(characterData.class);
+        if (!charClass) throw new Error("Character class not found");
+        
+        const encounter: EncounterOutput = await generateEncounter({
+            playerClass: charClass.name,
+            playerLevel: characterData.level,
+            location: narrativeData.location,
+            questId: Object.keys(narrativeData.questFlags).find(q => narrativeData.questFlags[q].status === 'started'),
+            reputation: {
+                stealth: narrativeData.reputationStealth,
+                combat: narrativeData.reputationCombat,
+                diplomacy: narrativeData.reputationDiplomacy,
+            },
+        });
+
+        const allCardsMap = new Map<string, CardData>();
+        charClass.starterDeck.forEach(starter => {
+            const cardDetails = Object.values(CARD_DATA).find(c => c.name === starter.name);
+            if (cardDetails) allCardsMap.set(starter.name, { ...cardDetails, id: starter.name, class: charClass.name });
+        });
+        inventoryData?.forEach((item: any) => {
+            if (item.name && item.type === 'card') {
+                allCardsMap.set(item.name, {
+                    id: item.id || item.name,
+                    name: item.name,
+                    description: item.description,
+                    manaCost: item.manaCost,
+                    attack: item.attack,
+                    defense: item.defense,
+                    healing: item.healing,
+                    class: charClass.name,
+                } as CardData);
+            }
+        });
+        deckData?.cards?.forEach((cardName: string) => {
+            if (!allCardsMap.has(cardName)) {
+                const cardDetails = Object.values(CARD_DATA).find(c => c.name === cardName);
+                if (cardDetails) {
+                    allCardsMap.set(cardName, {
+                        ...cardDetails,
+                        id: cardName,
+                        class: charClass.name,
+                    });
+                }
+            }
+        });
+        
+        setCollectionState(Array.from(allCardsMap.values()));
+        setCharacter(characterData);
+        setDeck(deckData);
+
+        const shuffledDeck = shuffle(deckData.cards);
+        const initialHand = shuffledDeck.slice(0, 5);
+        const remainingDeck = shuffledDeck.slice(5);
+        const initialEnemies = encounter.enemies.map(e => ({ ...e, hp: e.maxHp, defense: e.modifier?.type === 'Shielded' ? e.modifier.value || 0 : 0 }));
+
+        setBattleState({
+            playerHealth: characterData.health,
+            playerMana: characterData.maxMana,
+            playerDefense: 0,
+            enemies: initialEnemies,
+            deck: remainingDeck,
+            hand: initialHand,
+            discard: [],
+            turn: 'player',
+            selectedCard: null,
+            selectedTarget: null,
+            isProcessing: false,
+            enemiesKilled: 0,
+            xpGained: 0,
+            introText: encounter.introText,
+            loot: encounter.loot
+        });
+
+    } catch (e: any) {
+        console.error("Failed to fetch battle data:", e);
+        toast({ title: "Error", description: e.message || "Failed to fetch battle data.", variant: "destructive" });
+        router.push('/');
+    } finally {
+        setIsLoading(false);
+    }
+  }, [firestore, user, characterId, needsEncounter, router, toast]);
+
+  useEffect(() => {
     if (needsEncounter) {
         fetchInitialData();
     }
-  }, [firestore, user, characterId, needsEncounter, router, toast]);
+  }, [needsEncounter, fetchInitialData]);
 
     const fullCardData = (cardName: string): CardData | null => {
         const card = collectionState.find(c => c.name === cardName);
