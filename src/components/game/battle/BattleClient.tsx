@@ -87,9 +87,17 @@ export function BattleClient({ characterId, needsEncounter }: BattleClientProps)
   const [battleState, setBattleState] = useState<BattleState | null>(null);
   const [collectionState, setCollectionState] = useState<CardData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [lastDamageToast, setLastDamageToast] = useState<{ title: string; description: string; variant?: "destructive" } | null>(null);
   
   const characterClass = useMemo(() => character ? getClass(character.class) : null, [character]);
   
+  useEffect(() => {
+    if (lastDamageToast) {
+        toast(lastDamageToast);
+        setLastDamageToast(null);
+    }
+  }, [lastDamageToast, toast]);
+
   const fetchInitialData = useCallback(async () => {
     if (!firestore || !user || !characterId) return;
 
@@ -198,7 +206,7 @@ export function BattleClient({ characterId, needsEncounter }: BattleClientProps)
     } finally {
         setIsLoading(false);
     }
-  }, [firestore, user, characterId, router, toast]);
+  }, [firestore, user, characterId]);
 
   useEffect(() => {
     if (needsEncounter) {
@@ -234,10 +242,10 @@ export function BattleClient({ characterId, needsEncounter }: BattleClientProps)
             const newHand = prev.hand.filter(c => c !== cardName);
             const newPlayerHealth = Math.min(character.maxHealth, prev.playerHealth + cardData.healing);
             if (cardData.healing > 0) {
-                toast({ title: cardData.name, description: `You heal for ${cardData.healing}!` });
+                setLastDamageToast({ title: cardData.name, description: `You heal for ${cardData.healing}!` });
             }
             if (cardData.defense > 0) {
-                toast({ title: cardData.name, description: `You gain ${cardData.defense} defense!` });
+                setLastDamageToast({ title: cardData.name, description: `You gain ${cardData.defense} defense!` });
             }
             return {
                 ...prev,
@@ -292,7 +300,7 @@ export function BattleClient({ characterId, needsEncounter }: BattleClientProps)
 
         const newPlayerHealth = Math.max(0, prev.playerHealth - playerDamageTaken);
         if (playerDamageTaken > 0) {
-            toast({ title: "Retaliation!", description: `You take ${playerDamageTaken} damage from spikes!`, variant: "destructive" });
+            setLastDamageToast({ title: "Retaliation!", description: `You take ${playerDamageTaken} damage from spikes!`, variant: "destructive" });
         }
 
         if (newPlayerHealth === 0) {
@@ -362,7 +370,7 @@ export function BattleClient({ characterId, needsEncounter }: BattleClientProps)
                 const damageTaken = Math.max(0, totalEnemyAttack - prev.playerDefense);
                 const newPlayerHealth = Math.max(0, prev.playerHealth - damageTaken);
                 
-                toast({ title: "Enemy attacks!", description: `You take ${damageTaken} damage.` });
+                setLastDamageToast({ title: "Enemy attacks!", description: `You take ${damageTaken} damage.` });
 
                 if (newPlayerHealth === 0) {
                     return { ...prev, playerHealth: 0, turn: 'defeat', isProcessing: true };
@@ -400,7 +408,7 @@ export function BattleClient({ characterId, needsEncounter }: BattleClientProps)
 
         return () => clearTimeout(timeout);
     }
-  }, [battleState?.turn, battleState?.enemies, character?.maxMana, toast]);
+  }, [battleState?.turn, battleState?.enemies, character?.maxMana]);
   
   useEffect(() => {
       const processVictory = async () => {
@@ -484,7 +492,7 @@ export function BattleClient({ characterId, needsEncounter }: BattleClientProps)
       if (battleState?.turn === 'victory') processVictory();
       if (battleState?.turn === 'defeat') processDefeat();
 
-  }, [battleState?.turn, firestore, user, characterId, router, toast, character, characterClass, battleState]);
+  }, [battleState, firestore, user, characterId, router, toast, character, characterClass]);
   
   if (isLoading || !battleState) {
     return <div className="flex flex-col items-center justify-center h-96">
@@ -509,7 +517,7 @@ export function BattleClient({ characterId, needsEncounter }: BattleClientProps)
 
         <div className="min-h-24 flex items-center justify-center text-muted-foreground italic text-center px-4">
             {battleState.isProcessing && (battleState.turn === 'enemy' || battleState.turn === 'victory' || battleState.turn === 'defeat') ? 'Processing...' : ''}
-            {battleleState.turn === 'player' && !battleState.isProcessing ? (battleState.selectedCard ? 'Select a target!' : battleState.introText) : ''}
+            {battleState.turn === 'player' && !battleState.isProcessing ? (battleState.selectedCard ? 'Select a target!' : battleState.introText) : ''}
         </div>
 
         <div className="pt-4 border-t-2 border-border">
