@@ -89,7 +89,8 @@ export function InventorySheet({ characterId }: { characterId: string }) {
 
         try {
             const inventoryCardNames = inventoryData.filter(item => item.type === 'card').map(item => item.name);
-            const allOwnedCards = Array.from(new Set([...deckData.cards, ...Object.keys(CARD_DATA), ...inventoryCardNames]));
+            const starterCardNames = characterClass.starterDeck.map(c => c.name);
+            const allOwnedCards = Array.from(new Set([...deckData.cards, ...Object.keys(CARD_DATA), ...inventoryCardNames, ...starterCardNames]));
             
             const newCard = await transmuteItemToCard({
                 playerClass: characterClass.name,
@@ -106,8 +107,8 @@ export function InventorySheet({ characterId }: { characterId: string }) {
             batch.delete(itemToDeleteRef);
             
             // Add the new card to the inventory (it is now an item of type 'card')
-            const newCardItemRef = collection(firestore, `users/${user.uid}/characters/${characterId}/inventory`);
-            batch.set(doc(newCardItemRef), { ...newCard, type: 'card' });
+            const newCardItemRef = doc(collection(firestore, `users/${user.uid}/characters/${characterId}/inventory`));
+            batch.set(newCardItemRef, { ...newCard, type: 'card' });
 
             await batch.commit();
 
@@ -132,7 +133,7 @@ export function InventorySheet({ characterId }: { characterId: string }) {
         );
     }
     
-    const junkItems = inventoryData?.filter(item => item.type !== 'card') || [];
+    const junkItems = inventoryData?.filter(item => item.type === 'junk') || [];
     const cardItems = inventoryData?.filter(item => item.type === 'card') || [];
     
     return (
