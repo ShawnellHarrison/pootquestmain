@@ -1,7 +1,6 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -10,7 +9,6 @@ import { useCollection, useFirebase, useMemoFirebase } from '@/firebase';
 import { collection, query } from 'firebase/firestore';
 import { Loader2, ShoppingBag, ExternalLink, Zap } from 'lucide-react';
 import { Badge } from '../ui/badge';
-import { seedProducts } from '@/lib/product-data';
 
 type Product = {
     id: string;
@@ -58,23 +56,13 @@ const ProductCard = ({ product }: { product: Product }) => (
 
 export function StoreSheet() {
     const { firestore } = useFirebase();
-    const [isSeeding, setIsSeeding] = useState(true);
-
-    // Seed products on initial load if the collection is empty
-    useEffect(() => {
-        if (firestore) {
-            seedProducts(firestore).finally(() => setIsSeeding(false));
-        }
-    }, [firestore]);
 
     const productsQuery = useMemoFirebase(() => {
         if (!firestore) return null;
         return query(collection(firestore, 'products'));
     }, [firestore]);
 
-    const { data: products, isLoading: isLoadingProducts } = useCollection(productsQuery);
-    
-    const isLoading = isSeeding || isLoadingProducts;
+    const { data: products, isLoading } = useCollection(productsQuery);
 
     return (
         <Sheet>
@@ -115,5 +103,3 @@ export function StoreSheet() {
         </Sheet>
     );
 }
-
-    

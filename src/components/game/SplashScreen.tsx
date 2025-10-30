@@ -8,8 +8,9 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Loader2 } from "lucide-react";
 import placeholderData from "@/lib/placeholder-images.json";
-import { useUser, useAuth } from "@/firebase";
+import { useUser, useAuth, useFirebase } from "@/firebase";
 import { initiateAnonymousSignIn } from "@/firebase/non-blocking-login";
+import { seedProducts } from "@/lib/product-data";
 
 const throneImage = placeholderData.placeholderImages.find(p => p.id === "splash-throne");
 
@@ -39,11 +40,19 @@ export function SplashScreen() {
   const [bubbles, setBubbles] = React.useState<number[]>([]);
   const { user, isUserLoading } = useUser();
   const auth = useAuth();
+  const { firestore } = useFirebase();
 
   useEffect(() => {
     const numBubbles = 20;
     setBubbles(Array.from({ length: numBubbles }, (_, i) => i));
   }, []);
+
+  // Seed products on initial load if the collection is empty
+  useEffect(() => {
+    if (firestore) {
+      seedProducts(firestore);
+    }
+  }, [firestore]);
 
   // Automatically sign in anonymously if not logged in
   useEffect(() => {
