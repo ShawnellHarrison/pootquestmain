@@ -445,15 +445,16 @@ const EnemySchema = __TURBOPACK__imported__module__$5b$project$5d2f$node_modules
     modifier: EnemyModifierSchema.optional()
 });
 const LootSchema = __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$zod$2f$lib$2f$index$2e$mjs__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["z"].object({
-    name: __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$zod$2f$lib$2f$index$2e$mjs__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["z"].string().describe('The name of the loot item.'),
-    description: __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$zod$2f$lib$2f$index$2e$mjs__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["z"].string().describe('A description of the loot item.'),
+    name: __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$zod$2f$lib$2f$index$2e$mjs__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["z"].string().describe('The name of the loot item. This should be a piece of "junk" with a flavorful name, not a generic weapon or scroll.'),
+    description: __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$zod$2f$lib$2f$index$2e$mjs__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["z"].string().describe('A creative and flavorful description of the junk item.'),
     type: __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$zod$2f$lib$2f$index$2e$mjs__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["z"].enum([
+        "junk",
         "weapon",
         "armor",
         "potion",
         "scroll",
         "misc"
-    ]).describe('The type of the item.')
+    ]).describe('The type of the item. It should always be "junk".')
 });
 const EncounterOutputSchema = __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$zod$2f$lib$2f$index$2e$mjs__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["z"].object({
     enemies: __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$zod$2f$lib$2f$index$2e$mjs__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["z"].array(EnemySchema).describe('An array of enemies for the player to fight.'),
@@ -509,7 +510,7 @@ const generateEncounterPrompt = __TURBOPACK__imported__module__$5b$project$5d2f$
       -   **"Regenerator"**: Heals itself at the start of its turn. (e.g., \`"modifier": {"type": "Regenerator", "value": 5}\`)
       -   **"Commander"**: Boosts the attack of its allies. (e.g., \`"modifier": {"type": "Commander", "value": 2}\`)
       -   **"Shielded"**: Starts the battle with temporary defense points. (e.g., \`"modifier": {"type": "Shielded", "value": 10}\`)
-  3.  **Loot**: The loot awarded MUST be a "Mystery Scroll". Set the loot name to "Mystery Scroll", type to "scroll", and give it a mysterious description.
+  3.  **Loot**: The loot MUST be a piece of flavorful junk, not a weapon or usable item. The 'type' must be "junk". Be creative with the name and description!
   4.  **Intro Text**: Write a short, engaging introductory text (1-2 sentences) that hints at the challenge. If there's an Elite, hint at its special nature.
 
   **Example (Elite with Retaliator):**
@@ -519,7 +520,7 @@ const generateEncounterPrompt = __TURBOPACK__imported__module__$5b$project$5d2f$
       { "id": "goblin-brute-1", "name": "Spiky Goblin", "hp": 40, "maxHp": 40, "imageUrl": "https://picsum.photos/seed/goblin1/200/200", "attack": 8, "modifier": {"type": "Retaliator", "value": 3} },
       { "id": "goblin-grunt-2", "name": "Goblin Grunt", "hp": 20, "maxHp": 20, "imageUrl": "https://picsum.photos/seed/goblin2/200/200", "attack": 5 }
     ],
-    "loot": { "name": "Mystery Scroll", "description": "A dusty scroll radiating a faint magical aura. What secrets does it hold?", "type": "scroll" }
+    "loot": { "name": "A Goblin's Tooth", "description": "A single, yellowed goblin tooth. It smells faintly of regret and stale cabbage.", "type": "junk" }
   }`
 });
 const generateEncounterFlow = __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$ai$2f$genkit$2e$ts__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__["ai"].defineFlow({

@@ -1,7 +1,7 @@
 
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import {
   Card,
   CardContent,
@@ -11,7 +11,6 @@ import {
 import { Button } from "@/components/ui/button";
 import { Loader2, BookOpen, Forward, ChevronRight, Briefcase, Scroll, Shield, Swords, Ghost } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import Link from "next/link";
 import { Separator } from "@/components/ui/separator";
 import {
   Tooltip,
@@ -21,6 +20,9 @@ import {
 } from "@/components/ui/tooltip";
 import { useCharacter } from "@/hooks/useCharacter";
 import { useNarrative } from "@/hooks/useNarrative";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { DeckManagerSheet } from "./sheets/DeckManagerSheet";
+import { InventorySheet } from "./sheets/InventorySheet";
 
 interface AdventureClientProps {
   characterId: string;
@@ -117,16 +119,32 @@ export function AdventureClient({ characterId, initialBattleState }: AdventureCl
             <Button onClick={handleContinue} size="lg" disabled={gameState === 'generating'}>
               Continue Your Adventure <Forward className="ml-2 h-4 w-4" />
             </Button>
-             <Button asChild variant="outline" size="lg">
-                <Link href={`/deck/${characterId}`}>
-                    <Briefcase className="mr-2 h-4 w-4" /> Manage Deck
-                </Link>
-            </Button>
-            <Button asChild variant="outline" size="lg">
-                <Link href={`/inventory/${characterId}`}>
-                    <Scroll className="mr-2 h-4 w-4" /> Inspect Inventory
-                </Link>
-            </Button>
+            <Sheet>
+                <SheetTrigger asChild>
+                    <Button variant="outline" size="lg">
+                        <Briefcase className="mr-2 h-4 w-4" /> Manage Deck
+                    </Button>
+                </SheetTrigger>
+                <SheetContent side="right" className="w-full sm:max-w-4xl overflow-y-auto">
+                    <SheetHeader>
+                        <SheetTitle className="font-headline text-3xl text-glow">Deck Manager</SheetTitle>
+                    </SheetHeader>
+                    <DeckManagerSheet characterId={characterId} />
+                </SheetContent>
+            </Sheet>
+            <Sheet>
+                <SheetTrigger asChild>
+                    <Button variant="outline" size="lg">
+                        <Scroll className="mr-2 h-4 w-4" /> Inspect Inventory
+                    </Button>
+                </SheetTrigger>
+                 <SheetContent side="right" className="w-full sm:max-w-3xl overflow-y-auto">
+                    <SheetHeader>
+                        <SheetTitle className="font-headline text-3xl text-glow">Inventory</SheetTitle>
+                    </SheetHeader>
+                    <InventorySheet characterId={characterId} />
+                </SheetContent>
+            </Sheet>
           </div>
         </div>
       );

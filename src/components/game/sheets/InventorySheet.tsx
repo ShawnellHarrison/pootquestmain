@@ -1,16 +1,13 @@
 
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState } from 'react';
 import { useFirebase, useCollection, useDoc, useMemoFirebase } from '@/firebase';
-import { collection, writeBatch, doc, addDoc, deleteDoc } from 'firebase/firestore';
+import { writeBatch, doc, collection } from 'firebase/firestore';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Loader2, ArrowLeft, Wand2, Sparkles, AlertCircle, HelpCircle } from 'lucide-react';
+import { Loader2, Wand2, Sparkles, HelpCircle } from 'lucide-react';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
-import Link from 'next/link';
-import { Header } from '@/components/game/Header';
-import { GameContainer } from '@/components/game/GameContainer';
 import { useToast } from '@/hooks/use-toast';
 import { transmuteItemToCard, TransmuteItemOutput } from '@/ai/flows/transmute-item-flow';
 import { CARD_DATA, getClass } from '@/lib/game-data';
@@ -50,8 +47,7 @@ const NewCard = ({ card }: { card: TransmuteItemOutput }) => (
     </Card>
 )
 
-export default function InventoryPage({ params }: { params: { characterId: string } }) {
-    const { characterId } = params;
+export function InventorySheet({ characterId }: { characterId: string }) {
     const { firestore, user, isUserLoading } = useFirebase();
     const { toast } = useToast();
 
@@ -140,18 +136,8 @@ export default function InventoryPage({ params }: { params: { characterId: strin
     const cardItems = inventoryData?.filter(item => item.type === 'card') || [];
     
     return (
-        <>
-        <Header />
-        <main className="py-12">
-        <GameContainer>
+        <div className="py-4">
             <div className="space-y-8">
-                 <div className="flex justify-between items-center">
-                    <h1 className="font-headline text-4xl text-glow">Inventory</h1>
-                    <Button variant="outline" asChild>
-                        <Link href={`/adventure/${characterId}`}><ArrowLeft /> Back to Adventure</Link>
-                    </Button>
-                </div>
-                
                 {newlyCreatedCard && (
                     <Alert variant="default" className="border-green-500/50 bg-green-900/30">
                         <Sparkles className="h-4 w-4 text-green-400" />
@@ -203,8 +189,6 @@ export default function InventoryPage({ params }: { params: { characterId: strin
                     </CardContent>
                 </Card>
             </div>
-        </GameContainer>
-        </main>
-        </>
+        </div>
     );
 }

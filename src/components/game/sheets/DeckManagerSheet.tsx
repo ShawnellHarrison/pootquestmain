@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
@@ -7,15 +6,12 @@ import { useFirebase, useCollection, useDoc, useMemoFirebase } from '@/firebase'
 import { doc, collection, writeBatch } from 'firebase/firestore';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Loader2, ArrowLeft, Save, AlertCircle } from 'lucide-react';
+import { Loader2, Save, AlertCircle } from 'lucide-react';
 import { CARD_DATA, CardData, getClass } from '@/lib/game-data';
 import { DndContext, closestCenter, DragEndEvent } from '@dnd-kit/core';
 import { arrayMove, SortableContext, useSortable, rectSortingStrategy } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
-import Link from 'next/link';
-import { Header } from '@/components/game/Header';
-import { GameContainer } from '@/components/game/GameContainer';
 import { useToast } from '@/hooks/use-toast';
 
 const DECK_SIZE = 15;
@@ -50,8 +46,7 @@ const DraggableCard = ({ card, inDeck }: DraggableCardProps) => {
 };
 
 
-export default function DeckManagerPage({ params }: { params: { characterId: string } }) {
-    const { characterId } = params;
+export function DeckManagerSheet({ characterId }: { characterId: string }) {
     const { firestore, user, isUserLoading } = useFirebase();
     const { toast } = useToast();
 
@@ -210,66 +205,55 @@ export default function DeckManagerPage({ params }: { params: { characterId: str
     }
     
     return (
-        <>
-        <Header />
-        <main className="py-12">
-        <GameContainer>
-        <DndContext onDragEnd={handleDragEnd} collisionDetection={closestCenter}>
-            <div className="space-y-8">
-                <div className="flex justify-between items-center">
-                    <h1 className="font-headline text-4xl text-glow">Deck Manager</h1>
-                    <div className="flex gap-4">
-                        <Button variant="outline" asChild>
-                            <Link href={`/adventure/${characterId}`}><ArrowLeft /> Back to Adventure</Link>
-                        </Button>
+        <div className="py-4">
+            <DndContext onDragEnd={handleDragEnd} collisionDetection={closestCenter}>
+                <div className="space-y-8">
+                    <div className="flex justify-end items-center">
                         <Button onClick={handleSaveDeck} disabled={isSaving || deck.length !== DECK_SIZE}>
                             {isSaving ? <Loader2 className="animate-spin" /> : <Save />} Save Deck
                         </Button>
                     </div>
+
+                    {deck.length !== DECK_SIZE && (
+                        <Alert variant="destructive">
+                            <AlertCircle className="h-4 w-4" />
+                            <AlertTitle>Deck Invalid</AlertTitle>
+                            <AlertDescription>
+                                Your deck has {deck.length} cards. It must have exactly {DECK_SIZE} cards to be valid.
+                            </AlertDescription>
+                        </Alert>
+                    )}
+
+                    <Card id="deck-droppable" className="min-h-96">
+                        <CardHeader>
+                            <CardTitle>Your Deck ({deck.length}/{DECK_SIZE})</CardTitle>
+                            <CardDescription>This is your active deck for battles. Drag and drop cards to customize it.</CardDescription>
+                        </CardHeader>
+                        <CardContent className="flex flex-wrap gap-4 p-4 bg-muted/20 rounded-lg min-h-[22rem]">
+                            <SortableContext items={deck} strategy={rectSortingStrategy}>
+                                {deck.map(cardName => {
+                                    const cardData = collectionState.find(c => c.name === cardName);
+                                    return cardData ? <DraggableCard key={cardName} card={cardData} inDeck={true} /> : null;
+                                })}
+                            </SortableContext>
+                        </CardContent>
+                    </Card>
+
+                    <Card id="collection-droppable" className="min-h-96">
+                        <CardHeader>
+                            <CardTitle>Your Collection</CardTitle>
+                            <CardDescription>These are all the cards you own. Drag cards into your deck above.</CardDescription>
+                        </CardHeader>
+                        <CardContent className="flex flex-wrap gap-4 p-4 bg-background/50 rounded-lg">
+                            <SortableContext items={collectionPool.map(c => c.name)} strategy={rectSortingStrategy}>
+                                {collectionPool.map(card => (
+                                <DraggableCard key={card.id} card={card} inDeck={false} />
+                                ))}
+                            </SortableContext>
+                        </CardContent>
+                    </Card>
                 </div>
-
-                {deck.length !== DECK_SIZE && (
-                    <Alert variant="destructive">
-                        <AlertCircle className="h-4 w-4" />
-                        <AlertTitle>Deck Invalid</AlertTitle>
-                        <AlertDescription>
-                            Your deck has {deck.length} cards. It must have exactly {DECK_SIZE} cards to be valid.
-                        </AlertDescription>
-                    </Alert>
-                )}
-
-                <Card id="deck-droppable" className="min-h-96">
-                    <CardHeader>
-                        <CardTitle>Your Deck ({deck.length}/{DECK_SIZE})</CardTitle>
-                        <CardDescription>This is your active deck for battles. Drag and drop cards to customize it.</CardDescription>
-                    </CardHeader>
-                    <CardContent className="flex flex-wrap gap-4 p-4 bg-muted/20 rounded-lg min-h-[22rem]">
-                        <SortableContext items={deck} strategy={rectSortingStrategy}>
-                            {deck.map(cardName => {
-                                const cardData = collectionState.find(c => c.name === cardName);
-                                return cardData ? <DraggableCard key={cardName} card={cardData} inDeck={true} /> : null;
-                            })}
-                        </SortableContext>
-                    </CardContent>
-                </Card>
-
-                 <Card id="collection-droppable" className="min-h-96">
-                    <CardHeader>
-                        <CardTitle>Your Collection</CardTitle>
-                        <CardDescription>These are all the cards you own. Drag cards into your deck above.</CardDescription>
-                    </CardHeader>
-                    <CardContent className="flex flex-wrap gap-4 p-4 bg-background/50 rounded-lg">
-                        <SortableContext items={collectionPool.map(c => c.name)} strategy={rectSortingStrategy}>
-                            {collectionPool.map(card => (
-                               <DraggableCard key={card.id} card={card} inDeck={false} />
-                            ))}
-                        </SortableContext>
-                    </CardContent>
-                </Card>
-            </div>
-        </DndContext>
-        </GameContainer>
-        </main>
-        </>
+            </DndContext>
+        </div>
     );
 }
