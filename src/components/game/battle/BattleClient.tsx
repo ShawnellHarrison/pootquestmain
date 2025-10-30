@@ -206,7 +206,7 @@ export function BattleClient({ characterId, needsEncounter }: BattleClientProps)
     } finally {
         setIsLoading(false);
     }
-  }, [firestore, user, characterId]);
+  }, [firestore, user, characterId, router, toast]);
 
   useEffect(() => {
     if (needsEncounter) {
@@ -469,7 +469,7 @@ export function BattleClient({ characterId, needsEncounter }: BattleClientProps)
               enemiesKilled: battleState.enemiesKilled,
               enemiesSpared: 0,
               secretRoomsFound: 0,
-              ending: `Vanquished by ${battleState?.enemies[0]?.name || 'a mysterious foe'}.`,
+              ending: `Vanquished by ${battleState.enemies[0]?.name || 'a mysterious foe'}.`,
               uniqueDiscovery: "Learned that hubris smells a lot like sulfur.",
               createdAt: new Date().toISOString(),
           };
