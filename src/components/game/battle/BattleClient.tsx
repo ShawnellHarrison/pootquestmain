@@ -91,7 +91,7 @@ export function BattleClient({ characterId, needsEncounter }: BattleClientProps)
   const characterClass = useMemo(() => character ? getClass(character.class) : null, [character]);
   
   const fetchInitialData = useCallback(async () => {
-    if (!firestore || !user || !characterId || !needsEncounter) return;
+    if (!firestore || !user || !characterId) return;
 
     setIsLoading(true);
 
@@ -198,7 +198,7 @@ export function BattleClient({ characterId, needsEncounter }: BattleClientProps)
     } finally {
         setIsLoading(false);
     }
-  }, [firestore, user, characterId, needsEncounter, router, toast]);
+  }, [firestore, user, characterId, router, toast]);
 
   useEffect(() => {
     if (needsEncounter) {
@@ -509,7 +509,7 @@ export function BattleClient({ characterId, needsEncounter }: BattleClientProps)
 
         <div className="min-h-24 flex items-center justify-center text-muted-foreground italic text-center px-4">
             {battleState.isProcessing && (battleState.turn === 'enemy' || battleState.turn === 'victory' || battleState.turn === 'defeat') ? 'Processing...' : ''}
-            {battleState.turn === 'player' && !battleState.isProcessing ? (battleState.selectedCard ? 'Select a target!' : battleState.introText) : ''}
+            {battleleState.turn === 'player' && !battleState.isProcessing ? (battleState.selectedCard ? 'Select a target!' : battleState.introText) : ''}
         </div>
 
         <div className="pt-4 border-t-2 border-border">
