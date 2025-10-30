@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useFirebase, useDoc, useMemoFirebase } from '@/firebase';
 import { doc, writeBatch } from 'firebase/firestore';
 import { useRouter } from 'next/navigation';
@@ -12,6 +12,7 @@ import {
 } from '@/ai/flows/branching-narrative-system';
 import { generateEncounter } from '@/ai/flows/generate-encounter-flow';
 import { generateNpc, NpcOutput } from "@/ai/flows/ai-dungeon-master-npc";
+import { generateClassNarration } from '@/ai/flows/class-specific-ai-narration';
 import type { CharacterState } from './useCharacter';
 import type { CharacterClass } from '@/lib/game-data';
 
@@ -71,27 +72,29 @@ export function useNarrative(
         }
     }, [narrativeContextData, initialBattleState, character]);
 
-    useEffect(() => {
-        if (!character || !narrativeContext) {
-            setGameState("loading");
-            return;
-        }
-
-        if (narrativeContext.currentScenario) {
-            setGameState("ready");
-        } else if (narrativeContext.triggerNextScenario) {
-            handleContinue();
-        } else {
-            setGameState("awaiting_continue");
-        }
-    }, [character, narrativeContext]);
-
-
-    const handleContinue = async () => {
-        if (!narrativeContext || !firestore || !user || !characterClassData || !character) return;
+    const handleContinue = useCallback(async () => {
+        if (!narrativeContext || !firestore || !user || !characterClassData || !character || !narrativeContextRef) return;
     
         try {
           setGameState("generating");
+
+          // Check if this is the very first time (placeholder narration)
+          if (narrativeContext.storyArc === "Your legend is about to be written...") {
+            const narrationResult = await generateClassNarration({ playerClass: characterClassData.name });
+            if (narrationResult) {
+                const batch = writeBatch(firestore);
+                const firstTimeUpdates = {
+                    storyArc: narrationResult.storyArc,
+                    lastNarration: narrationResult.openingNarration,
+                    triggerNextScenario: false, // We have narration, don't trigger another generation
+                };
+                batch.update(narrativeContextRef, firstTimeUpdates);
+                await batch.commit();
+                setNarrativeContext(prev => prev ? ({ ...prev, ...firstTimeUpdates }) : null);
+                setGameState("awaiting_continue"); // Go back to showing the new narration
+                return; // Stop here, user will click continue again
+            }
+          }
     
           const result = await generateNextScenario({
             playerClass: characterClassData.name,
@@ -126,11 +129,27 @@ export function useNarrative(
           setError(e.message || "An unknown error occurred while generating the scenario.");
           setGameState("loading");
         }
-      };
+      }, [narrativeContext, firestore, user, characterClassData, character, narrativeContextRef]);
+
+
+    useEffect(() => {
+        if (!character || !narrativeContext) {
+            setGameState("loading");
+            return;
+        }
+
+        if (narrativeContext.currentScenario) {
+            setGameState("ready");
+        } else if (narrativeContext.triggerNextScenario) {
+            handleContinue();
+        } else {
+            setGameState("awaiting_continue");
+        }
+    }, [character, narrativeContext, handleContinue]);
     
       const handleChoice = async (choice: Choice) => {
         if (!firestore || !user || !characterClassData || !character || !narrativeContext || !narrativeContextRef) return;
-        setGameState("generating");
+        
     
         const choiceData = { id: choice.id, text: choice.text, tags: choice.tags, timestamp: new Date().toISOString() };
         
@@ -143,6 +162,17 @@ export function useNarrative(
         if (choice.tags.includes("COMBAT")) newNarrativeContext.reputationCombat += 5;
         if (choice.tags.includes("DIPLOMACY")) newNarrativeContext.reputationDiplomacy += 5;
         
+        // Optimistically navigate for combat
+        if (choice.tags.includes("COMBAT")) {
+            // Don't wait for AI. Just go to battle page.
+            // The battle page will be responsible for generating its own encounter.
+            setGameState("loading"); // Show loading on adventure screen while navigating
+            router.push(`/battle?characterId=${characterId}&needsEncounter=true`);
+            return; 
+        }
+
+        setGameState("generating");
+
         try {
             if (choice.questProgress) {
                 const { questId, nextStep } = choice.questProgress;
@@ -162,32 +192,7 @@ export function useNarrative(
                 }
             }
     
-            if (choice.tags.includes("COMBAT")) {
-                const activeQuestId = Object.keys(newNarrativeContext.questFlags).find(
-                  (key) => newNarrativeContext.questFlags[key]?.status === 'started'
-                );
-    
-                const encounterResult = await generateEncounter({
-                    playerClass: characterClassData.name,
-                    playerLevel: character.level,
-                    location: newNarrativeContext.location,
-                    questId: activeQuestId,
-                    reputation: {
-                        stealth: newNarrativeContext.reputationStealth,
-                        combat: newNarrativeContext.reputationCombat,
-                        diplomacy: newNarrativeContext.reputationDiplomacy,
-                    },
-                });
-                
-                const batch = writeBatch(firestore);
-                batch.update(narrativeContextRef, newNarrativeContext);
-                await batch.commit();
-    
-                const encounterString = JSON.stringify(encounterResult);
-                router.push(`/battle?characterId=${characterId}&encounter=${encodeURIComponent(encounterString)}`);
-                return;
-    
-            } else if (choice.tags.includes("NPC_INTERACTION")) {
+            if (choice.tags.includes("NPC_INTERACTION")) {
                 
                 const npcResult: NpcOutput = await generateNpc({
                     location: newNarrativeContext.location,
@@ -237,7 +242,7 @@ export function useNarrative(
             
             const batch = writeBatch(firestore);
             batch.update(narrativeContextRef, newNarrativeContext);
-            await batch.commit();
+await batch.commit();
     
             setNarrativeContext(newNarrativeContext);
     

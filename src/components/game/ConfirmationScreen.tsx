@@ -13,7 +13,6 @@ import { collection, doc, writeBatch } from "firebase/firestore";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Loader2 } from "lucide-react";
-import { generateClassNarration } from "@/ai/flows/class-specific-ai-narration";
 
 interface ConfirmationScreenProps {
     character: CharacterClass;
@@ -35,11 +34,6 @@ export function ConfirmationScreen({ character }: ConfirmationScreenProps) {
         if (!firestore || !user) return;
         setIsCreating(true);
         try {
-            const narrationResult = await generateClassNarration({ playerClass: character.name });
-            if (!narrationResult) {
-                throw new Error("Failed to generate initial story from AI.");
-            }
-
             const batch = writeBatch(firestore);
 
             // 1. Create Character document
@@ -60,22 +54,22 @@ export function ConfirmationScreen({ character }: ConfirmationScreenProps) {
                 createdAt: new Date(),
             });
 
-            // 2. Create initial NarrativeContext document
+            // 2. Create initial NarrativeContext document with placeholder text
             const narrativeContextRef = doc(firestore, `users/${user.uid}/characters/${newCharacterRef.id}/narrativeContexts`, "main");
             batch.set(narrativeContextRef, {
                 characterId: newCharacterRef.id,
                 location: "Tavern of Broken Wind",
-                storyArc: narrationResult.storyArc,
+                storyArc: "Your legend is about to be written...", // Placeholder
                 playerChoices: [],
                 reputationStealth: 10,
                 reputationCombat: 10,
                 reputationDiplomacy: 10,
                 unlockedPaths: [],
                 questFlags: {},
-                lastNarration: narrationResult.openingNarration,
+                lastNarration: "A new adventure begins! What will your first move be?", // Placeholder
                 currentScenario: null,
                 currentEncounter: null,
-                triggerNextScenario: false,
+                triggerNextScenario: true, // Trigger narration generation on first load
             });
 
             // 3. Create initial Deck document

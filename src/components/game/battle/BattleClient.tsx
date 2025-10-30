@@ -8,7 +8,6 @@ import { doc, getDoc, writeBatch, increment, collection, addDoc, getDocs } from 
 import { Loader2, Flag, ArrowRightCircle } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Card, CardContent } from '@/components/ui/card';
 import { EncounterOutput } from '@/ai/flows/flow-schemas';
 import { PlayerCard } from './PlayerCard';
@@ -16,6 +15,7 @@ import { Enemy } from './Enemy';
 import { Button } from '@/components/ui/button';
 import { PlayerStats } from './PlayerStats';
 import { CARD_DATA, CardData, CharacterClass, getClass } from '@/lib/game-data';
+import { generateEncounter } from '@/ai/flows/generate-encounter-flow';
 
 // Fisher-Yates shuffle algorithm
 const shuffle = <T,>(array: T[]): T[] => {
@@ -43,6 +43,7 @@ type BattleState = {
     isProcessing: boolean;
     enemiesKilled: number;
     xpGained: number;
+    introText: string;
 };
 
 type CharacterData = {
@@ -57,16 +58,25 @@ type CharacterData = {
     speed: number;
 }
 
+type NarrativeContextData = {
+    location: string;
+    reputationStealth: number;
+    reputationCombat: number;
+    reputationDiplomacy: number;
+    questFlags: Record<string, any>;
+};
+
+
 type DeckData = {
     cards: string[];
 }
 
 interface BattleClientProps {
     characterId: string;
-    encounter: EncounterOutput;
+    needsEncounter: boolean;
 }
 
-export function BattleClient({ characterId, encounter }: BattleClientProps) {
+export function BattleClient({ characterId, needsEncounter }: BattleClientProps) {
   const { firestore, user } = useFirebase();
   const router = useRouter();
   const { toast } = useToast();
@@ -75,100 +85,103 @@ export function BattleClient({ characterId, encounter }: BattleClientProps) {
   const [deck, setDeck] = useState<DeckData | null>(null);
   const [battleState, setBattleState] = useState<BattleState | null>(null);
   const [collectionState, setCollectionState] = useState<CardData[]>([]);
-
+  const [isLoading, setIsLoading] = useState(true);
+  
   const characterClass = useMemo(() => character ? getClass(character.class) : null, [character]);
   
   useEffect(() => {
     const fetchInitialData = async () => {
-        if (!firestore || !user) return;
+        if (!firestore || !user || !characterId) return;
+
+        setIsLoading(true);
+
         try {
             const characterDocRef = doc(firestore, `users/${user.uid}/characters/${characterId}`);
             const deckRef = doc(firestore, `users/${user.uid}/characters/${characterId}/decks`, "main");
             const inventoryRef = collection(firestore, `users/${user.uid}/characters/${characterId}/inventory`);
+            const narrativeRef = doc(firestore, `users/${user.uid}/characters/${characterId}/narrativeContexts`, "main");
 
-            const [characterSnap, deckSnap, inventorySnap] = await Promise.all([
+            const [characterSnap, deckSnap, inventorySnap, narrativeSnap] = await Promise.all([
                 getDoc(characterDocRef),
                 getDoc(deckRef),
                 getDocs(inventoryRef),
+                getDoc(narrativeRef)
             ]);
 
-            if (characterSnap.exists() && deckSnap.exists()) {
-                const characterData = characterSnap.data() as CharacterData;
-                const deckData = deckSnap.data() as DeckData;
-                const inventoryData = inventorySnap.docs.map(d => ({...d.data(), id: d.id}));
-
-                const charClass = getClass(characterData.class);
-                if (!charClass) {
-                    throw new Error("Character class not found");
-                }
-                
-                const allCardsMap = new Map<string, CardData>();
-                charClass.starterDeck.forEach(starter => {
-                    const cardDetails = Object.values(CARD_DATA).find(c => c.name === starter.name);
-                    if (cardDetails) {
-                        allCardsMap.set(starter.name, { ...cardDetails, id: starter.name, class: charClass.name });
-                    }
-                });
-
-                inventoryData.forEach((item: any) => {
-                    if ((item.type === 'card' || Object.values(CARD_DATA).some(c => c.name === item.name))) {
-                        allCardsMap.set(item.name, {
-                            id: item.id || item.name,
-                            name: item.name,
-                            description: item.description,
-                            manaCost: item.manaCost,
-                            attack: item.attack,
-                            defense: item.defense,
-                            healing: item.healing,
-                            class: charClass.name,
-                        } as CardData);
-                    }
-                });
-                
-                setCollectionState(Array.from(allCardsMap.values()));
-                setCharacter(characterData);
-                setDeck(deckData);
-
-                const shuffledDeck = shuffle(deckData.cards);
-                const initialHand = shuffledDeck.slice(0, 5);
-                const remainingDeck = shuffledDeck.slice(5);
-
-                const initialEnemies = encounter.enemies.map(e => {
-                    let initialDefense = 0;
-                    if (e.modifier?.type === 'Shielded') {
-                        initialDefense = e.modifier.value || 0;
-                    }
-                    return {...e, hp: e.maxHp, defense: initialDefense}; // Ensure enemies have full HP and set initial defense
-                });
-
-                setBattleState({
-                    playerHealth: characterData.health,
-                    playerMana: characterData.maxMana,
-                    playerDefense: 0,
-                    enemies: initialEnemies,
-                    deck: remainingDeck,
-                    hand: initialHand,
-                    discard: [],
-                    turn: 'player',
-                    selectedCard: null,
-                    selectedTarget: null,
-                    isProcessing: false,
-                    enemiesKilled: 0,
-                    xpGained: 0,
-                });
-
-            } else {
-                toast({ title: "Error", description: "Could not load character data for battle.", variant: "destructive" });
-                router.push('/');
+            if (!characterSnap.exists() || !deckSnap.exists() || !narrativeSnap.exists()) {
+                throw new Error("Could not load all required data for battle.");
             }
-        } catch (e) {
+
+            const characterData = characterSnap.data() as CharacterData;
+            const deckData = deckSnap.data() as DeckData;
+            const narrativeData = narrativeSnap.data() as NarrativeContextData;
+            const inventoryData = inventorySnap.docs.map(d => ({...d.data(), id: d.id}));
+
+            const charClass = getClass(characterData.class);
+            if (!charClass) throw new Error("Character class not found");
+            
+            const encounter: EncounterOutput = await generateEncounter({
+                playerClass: charClass.name,
+                playerLevel: characterData.level,
+                location: narrativeData.location,
+                questId: Object.keys(narrativeData.questFlags).find(q => narrativeData.questFlags[q].status === 'started'),
+                reputation: {
+                    stealth: narrativeData.reputationStealth,
+                    combat: narrativeData.reputationCombat,
+                    diplomacy: narrativeData.reputationDiplomacy,
+                },
+            });
+
+            const allCardsMap = new Map<string, CardData>();
+            charClass.starterDeck.forEach(starter => {
+                const cardDetails = Object.values(CARD_DATA).find(c => c.name === starter.name);
+                if (cardDetails) allCardsMap.set(starter.name, { ...cardDetails, id: starter.name, class: charClass.name });
+            });
+            inventoryData.forEach((item: any) => {
+                if ((item.type === 'card' || Object.values(CARD_DATA).some(c => c.name === item.name))) {
+                    allCardsMap.set(item.name, { id: item.id || item.name, ...item } as CardData);
+                }
+            });
+            
+            setCollectionState(Array.from(allCardsMap.values()));
+            setCharacter(characterData);
+            setDeck(deckData);
+
+            const shuffledDeck = shuffle(deckData.cards);
+            const initialHand = shuffledDeck.slice(0, 5);
+            const remainingDeck = shuffledDeck.slice(5);
+            const initialEnemies = encounter.enemies.map(e => ({ ...e, hp: e.maxHp, defense: e.modifier?.type === 'Shielded' ? e.modifier.value || 0 : 0 }));
+
+            setBattleState({
+                playerHealth: characterData.health,
+                playerMana: characterData.maxMana,
+                playerDefense: 0,
+                enemies: initialEnemies,
+                deck: remainingDeck,
+                hand: initialHand,
+                discard: [],
+                turn: 'player',
+                selectedCard: null,
+                selectedTarget: null,
+                isProcessing: false,
+                enemiesKilled: 0,
+                xpGained: 0,
+                introText: encounter.introText,
+            });
+
+        } catch (e: any) {
             console.error("Failed to fetch battle data:", e);
-            toast({ title: "Error", description: "Failed to fetch battle data.", variant: "destructive" });
+            toast({ title: "Error", description: e.message || "Failed to fetch battle data.", variant: "destructive" });
             router.push('/');
+        } finally {
+            setIsLoading(false);
         }
     };
-    fetchInitialData();
-  }, [firestore, user, characterId, encounter, router, toast]);
+
+    if (needsEncounter) {
+        fetchInitialData();
+    }
+  }, [firestore, user, characterId, needsEncounter, router, toast]);
 
     const fullCardData = (cardName: string): CardData | null => {
         const card = collectionState.find(c => c.name === cardName);
@@ -231,6 +244,7 @@ export function BattleClient({ characterId, encounter }: BattleClientProps) {
         let enemiesKilledThisTurn = 0;
         let xpGainedThisTurn = 0;
         let playerDamageTaken = 0;
+        let loot: any = null;
         
         const newEnemies = prev.enemies.map(e => {
             if (e.id === enemyId) {
@@ -260,7 +274,7 @@ export function BattleClient({ characterId, encounter }: BattleClientProps) {
         }
 
         if (newPlayerHealth === 0) {
-            return { ...prev, playerHealth: 0, turn: 'defeat', isProcessing: true };
+            return { ...prev, playerHealth: 0, turn: 'defeat', isProcessing: true, introText: prev.introText };
         }
 
         const newHand = prev.hand.filter(c => c !== prev!.selectedCard);
@@ -277,7 +291,7 @@ export function BattleClient({ characterId, encounter }: BattleClientProps) {
             turn: isVictory ? 'victory' : prev.turn,
             isProcessing: isVictory,
             enemiesKilled: prev.enemiesKilled + enemiesKilledThisTurn,
-            xpGained: prev.xpGained + xpGainedThisTurn
+            xpGained: prev.xpGained + xpGainedThisTurn,
         };
     });
   };
@@ -369,7 +383,13 @@ export function BattleClient({ characterId, encounter }: BattleClientProps) {
   useEffect(() => {
       const processVictory = async () => {
         if (!battleState || battleState.turn !== 'victory' || !character) return;
-        toast({ title: "Victory!", description: `You found: ${encounter.loot.name}`, duration: 5000 });
+        
+        // This is a bit of a hack to get the loot which should be part of the encounter state
+        const encounterRef = doc(firestore!, `users/${user!.uid}/characters/${characterId}/narrativeContexts`, 'main');
+        const encounterSnap = await getDoc(encounterRef);
+        const loot = encounterSnap.data()?.currentEncounter?.loot || { name: 'some junk' };
+
+        toast({ title: "Victory!", description: `You found: ${loot.name}`, duration: 5000 });
 
         if(firestore && user) {
             const batch = writeBatch(firestore);
@@ -391,17 +411,16 @@ export function BattleClient({ characterId, encounter }: BattleClientProps) {
             }
 
             batch.update(characterDocRef, characterUpdates);
-            batch.set(doc(inventoryRef), encounter.loot);
+            batch.set(doc(inventoryRef), loot);
             batch.update(narrativeContextRef, { currentEncounter: null, triggerNextScenario: true });
 
             await batch.commit();
         }
         
-        // This simulates passing state back to the adventure page without writing it to the db
         const resultState = {
             playerHealth: battleState.playerHealth,
             xpGained: battleState.xpGained,
-            loot: encounter.loot,
+            loot: loot,
         };
 
         router.push(`/adventure/${characterId}?battleState=${encodeURIComponent(JSON.stringify(resultState))}`);
@@ -418,7 +437,7 @@ export function BattleClient({ characterId, encounter }: BattleClientProps) {
               enemiesKilled: battleState.enemiesKilled,
               enemiesSpared: 0,
               secretRoomsFound: 0,
-              ending: `Vanquished by ${encounter?.enemies[0]?.name || 'a mysterious foe'}.`,
+              ending: `Vanquished by ${battleState?.enemies[0]?.name || 'a mysterious foe'}.`,
               uniqueDiscovery: "Learned that hubris smells a lot like sulfur.",
               createdAt: new Date().toISOString(),
           };
@@ -447,12 +466,13 @@ export function BattleClient({ characterId, encounter }: BattleClientProps) {
       if (battleState?.turn === 'victory') processVictory();
       if (battleState?.turn === 'defeat') processDefeat();
 
-  }, [battleState?.turn, firestore, user, characterId, router, toast, character, characterClass, encounter, battleState]);
-
-  const isLoading = !character || !deck || !battleState;
+  }, [battleState?.turn, firestore, user, characterId, router, toast, character, characterClass, battleState]);
   
-  if (isLoading) {
-    return <div className="flex justify-center items-center h-96"><Loader2 className="h-16 w-16 animate-spin text-primary" /></div>;
+  if (isLoading || !battleState) {
+    return <div className="flex flex-col items-center justify-center h-96">
+        <Loader2 className="h-16 w-16 animate-spin text-primary mb-4" />
+        <p className="text-xl text-muted-foreground font-headline">The Fartmaster is brewing a foul encounter...</p>
+    </div>;
   }
   
   return (
@@ -471,20 +491,20 @@ export function BattleClient({ characterId, encounter }: BattleClientProps) {
 
         <div className="min-h-24 flex items-center justify-center text-muted-foreground italic text-center px-4">
             {battleState.isProcessing && (battleState.turn === 'enemy' || battleState.turn === 'victory' || battleState.turn === 'defeat') ? 'Processing...' : ''}
-            {battleState.turn === 'player' && !battleState.isProcessing ? (battleState.selectedCard ? 'Select a target!' : encounter.introText) : ''}
+            {battleState.turn === 'player' && !battleState.isProcessing ? (battleState.selectedCard ? 'Select a target!' : battleState.introText) : ''}
         </div>
 
         <div className="pt-4 border-t-2 border-border">
           <div className="flex justify-between items-center mb-4 px-4">
             <PlayerStats 
               health={battleState.playerHealth}
-              maxHealth={character.maxHealth}
+              maxHealth={character!.maxHealth}
               mana={battleState.playerMana}
-              maxMana={character.maxMana}
+              maxMana={character!.maxMana}
               defense={battleState.playerDefense}
-              level={character.level}
-              xp={character.experience}
-              xpToNextLevel={character.level * 100}
+              level={character!.level}
+              xp={character!.experience}
+              xpToNextLevel={character!.level * 100}
             />
             <div className="flex items-center gap-2">
               <Button asChild variant="destructive" size="lg">

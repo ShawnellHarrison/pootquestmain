@@ -2891,16 +2891,16 @@ body {
     width: auto;
   }
 
-  .sm\:max-w-sm {
-    max-width: 24rem;
-  }
-
   .sm\:max-w-3xl {
     max-width: 48rem;
   }
 
   .sm\:max-w-4xl {
     max-width: 56rem;
+  }
+
+  .sm\:max-w-sm {
+    max-width: 24rem;
   }
 
   .sm\:flex-row {

@@ -10,16 +10,15 @@ import { Suspense } from "react";
 function BattlePageContent() {
   const searchParams = useSearchParams();
   const characterId = searchParams.get('characterId');
-  const encounterString = searchParams.get('encounter');
-  const encounter = encounterString ? JSON.parse(encounterString) : null;
+  const needsEncounter = searchParams.get('needsEncounter') === 'true';
 
-  if (!characterId || !encounter) {
+  if (!characterId) {
     // Handle error or redirect
-    return <div>Error: Missing battle data.</div>;
+    return <div>Error: Missing character data.</div>;
   }
   
   return (
-     <BattleClient characterId={characterId} encounter={encounter} />
+     <BattleClient characterId={characterId} needsEncounter={needsEncounter} />
   )
 }
 
