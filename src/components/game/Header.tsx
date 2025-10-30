@@ -1,7 +1,9 @@
 
+
 import Link from "next/link";
-import { Swords, Coffee, BookOpen } from "lucide-react";
+import { Swords, Coffee, BookOpen, ShoppingBag } from "lucide-react";
 import { Button } from "../ui/button";
+import { StoreSheet } from "../store/StoreSheet";
 
 export function Header() {
   return (
@@ -13,20 +15,23 @@ export function Header() {
             Poot Quest
           </h1>
         </Link>
-        <nav className="flex items-center gap-4">
+        <nav className="flex items-center gap-2">
             <Link href="/character-creation" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors hidden sm:block">
                 New Game
             </Link>
             <Link href="/chronicle" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors hidden sm:block">
                 Chronicles
             </Link>
-            <Button asChild variant="ghost" size="sm">
+            <Button asChild variant="ghost" size="sm" className="hidden sm:inline-flex">
                 <a href="https://buymeacoffee.com/harrisonfamilyventures" target="_blank" rel="noopener noreferrer">
                     <Coffee className="mr-2 h-4 w-4" /> Buy me a Coffee
                 </a>
             </Button>
+            <StoreSheet />
         </nav>
       </div>
     </header>
   );
 }
+
+    

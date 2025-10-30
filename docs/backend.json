@@ -372,6 +372,44 @@
         "characterClass",
         "moralAlignment"
       ]
+    },
+    "Product": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Product",
+      "type": "object",
+      "description": "Represents a physical product in the in-game store.",
+      "properties": {
+        "title": {
+          "type": "string",
+          "description": "The name of the product."
+        },
+        "description": {
+          "type": "string",
+          "description": "A short description of the product."
+        },
+        "price": {
+          "type": "number",
+          "description": "The price of the product in USD."
+        },
+        "imageUrl": {
+          "type": "string",
+          "description": "URL for the product image."
+        },
+        "imageHint": {
+          "type": "string",
+          "description": "A hint for AI to find a similar image."
+        },
+        "stripePaymentLink": {
+          "type": "string",
+          "description": "The direct Stripe Payment Link for purchasing the item."
+        },
+        "status": {
+          "type": "string",
+          "enum": ["available", "limited", "sold_out"],
+          "description": "The availability status of the product."
+        }
+      },
+      "required": ["title", "description", "price", "imageUrl", "stripePaymentLink", "status"]
     }
   },
   "auth": {
@@ -524,8 +562,26 @@
             }
           ]
         }
+      },
+      {
+        "path": "/products/{productId}",
+        "definition": {
+            "entityName": "Product",
+            "schema": {
+                "$ref": "#/entities/Product"
+            },
+            "description": "Stores global product data for the in-game store. This collection is publicly readable.",
+            "params": [
+                {
+                    "name": "productId",
+                    "description": "The unique identifier for the product."
+                }
+            ]
+        }
       }
     ],
     "reasoning": "The Firestore structure is designed to securely manage user data, character information, card collections, narrative contexts, and game run chronicles for the 'Poot Quest' game. Prioritizing authorization independence, data clarity, and structural segregation, the design eliminates hierarchical authorization dependencies (`get()`) and ensures robust security rules.\\n\\nAuthorization Independence is achieved through structural denormalization. For example, access to `characters` is governed by ownership; `/users/{userId}/characters/{characterId}` allows direct, secure access without needing to check parent (`/users/{userId}`) data. This same approach is applied to the other collections, creating a consistent and secure data access pattern.\\n\\nQAPs (Rules are not Filters) is supported by segregating data based on ownership (path-based authorization), and by avoiding mixing data with different access needs within the same collection. The consistent use of path-based ownership enables efficient and secure `list` operations, as rules can directly enforce access based on the `userId` parameter.\\n\\nThe design explicitly models a single, dedicated `status` field for entities, enabling clear state management and enhancing debuggability. Predictable schemas are enforced by avoiding dynamic keys and using arrays of objects with static keys instead."
   }
 }
+
+    
