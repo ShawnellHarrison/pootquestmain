@@ -206,7 +206,7 @@ export function BattleClient({ characterId, needsEncounter }: BattleClientProps)
     } finally {
         setIsLoading(false);
     }
-  }, [firestore, user, characterId]);
+  }, [firestore, user, characterId, toast, router]);
 
   useEffect(() => {
     if (needsEncounter) {
@@ -242,12 +242,17 @@ export function BattleClient({ characterId, needsEncounter }: BattleClientProps)
             const newHand = prev.hand.filter(c => c !== cardName);
             const newPlayerHealth = Math.min(character.maxHealth, prev.playerHealth + cardData.healing);
             
+            let toastMessage: { title: string; description: string } | null = null;
             if (cardData.healing > 0) {
-                setLastDamageToast({ title: cardData.name, description: `You heal for ${cardData.healing}!` });
+                toastMessage = { title: cardData.name, description: `You heal for ${cardData.healing}!` };
             }
             if (cardData.defense > 0) {
-                setLastDamageToast({ title: cardData.name, description: `You gain ${cardData.defense} defense!` });
+                toastMessage = { title: cardData.name, description: `You gain ${cardData.defense} defense!` };
             }
+            if (toastMessage) {
+                setLastDamageToast(toastMessage);
+            }
+
             return {
                 ...prev,
                 playerHealth: newPlayerHealth,
@@ -495,7 +500,7 @@ export function BattleClient({ characterId, needsEncounter }: BattleClientProps)
 
   }, [battleState, firestore, user, characterId, router, toast, character, characterClass]);
   
-  if (isLoading || !battleState) {
+  if (isLoading || !battleState || !character) {
     return <div className="flex flex-col items-center justify-center h-96">
         <Loader2 className="h-16 w-16 animate-spin text-primary mb-4" />
         <p className="text-xl text-muted-foreground font-headline">The Fartmaster is brewing a foul encounter...</p>
@@ -525,13 +530,13 @@ export function BattleClient({ characterId, needsEncounter }: BattleClientProps)
           <div className="flex justify-between items-center mb-4 px-4">
             <PlayerStats 
               health={battleState.playerHealth}
-              maxHealth={character!.maxHealth}
+              maxHealth={character.maxHealth}
               mana={battleState.playerMana}
-              maxMana={character!.maxMana}
+              maxMana={character.maxMana}
               defense={battleState.playerDefense}
-              level={character!.level}
-              xp={character!.experience}
-              xpToNextLevel={character!.level * 100}
+              level={character.level}
+              xp={character.experience}
+              xpToNextLevel={character.level * 100}
             />
             <div className="flex items-center gap-2">
               <Button asChild variant="destructive" size="lg">
