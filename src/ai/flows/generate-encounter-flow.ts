@@ -34,7 +34,7 @@ const generateEncounterPrompt = ai.definePrompt({
       -   **"Regenerator"**: Heals itself at the start of its turn. (e.g., \`"modifier": {"type": "Regenerator", "value": 5}\`)
       -   **"Commander"**: Boosts the attack of its allies. (e.g., \`"modifier": {"type": "Commander", "value": 2}\`)
       -   **"Shielded"**: Starts the battle with temporary defense points. (e.g., \`"modifier": {"type": "Shielded", "value": 10}\`)
-  3.  **Loot**: The loot awarded MUST be a "Mystery Scroll". Set the loot name to "Mystery Scroll", type to "scroll", and give it a mysterious description.
+  3.  **Loot**: The loot MUST be a piece of flavorful junk, not a weapon or usable item. The 'type' must be "junk". Be creative with the name and description!
   4.  **Intro Text**: Write a short, engaging introductory text (1-2 sentences) that hints at the challenge. If there's an Elite, hint at its special nature.
 
   **Example (Elite with Retaliator):**
@@ -44,7 +44,7 @@ const generateEncounterPrompt = ai.definePrompt({
       { "id": "goblin-brute-1", "name": "Spiky Goblin", "hp": 40, "maxHp": 40, "imageUrl": "https://picsum.photos/seed/goblin1/200/200", "attack": 8, "modifier": {"type": "Retaliator", "value": 3} },
       { "id": "goblin-grunt-2", "name": "Goblin Grunt", "hp": 20, "maxHp": 20, "imageUrl": "https://picsum.photos/seed/goblin2/200/200", "attack": 5 }
     ],
-    "loot": { "name": "Mystery Scroll", "description": "A dusty scroll radiating a faint magical aura. What secrets does it hold?", "type": "scroll" }
+    "loot": { "name": "A Goblin's Tooth", "description": "A single, yellowed goblin tooth. It smells faintly of regret and stale cabbage.", "type": "junk" }
   }`,
 });
 

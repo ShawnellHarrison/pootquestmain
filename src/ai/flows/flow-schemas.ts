@@ -30,9 +30,9 @@ const EnemySchema = z.object({
 });
 
 const LootSchema = z.object({
-    name: z.string().describe('The name of the loot item.'),
-    description: z.string().describe('A description of the loot item.'),
-    type: z.enum(["weapon", "armor", "potion", "scroll", "misc"]).describe('The type of the item.'),
+    name: z.string().describe('The name of the loot item. This should be a piece of "junk" with a flavorful name, not a generic weapon or scroll.'),
+    description: z.string().describe('A creative and flavorful description of the junk item.'),
+    type: z.enum(["junk", "weapon", "armor", "potion", "scroll", "misc"]).describe('The type of the item. It should always be "junk".'),
 });
 
 export const EncounterOutputSchema = z.object({

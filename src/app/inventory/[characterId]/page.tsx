@@ -6,36 +6,36 @@ import { useFirebase, useCollection, useDoc, useMemoFirebase } from '@/firebase'
 import { collection, writeBatch, doc, addDoc, deleteDoc } from 'firebase/firestore';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Loader2, ArrowLeft, Wand2, Sparkles, AlertCircle } from 'lucide-react';
+import { Loader2, ArrowLeft, Wand2, Sparkles, AlertCircle, HelpCircle } from 'lucide-react';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import Link from 'next/link';
 import { Header } from '@/components/game/Header';
 import { GameContainer } from '@/components/game/GameContainer';
 import { useToast } from '@/hooks/use-toast';
-import { generateCard, GenerateCardOutput } from '@/ai/flows/generate-card-flow';
+import { transmuteItemToCard, TransmuteItemOutput } from '@/ai/flows/transmute-item-flow';
 import { CARD_DATA, getClass } from '@/lib/game-data';
 
-const ItemCard = ({ item, onIdentify, isIdentifying }: { item: any, onIdentify: (itemId: string) => void, isIdentifying: boolean }) => {
-    const isScroll = item.name === "Mystery Scroll";
+const ItemCard = ({ item, onTransmute, isTransmuting }: { item: any, onTransmute: (item: any) => void, isTransmuting: boolean }) => {
+    const canBeTransmuted = item.type === 'junk';
     return (
         <Card className="w-48 h-64 flex flex-col p-3 text-center bg-secondary/50">
             <CardHeader className="p-2">
                 <CardTitle className="text-lg">{item.name}</CardTitle>
-                <CardDescription className="text-xs italic">{item.description}</CardDescription>
+                <CardDescription className="text-xs italic h-10 overflow-hidden">{item.description}</CardDescription>
             </CardHeader>
             <CardContent className="flex-grow flex items-center justify-center">
-                {isScroll ? <Sparkles className="h-16 w-16 text-primary animate-pulse" /> : <p>Placeholder</p>}
+                <HelpCircle className="h-16 w-16 text-primary/50" />
             </CardContent>
-            {isScroll && (
-                <Button onClick={() => onIdentify(item.id)} disabled={isIdentifying}>
-                    {isIdentifying ? <Loader2 className="animate-spin" /> : <><Wand2 className="mr-2" />Identify</>}
+            {canBeTransmuted && (
+                <Button onClick={() => onTransmute(item)} disabled={isTransmuting}>
+                    {isTransmuting ? <Loader2 className="animate-spin" /> : <><Wand2 className="mr-2" />Transmute</>}
                 </Button>
             )}
         </Card>
     );
 };
 
-const NewCard = ({ card }: { card: GenerateCardOutput }) => (
+const NewCard = ({ card }: { card: TransmuteItemOutput }) => (
      <Card className="w-48 h-64 flex flex-col p-3 text-center bg-green-900/50 border-green-500">
         <CardHeader className="p-2">
             <CardTitle className="text-lg text-green-300">{card.name}</CardTitle>
@@ -55,8 +55,8 @@ export default function InventoryPage({ params }: { params: { characterId: strin
     const { firestore, user, isUserLoading } = useFirebase();
     const { toast } = useToast();
 
-    const [isIdentifying, setIsIdentifying] = useState<string | null>(null);
-    const [newlyCreatedCard, setNewlyCreatedCard] = useState<GenerateCardOutput | null>(null);
+    const [isTransmuting, setIsTransmuting] = useState<string | null>(null);
+    const [newlyCreatedCard, setNewlyCreatedCard] = useState<TransmuteItemOutput | null>(null);
 
     const inventoryRef = useMemoFirebase(() => {
         if (!firestore || !user) return null;
@@ -78,16 +78,16 @@ export default function InventoryPage({ params }: { params: { characterId: strin
     
     const { data: deckData, isLoading: isDeckLoading } = useDoc(deckRef);
 
-    const handleIdentifyScroll = async (itemId: string) => {
+    const handleTransmuteItem = async (itemToTransmute: any) => {
         if (!firestore || !user || !characterData || !deckData || !inventoryData) return;
-        setIsIdentifying(itemId);
+        setIsTransmuting(itemToTransmute.id);
         setNewlyCreatedCard(null);
 
         const characterClass = getClass(characterData?.class);
         
         if (!characterData || !characterClass || !deckData) {
              toast({ title: "Error", description: "Could not find character data to generate card.", variant: "destructive" });
-             setIsIdentifying(null);
+             setIsTransmuting(null);
              return;
         }
 
@@ -95,32 +95,34 @@ export default function InventoryPage({ params }: { params: { characterId: strin
             const inventoryCardNames = inventoryData.filter(item => item.type === 'card').map(item => item.name);
             const allOwnedCards = Array.from(new Set([...deckData.cards, ...Object.keys(CARD_DATA), ...inventoryCardNames]));
             
-            const newCard = await generateCard({
+            const newCard = await transmuteItemToCard({
                 playerClass: characterClass.name,
                 playerLevel: characterData.level,
                 existingCards: allOwnedCards,
+                itemName: itemToTransmute.name,
+                itemDescription: itemToTransmute.description,
             });
 
             const batch = writeBatch(firestore);
             
-            // Delete the scroll
-            const itemToDeleteRef = doc(inventoryRef!, itemId);
+            // Delete the junk item
+            const itemToDeleteRef = doc(inventoryRef!, itemToTransmute.id);
             batch.delete(itemToDeleteRef);
             
-            // Add the new card to the inventory (it's a card now, but represented as an Item doc)
+            // Add the new card to the inventory (it is now an item of type 'card')
             const newCardItemRef = collection(firestore, `users/${user.uid}/characters/${characterId}/inventory`);
             batch.set(doc(newCardItemRef), { ...newCard, type: 'card' });
 
             await batch.commit();
 
             setNewlyCreatedCard(newCard);
-            toast({ title: "Scroll Identified!", description: `You have discovered the "${newCard.name}" card!`, className: 'bg-primary text-primary-foreground' });
+            toast({ title: "Transmutation Successful!", description: `Your ${itemToTransmute.name} became "${newCard.name}"!`, className: 'bg-primary text-primary-foreground' });
 
         } catch (error) {
-            console.error("Failed to identify scroll:", error);
-            toast({ title: "AI Error", description: "The scroll's magic fizzled. Please try again.", variant: "destructive" });
+            console.error("Failed to transmute item:", error);
+            toast({ title: "AI Error", description: "The item fizzled into dust. Please try again with another.", variant: "destructive" });
         } finally {
-            setIsIdentifying(null);
+            setIsTransmuting(null);
         }
     };
     
@@ -133,6 +135,9 @@ export default function InventoryPage({ params }: { params: { characterId: strin
             </div>
         );
     }
+    
+    const junkItems = inventoryData?.filter(item => item.type !== 'card') || [];
+    const cardItems = inventoryData?.filter(item => item.type === 'card') || [];
     
     return (
         <>
@@ -150,9 +155,9 @@ export default function InventoryPage({ params }: { params: { characterId: strin
                 {newlyCreatedCard && (
                     <Alert variant="default" className="border-green-500/50 bg-green-900/30">
                         <Sparkles className="h-4 w-4 text-green-400" />
-                        <AlertTitle className="text-green-300">New Card Discovered!</AlertTitle>
+                        <AlertTitle className="text-green-300">New Card Created!</AlertTitle>
                         <AlertDescription className="flex items-center gap-4">
-                           <p> The Mystery Scroll revealed its secret. The "{newlyCreatedCard.name}" card has been added to your collection and can now be added to your deck.</p>
+                           <p> The item was transmuted successfully. The "{newlyCreatedCard.name}" card has been added to your collection and can now be added to your deck.</p>
                            <NewCard card={newlyCreatedCard} />
                         </AlertDescription>
                     </Alert>
@@ -160,21 +165,40 @@ export default function InventoryPage({ params }: { params: { characterId: strin
 
                 <Card>
                     <CardHeader>
-                        <CardTitle>Your Items</CardTitle>
-                        <CardDescription>These are the items you've collected on your journey.</CardDescription>
+                        <CardTitle>Your Junk</CardTitle>
+                        <CardDescription>These are the useless but potentially magical items you've collected. Try transmuting them!</CardDescription>
                     </CardHeader>
                     <CardContent className="flex flex-wrap gap-4 p-4 bg-muted/20 rounded-lg min-h-64">
-                       {inventoryData && inventoryData.length > 0 ? (
-                           inventoryData.map(item => (
+                       {junkItems.length > 0 ? (
+                           junkItems.map(item => (
                                <ItemCard 
                                     key={item.id} 
                                     item={item} 
-                                    onIdentify={handleIdentifyScroll} 
-                                    isIdentifying={isIdentifying === item.id} 
+                                    onTransmute={handleTransmuteItem} 
+                                    isTransmuting={isTransmuting === item.id} 
                                 />
                            ))
                        ) : (
-                           <p className="text-muted-foreground">Your inventory is empty.</p>
+                           <p className="text-muted-foreground p-4">You have no junk to transmute. Go find some!</p>
+                       )}
+                    </CardContent>
+                </Card>
+
+                 <Card>
+                    <CardHeader>
+                        <CardTitle>Your Discovered Cards</CardTitle>
+                        <CardDescription>These are cards you have transmuted. Manage them in your deck.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="flex flex-wrap gap-4 p-4 bg-muted/20 rounded-lg min-h-24">
+                       {cardItems.length > 0 ? (
+                           cardItems.map(item => (
+                               <NewCard 
+                                    key={item.id} 
+                                    card={item as TransmuteItemOutput} 
+                                />
+                           ))
+                       ) : (
+                           <p className="text-muted-foreground p-4">You haven't transmuted any cards yet.</p>
                        )}
                     </CardContent>
                 </Card>
