@@ -24,10 +24,10 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/co
 import { DeckManagerSheet } from "./sheets/DeckManagerSheet";
 import { InventorySheet } from "./sheets/InventorySheet";
 import { cn } from "@/lib/utils";
+import { useSearchParams } from "next/navigation";
 
 interface AdventureClientProps {
   characterId: string;
-  initialBattleState?: any;
 }
 
 const GeneratingState = () => {
@@ -90,7 +90,11 @@ const GeneratingState = () => {
 };
 
 
-export function AdventureClient({ characterId, initialBattleState }: AdventureClientProps) {
+export function AdventureClient({ characterId }: AdventureClientProps) {
+  const searchParams = useSearchParams();
+  const battleStateString = searchParams.get('battleState');
+  const initialBattleState = battleStateString ? JSON.parse(decodeURIComponent(battleStateString)) : null;
+  
   const { character, characterClassData, isLoading: isCharacterLoading } = useCharacter(characterId);
   const { 
     narrativeContext, 

@@ -1,38 +1,28 @@
 
-'use client';
 import { AdventureClient } from "@/components/game/AdventureClient";
 import { GameContainer } from "@/components/game/GameContainer";
 import { Header } from "@/components/game/Header";
-import { useSearchParams } from 'next/navigation';
-import { Suspense, use } from "react";
+import { Suspense } from "react";
 
 type Props = {
-  params: Promise<{ class: string }>;
+  params: { class: string };
 };
 
-function AdventurePageContent({ params }: Props) {
-  const { class: characterId } = use(params);
-  const searchParams = useSearchParams();
-  const battleStateString = searchParams.get('battleState');
-  const initialBattleState = battleStateString ? JSON.parse(battleStateString) : null;
+// This is now an async Server Component
+export default async function AdventurePage({ params }: Props) {
+  const characterId = params.class;
 
   return (
     <>
       <Header />
       <main className="py-12">
         <GameContainer>
-          <AdventureClient characterId={characterId} initialBattleState={initialBattleState} />
+          {/* Suspense is used here to handle client-side data fetching within AdventureClient */}
+          <Suspense fallback={<div>Loading your adventure...</div>}>
+            <AdventureClient characterId={characterId} />
+          </Suspense>
         </GameContainer>
       </main>
     </>
   );
-}
-
-
-export default function AdventurePage({ params }: Props) {
-  return (
-    <Suspense fallback={<div>Loading...</div>}>
-      <AdventurePageContent params={params} />
-    </Suspense>
-  )
 }
