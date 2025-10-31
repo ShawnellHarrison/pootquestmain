@@ -47,7 +47,7 @@ export const PRODUCTS: Product[] = [
 // In a real application, you would have a more robust seeding script
 // or use the Firebase console to manage this data.
 // For now, we can use this to add the data if the collection is empty.
-import { collection, getDocs, writeBatch } from 'firebase/firestore';
+import { collection, getDocs, writeBatch, doc } from 'firebase/firestore';
 import type { Firestore } from 'firebase/firestore';
 
 export async function seedProducts(db: Firestore) {
@@ -59,7 +59,7 @@ export async function seedProducts(db: Firestore) {
         const batch = writeBatch(db);
         PRODUCTS.forEach(product => {
             const { id, ...data } = product;
-            const docRef = collection(db, 'products').doc(id);
+            const docRef = doc(db, 'products', id);
             batch.set(docRef, data);
         });
         await batch.commit();
