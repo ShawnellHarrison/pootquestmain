@@ -308,7 +308,7 @@ function ConfirmationScreen({ character }) {
                 attack: character.stats.attack,
                 defense: character.stats.defense,
                 speed: character.stats.speed,
-                createdAt: new Date().toISOString()
+                createdAt: (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$firebase$2f$firestore$2f$dist$2f$index$2e$node$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["serverTimestamp"])()
             });
             // 2. Create initial NarrativeContext document with placeholder text
             const narrativeContextRef = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$firebase$2f$firestore$2f$dist$2f$index$2e$node$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["doc"])(firestore, `users/${user.uid}/characters/${newCharacterRef.id}/narrativeContexts`, "main");
