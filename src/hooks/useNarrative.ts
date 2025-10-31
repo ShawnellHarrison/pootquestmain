@@ -116,7 +116,7 @@ export function useNarrative(
                 currentScenario: result,
                 triggerNextScenario: false,
             };
-            batch.update(narrativeContextRef!, updates);
+            batch.update(narrativeContextRef, updates);
             await batch.commit();
             // No need to setNarrativeContext, hook will update
             setGameState("ready");
