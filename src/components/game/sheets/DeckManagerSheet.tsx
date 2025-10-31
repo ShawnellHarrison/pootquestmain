@@ -150,37 +150,31 @@ export function DeckManagerSheet({ characterId }: { characterId: string }) {
 
     const handleDragEnd = (event: DragEndEvent) => {
         const { active, over } = event;
-
+    
         if (!active || !over || active.id === over.id) return;
-
+    
         const cardName = active.id as string;
-        const inDeck = deck.includes(cardName);
-        const overCardName = over.id as string;
-
-        const targetIsDeck = over.id === 'deck-droppable' || deck.includes(overCardName);
-        const targetIsCollection = over.id === 'collection-droppable' || collectionPool.some(c => c.name === overCardName);
-
-
-        if (targetIsDeck) {
-             if (inDeck) {
-                const oldIndex = deck.findIndex(name => name === cardName);
-                const newIndex = deck.findIndex(name => name === overCardName);
-                if (oldIndex !== -1 && newIndex !== -1) {
-                    setDeck((items) => arrayMove(items, oldIndex, newIndex));
-                }
-             } else {
-                 // Moving from collection to deck
-                if (deck.length < DECK_SIZE) {
-                    setDeck((prev) => [...prev, cardName]);
-                } else {
-                    toast({ title: "Deck Full", description: `You can only have ${DECK_SIZE} cards in your deck.`, variant: "destructive" });
-                }
-             }
-        } else if (targetIsCollection) {
-            if (inDeck) {
-                // Moving from deck to collection
-                setDeck((prev) => prev.filter(c => c !== cardName));
+        const isCardInDeck = deck.includes(cardName);
+    
+        // Scenario 1: Moving a card within the deck to reorder
+        if (isCardInDeck && over.id && deck.includes(over.id as string)) {
+            const oldIndex = deck.findIndex(name => name === cardName);
+            const newIndex = deck.findIndex(name => name === over.id as string);
+            if (oldIndex !== -1 && newIndex !== -1) {
+                setDeck(items => arrayMove(items, oldIndex, newIndex));
             }
+        }
+        // Scenario 2: Moving a card from collection to deck
+        else if (!isCardInDeck && (over.id === 'deck-droppable' || deck.includes(over.id as string))) {
+            if (deck.length < DECK_SIZE) {
+                setDeck(prev => [...prev, cardName]);
+            } else {
+                toast({ title: "Deck Full", description: `You can only have ${DECK_SIZE} cards in your deck.`, variant: "destructive" });
+            }
+        }
+        // Scenario 3: Moving a card from deck to collection
+        else if (isCardInDeck && (over.id === 'collection-droppable' || collectionPool.some(c => c.name === over.id))) {
+            setDeck(prev => prev.filter(c => c !== cardName));
         }
     };
     

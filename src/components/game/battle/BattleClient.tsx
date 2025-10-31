@@ -4,7 +4,7 @@
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useFirebase } from '@/firebase';
-import { doc, getDoc, writeBatch, increment, collection, addDoc, getDocs } from 'firebase/firestore';
+import { doc, getDoc, writeBatch, increment, collection, addDoc, getDocs, deleteDoc } from 'firebase/firestore';
 import { Loader2, Flag, ArrowRightCircle } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
@@ -206,7 +206,7 @@ export function BattleClient({ characterId, needsEncounter }: BattleClientProps)
     } finally {
         setIsLoading(false);
     }
-  }, [firestore, user, characterId, router, toast]);
+  }, [firestore, user, characterId]);
 
   useEffect(() => {
     if (needsEncounter) {
@@ -481,8 +481,13 @@ export function BattleClient({ characterId, needsEncounter }: BattleClientProps)
             const characterDocRef = doc(firestore, `users/${user.uid}/characters/${characterId}`);
             const narrativeContextRef = doc(firestore, `users/${user.uid}/characters/${characterId}/narrativeContexts`, "main");
             const deckRef = doc(firestore, `users/${user.uid}/characters/${characterId}/decks`, "main");
-            
+            const inventoryRef = collection(firestore, `users/${user.uid}/characters/${characterId}/inventory`);
+
+            // Delete all inventory items
+            const inventorySnap = await getDocs(inventoryRef);
             const deleteBatch = writeBatch(firestore);
+            inventorySnap.docs.forEach(d => deleteBatch.delete(d.ref));
+            
             deleteBatch.delete(characterDocRef);
             deleteBatch.delete(narrativeContextRef);
             deleteBatch.delete(deckRef);
