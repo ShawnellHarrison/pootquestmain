@@ -9,7 +9,7 @@ import { ArrowLeft, CheckCircle, Swords, AlertTriangle, FolderOpen, Sparkles } f
 import Link from "next/link";
 import Image from "next/image";
 import { useFirebase } from "@/firebase";
-import { collection, doc, writeBatch } from "firebase/firestore";
+import { collection, doc, writeBatch, serverTimestamp } from "firebase/firestore";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Loader2 } from "lucide-react";
@@ -51,7 +51,7 @@ export function ConfirmationScreen({ character }: ConfirmationScreenProps) {
                 attack: character.stats.attack,
                 defense: character.stats.defense,
                 speed: character.stats.speed,
-                createdAt: new Date().toISOString(),
+                createdAt: serverTimestamp(),
             });
 
             // 2. Create initial NarrativeContext document with placeholder text

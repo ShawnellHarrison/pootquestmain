@@ -27,7 +27,7 @@ const RunCard = ({ run, onExport, isExporting }: { run: any, onExport: (run: any
                         The Legend of a {run.characterClass}
                     </CardTitle>
                     <CardDescription>
-                        {run.createdAt ? formatDistanceToNow(new Date(run.createdAt), { addSuffix: true }) : 'A timeless legend'}
+                        {run.createdAt ? formatDistanceToNow(new Date(run.createdAt.seconds * 1000), { addSuffix: true }) : 'A timeless legend'}
                     </CardDescription>
                 </div>
                 <div className="text-right">

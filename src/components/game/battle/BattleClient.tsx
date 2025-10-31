@@ -4,7 +4,7 @@
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useFirebase } from '@/firebase';
-import { doc, getDoc, writeBatch, increment, collection, addDoc, getDocs, deleteDoc } from 'firebase/firestore';
+import { doc, getDoc, writeBatch, increment, collection, addDoc, getDocs, deleteDoc, serverTimestamp } from 'firebase/firestore';
 import { Loader2, Flag, ArrowRightCircle } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
@@ -310,7 +310,7 @@ export function BattleClient({ characterId, needsEncounter }: BattleClientProps)
         }
 
         if (newPlayerHealth === 0) {
-            return { ...prev, playerHealth: 0, turn: 'defeat', isProcessing: true, introText: prev.introText, loot: prev.loot };
+            return { ...prev, playerHealth: 0, turn: 'defeat', isProcessing: true, introText: prev.introText, loot: prev.loot, enemies: newEnemies };
         }
 
         const newHand = prev.hand.filter(c => c !== prev!.selectedCard);
@@ -471,7 +471,7 @@ export function BattleClient({ characterId, needsEncounter }: BattleClientProps)
               secretRoomsFound: 0,
               ending: `Vanquished by ${battleState.enemies[0]?.name || 'a mysterious foe'}.`,
               uniqueDiscovery: "Learned that hubris smells a lot like sulfur.",
-              createdAt: new Date().toISOString(),
+              createdAt: serverTimestamp(),
           };
 
           const runChroniclesRef = collection(firestore, `users/${user.uid}/runChronicles`);
