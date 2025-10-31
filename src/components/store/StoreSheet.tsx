@@ -6,9 +6,10 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { useCollection, useFirebase, useMemoFirebase } from '@/firebase';
 import { collection, query } from 'firebase/firestore';
-import { Loader2, ShoppingBag, ExternalLink, Zap } from 'lucide-react';
+import { Loader2, ShoppingBag, Zap, Star } from 'lucide-react';
 import { Badge } from '../ui/badge';
 import StripeBuyButton from './StripeBuyButton';
+import { Separator } from '../ui/separator';
 
 type Product = {
     id: string;
@@ -92,18 +93,37 @@ export function StoreSheet() {
                         Grab some legendary loot from the real world. Ships worldwide!
                     </SheetDescription>
                 </SheetHeader>
-                <div className="py-8">
-                    {isLoading ? (
-                        <div className="flex justify-center items-center h-64">
-                            <Loader2 className="h-12 w-12 animate-spin text-primary" />
+                <div className="py-8 space-y-8">
+                    <div>
+                        <h3 className="font-headline text-2xl mb-4 text-glow flex items-center gap-2">
+                            <Star className="text-yellow-400" /> Featured Item
+                        </h3>
+                         <div className="p-6 rounded-lg border bg-card/50">
+                            <h2 className="font-headline text-2xl mb-2">Adventurer Tee</h2>
+                            <p className="text-muted-foreground mb-4">The official gear for any self-respecting Poot Quester. 100% combed cotton.</p>
+                            <StripeBuyButton
+                                buyButtonId="buy_btn_1SOGGFEjTiKwQHWzk29ON4YI"
+                                publishableKey="pk_live_51J1H3xEjTiKwQHWz5DuUnk4wPkPKoVcQ0HjlWIyW3iXxNzJe21lrZKYtlnU1dhio4f82DQzeBhJKlAVN9I40pkvb005oa4LQ3F"
+                            />
                         </div>
-                    ) : (
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            {products?.map((product) => (
-                                <ProductCard key={product.id} product={product as Product} />
-                            ))}
-                        </div>
-                    )}
+                    </div>
+
+                    <Separator />
+
+                    <div>
+                        <h3 className="font-headline text-2xl mb-4 text-glow">All Wares</h3>
+                         {isLoading ? (
+                            <div className="flex justify-center items-center h-64">
+                                <Loader2 className="h-12 w-12 animate-spin text-primary" />
+                            </div>
+                        ) : (
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                {products?.map((product) => (
+                                    <ProductCard key={product.id} product={product as Product} />
+                                ))}
+                            </div>
+                        )}
+                    </div>
                 </div>
             </SheetContent>
         </Sheet>

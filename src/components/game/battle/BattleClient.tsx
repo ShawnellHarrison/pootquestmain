@@ -206,7 +206,7 @@ export function BattleClient({ characterId, needsEncounter }: BattleClientProps)
     } finally {
         setIsLoading(false);
     }
-  }, [firestore, user, characterId]);
+  }, [firestore, user, characterId, router, toast]);
 
   useEffect(() => {
     if (needsEncounter) {
