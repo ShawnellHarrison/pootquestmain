@@ -12,34 +12,34 @@ export type Product = {
 
 export const PRODUCTS: Product[] = [
     {
-        id: "adventurer-tee",
-        title: "Adventurer Tee",
-        description: "Soft cotton tee for bold explorers.",
-        price: 19.99,
-        imageUrl: "https://picsum.photos/seed/adventurer-tee/800/800",
-        imageHint: "graphic t-shirt",
-        stripePaymentLink: "https://buy.stripe.com/8x26oHbXp7Mg3tC76i8bS0g",
-        status: "available"
+        "id": "adventurer-tee",
+        "title": "Adventurer Tee",
+        "description": "Soft cotton tee for bold explorers.",
+        "price": 19.99,
+        "imageUrl": "https://picsum.photos/seed/adventurer-tee/800/800",
+        "imageHint": "graphic t-shirt",
+        "stripePaymentLink": "https://buy.stripe.com/8x26oHbXp7Mg3tC76i8bS0g",
+        "status": "available"
     },
     {
-        id: "mana-mug",
-        title: "Mana Mug",
-        description: "Restores +10 energy every morning.",
-        price: 14.99,
-        imageUrl: "https://picsum.photos/seed/mana-mug/800/800",
-        imageHint: "ceramic mug",
-        stripePaymentLink: "https://buy.stripe.com/8x26oHbXp7Mg3tC76i8bS0g",
-        status: "limited"
+        "id": "mana-mug",
+        "title": "Mana Mug",
+        "description": "Restores +10 energy every morning.",
+        "price": 14.99,
+        "imageUrl": "https://picsum.photos/seed/mana-mug/800/800",
+        "imageHint": "ceramic mug",
+        "stripePaymentLink": "https://buy.stripe.com/8x26oHbXp7Mg3tC76i8bS0g",
+        "status": "limited"
     },
     {
-        id: "epic-quest-map",
-        title: "Epic Quest Map",
-        description: "Unfold your next great adventure.",
-        price: 24.99,
-        imageUrl: "https://picsum.photos/seed/epic-quest-map/800/800",
-        imageHint: "ancient map",
-        stripePaymentLink: "https://buy.stripe.com/8x26oHbXp7Mg3tC76i8bS0g",
-        status: "available"
+        "id": "epic-quest-map",
+        "title": "Epic Quest Map",
+        "description": "Unfold your next great adventure.",
+        "price": 24.99,
+        "imageUrl": "https://picsum.photos/seed/epic-quest-map/800/800",
+        "imageHint": "ancient map",
+        "stripePaymentLink": "https://buy.stripe.com/8x26oHbXp7Mg3tC76i8bS0g",
+        "status": "available"
     }
 ];
 

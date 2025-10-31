@@ -106,34 +106,34 @@ var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$firebase$2f$
 var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$firebase$2f$firestore$2f$dist$2f$index$2e$node$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/@firebase/firestore/dist/index.node.mjs [app-ssr] (ecmascript)");
 const PRODUCTS = [
     {
-        id: "adventurer-tee",
-        title: "Adventurer Tee",
-        description: "Soft cotton tee for bold explorers.",
-        price: 19.99,
-        imageUrl: "https://picsum.photos/seed/adventurer-tee/800/800",
-        imageHint: "graphic t-shirt",
-        stripePaymentLink: "https://buy.stripe.com/8x26oHbXp7Mg3tC76i8bS0g",
-        status: "available"
+        "id": "adventurer-tee",
+        "title": "Adventurer Tee",
+        "description": "Soft cotton tee for bold explorers.",
+        "price": 19.99,
+        "imageUrl": "https://picsum.photos/seed/adventurer-tee/800/800",
+        "imageHint": "graphic t-shirt",
+        "stripePaymentLink": "https://buy.stripe.com/8x26oHbXp7Mg3tC76i8bS0g",
+        "status": "available"
     },
     {
-        id: "mana-mug",
-        title: "Mana Mug",
-        description: "Restores +10 energy every morning.",
-        price: 14.99,
-        imageUrl: "https://picsum.photos/seed/mana-mug/800/800",
-        imageHint: "ceramic mug",
-        stripePaymentLink: "https://buy.stripe.com/8x26oHbXp7Mg3tC76i8bS0g",
-        status: "limited"
+        "id": "mana-mug",
+        "title": "Mana Mug",
+        "description": "Restores +10 energy every morning.",
+        "price": 14.99,
+        "imageUrl": "https://picsum.photos/seed/mana-mug/800/800",
+        "imageHint": "ceramic mug",
+        "stripePaymentLink": "https://buy.stripe.com/8x26oHbXp7Mg3tC76i8bS0g",
+        "status": "limited"
     },
     {
-        id: "epic-quest-map",
-        title: "Epic Quest Map",
-        description: "Unfold your next great adventure.",
-        price: 24.99,
-        imageUrl: "https://picsum.photos/seed/epic-quest-map/800/800",
-        imageHint: "ancient map",
-        stripePaymentLink: "https://buy.stripe.com/8x26oHbXp7Mg3tC76i8bS0g",
-        status: "available"
+        "id": "epic-quest-map",
+        "title": "Epic Quest Map",
+        "description": "Unfold your next great adventure.",
+        "price": 24.99,
+        "imageUrl": "https://picsum.photos/seed/epic-quest-map/800/800",
+        "imageHint": "ancient map",
+        "stripePaymentLink": "https://buy.stripe.com/8x26oHbXp7Mg3tC76i8bS0g",
+        "status": "available"
     }
 ];
 ;
