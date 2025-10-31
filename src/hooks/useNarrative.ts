@@ -69,7 +69,7 @@ export function useNarrative(
                 setNarrativeContext(narrativeData);
             }
         }
-    }, [narrativeContextData]);
+    }, [narrativeContextData, initialBattleState, character]);
 
 
     const handleContinue = useCallback(async () => {

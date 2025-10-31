@@ -1,4 +1,3 @@
-
 'use client';
 
 import Image from 'next/image';
@@ -9,6 +8,7 @@ import { useCollection, useFirebase, useMemoFirebase } from '@/firebase';
 import { collection, query } from 'firebase/firestore';
 import { Loader2, ShoppingBag, ExternalLink, Zap } from 'lucide-react';
 import { Badge } from '../ui/badge';
+import StripeBuyButton from './StripeBuyButton';
 
 type Product = {
     id: string;
@@ -18,6 +18,8 @@ type Product = {
     imageUrl: string;
     imageHint: string;
     stripePaymentLink: string;
+    buyButtonId: string;
+    publishableKey: string;
     status: 'available' | 'limited' | 'sold_out';
 };
 
@@ -44,12 +46,16 @@ const ProductCard = ({ product }: { product: Product }) => (
         <CardContent className="flex-grow" />
         <CardFooter className="flex justify-between items-center">
             <p className="text-2xl font-bold font-code text-primary">${product.price.toFixed(2)}</p>
-            <Button asChild disabled={product.status === 'sold_out'}>
-                <a href={product.stripePaymentLink} target="_blank" rel="noopener noreferrer">
-                    {product.status === 'sold_out' ? 'Sold Out' : 'Buy Now'}
-                    <ExternalLink className="ml-2" />
-                </a>
-            </Button>
+            {product.status !== 'sold_out' ? (
+                <StripeBuyButton 
+                    buyButtonId={product.buyButtonId} 
+                    publishableKey={product.publishableKey}
+                />
+            ) : (
+                 <Button disabled={true}>
+                    Sold Out
+                </Button>
+            )}
         </CardFooter>
     </Card>
 );

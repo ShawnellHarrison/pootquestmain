@@ -1,3 +1,5 @@
+import { collection, getDocs, writeBatch, doc } from 'firebase/firestore';
+import type { Firestore } from 'firebase/firestore';
 
 export type Product = {
     id: string;
@@ -7,6 +9,8 @@ export type Product = {
     imageUrl: string;
     imageHint: string;
     stripePaymentLink: string;
+    buyButtonId: string;
+    publishableKey: string;
     status: 'available' | 'limited' | 'sold_out';
 };
 
@@ -19,6 +23,8 @@ export const PRODUCTS: Product[] = [
         "imageUrl": "https://picsum.photos/seed/adventurer-tee/800/800",
         "imageHint": "graphic t-shirt",
         "stripePaymentLink": "https://buy.stripe.com/test_5kAdSfa21g5v85a7ss",
+        "buyButtonId": "buy_btn_1SOGGFEjTiKwQHWzk29ON4YI",
+        "publishableKey": "pk_live_51J1H3xEjTiKwQHWz5DuUnk4wPkPKoVcQ0HjlWIyW3iXxNzJe21lrZKYtlnU1dhio4f82DQzeBhJKlAVN9I40pkvb005oa4LQ3F",
         "status": "available"
     },
     {
@@ -29,6 +35,8 @@ export const PRODUCTS: Product[] = [
         "imageUrl": "https://picsum.photos/seed/mana-mug/800/800",
         "imageHint": "ceramic mug",
         "stripePaymentLink": "https://buy.stripe.com/test_5kAdSfa21g5v85a7ss",
+        "buyButtonId": "buy_btn_1SOGGFEjTiKwQHWzk29ON4YI",
+        "publishableKey": "pk_live_51J1H3xEjTiKwQHWz5DuUnk4wPkPKoVcQ0HjlWIyW3iXxNzJe21lrZKYtlnU1dhio4f82DQzeBhJKlAVN9I40pkvb005oa4LQ3F",
         "status": "limited"
     },
     {
@@ -39,6 +47,8 @@ export const PRODUCTS: Product[] = [
         "imageUrl": "https://picsum.photos/seed/epic-quest-map/800/800",
         "imageHint": "ancient map",
         "stripePaymentLink": "https://buy.stripe.com/test_5kAdSfa21g5v85a7ss",
+        "buyButtonId": "buy_btn_1SOGGFEjTiKwQHWzk29ON4YI",
+        "publishableKey": "pk_live_51J1H3xEjTiKwQHWz5DuUnk4wPkPKoVcQ0HjlWIyW3iXxNzJe21lrZKYtlnU1dhio4f82DQzeBhJKlAVN9I40pkvb005oa4LQ3F",
         "status": "available"
     },
     {
@@ -49,16 +59,11 @@ export const PRODUCTS: Product[] = [
         "imageUrl": "https://picsum.photos/seed/tome-of-farts/800/800",
         "imageHint": "ancient book",
         "stripePaymentLink": "https://buy.stripe.com/test_5kAdSfa21g5v85a7ss",
+        "buyButtonId": "buy_btn_1SOGGFEjTiKwQHWzk29ON4YI",
+        "publishableKey": "pk_live_51J1H3xEjTiKwQHWz5DuUnk4wPkPKoVcQ0HjlWIyW3iXxNzJe21lrZKYtlnU1dhio4f82DQzeBhJKlAVN9I40pkvb005oa4LQ3F",
         "status": "sold_out"
     }
 ];
-
-// This is a placeholder function to seed data.
-// In a real application, you would have a more robust seeding script
-// or use the Firebase console to manage this data.
-// For now, we can use this to add the data if the collection is empty.
-import { collection, getDocs, writeBatch, doc } from 'firebase/firestore';
-import type { Firestore } from 'firebase/firestore';
 
 export async function seedProducts(db: Firestore) {
     const productsRef = collection(db, 'products');

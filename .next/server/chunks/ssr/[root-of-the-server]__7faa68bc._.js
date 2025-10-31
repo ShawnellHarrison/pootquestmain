@@ -98,12 +98,9 @@ __turbopack_context__.s({
     "PRODUCTS": (()=>PRODUCTS),
     "seedProducts": (()=>seedProducts)
 });
-// This is a placeholder function to seed data.
-// In a real application, you would have a more robust seeding script
-// or use the Firebase console to manage this data.
-// For now, we can use this to add the data if the collection is empty.
 var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$firebase$2f$firestore$2f$dist$2f$index$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__$3c$module__evaluation$3e$__ = __turbopack_context__.i("[project]/node_modules/firebase/firestore/dist/index.mjs [app-ssr] (ecmascript) <module evaluation>");
 var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$firebase$2f$firestore$2f$dist$2f$index$2e$node$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/@firebase/firestore/dist/index.node.mjs [app-ssr] (ecmascript)");
+;
 const PRODUCTS = [
     {
         "id": "adventurer-tee",
@@ -113,6 +110,8 @@ const PRODUCTS = [
         "imageUrl": "https://picsum.photos/seed/adventurer-tee/800/800",
         "imageHint": "graphic t-shirt",
         "stripePaymentLink": "https://buy.stripe.com/test_5kAdSfa21g5v85a7ss",
+        "buyButtonId": "buy_btn_1SOGGFEjTiKwQHWzk29ON4YI",
+        "publishableKey": "pk_live_51J1H3xEjTiKwQHWz5DuUnk4wPkPKoVcQ0HjlWIyW3iXxNzJe21lrZKYtlnU1dhio4f82DQzeBhJKlAVN9I40pkvb005oa4LQ3F",
         "status": "available"
     },
     {
@@ -123,6 +122,8 @@ const PRODUCTS = [
         "imageUrl": "https://picsum.photos/seed/mana-mug/800/800",
         "imageHint": "ceramic mug",
         "stripePaymentLink": "https://buy.stripe.com/test_5kAdSfa21g5v85a7ss",
+        "buyButtonId": "buy_btn_1SOGGFEjTiKwQHWzk29ON4YI",
+        "publishableKey": "pk_live_51J1H3xEjTiKwQHWz5DuUnk4wPkPKoVcQ0HjlWIyW3iXxNzJe21lrZKYtlnU1dhio4f82DQzeBhJKlAVN9I40pkvb005oa4LQ3F",
         "status": "limited"
     },
     {
@@ -133,6 +134,8 @@ const PRODUCTS = [
         "imageUrl": "https://picsum.photos/seed/epic-quest-map/800/800",
         "imageHint": "ancient map",
         "stripePaymentLink": "https://buy.stripe.com/test_5kAdSfa21g5v85a7ss",
+        "buyButtonId": "buy_btn_1SOGGFEjTiKwQHWzk29ON4YI",
+        "publishableKey": "pk_live_51J1H3xEjTiKwQHWz5DuUnk4wPkPKoVcQ0HjlWIyW3iXxNzJe21lrZKYtlnU1dhio4f82DQzeBhJKlAVN9I40pkvb005oa4LQ3F",
         "status": "available"
     },
     {
@@ -143,10 +146,11 @@ const PRODUCTS = [
         "imageUrl": "https://picsum.photos/seed/tome-of-farts/800/800",
         "imageHint": "ancient book",
         "stripePaymentLink": "https://buy.stripe.com/test_5kAdSfa21g5v85a7ss",
+        "buyButtonId": "buy_btn_1SOGGFEjTiKwQHWzk29ON4YI",
+        "publishableKey": "pk_live_51J1H3xEjTiKwQHWz5DuUnk4wPkPKoVcQ0HjlWIyW3iXxNzJe21lrZKYtlnU1dhio4f82DQzeBhJKlAVN9I40pkvb005oa4LQ3F",
         "status": "sold_out"
     }
 ];
-;
 async function seedProducts(db) {
     const productsRef = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$firebase$2f$firestore$2f$dist$2f$index$2e$node$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["collection"])(db, 'products');
     const snapshot = await (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$firebase$2f$firestore$2f$dist$2f$index$2e$node$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["getDocs"])(productsRef);

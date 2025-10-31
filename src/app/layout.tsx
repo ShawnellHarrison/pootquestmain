@@ -3,6 +3,7 @@ import { Toaster } from "@/components/ui/toaster";
 import './globals.css';
 import { cn } from '@/lib/utils';
 import { FirebaseClientProvider } from '@/firebase';
+import Script from 'next/script';
 
 export const metadata: Metadata = {
   title: 'Poot Quest: The Land of Never-Ending Asses',
@@ -30,9 +31,8 @@ export default function RootLayout({
           {children}
         </FirebaseClientProvider>
         <Toaster />
+        <Script src="https://js.stripe.com/v3/buy-button.js" async />
       </body>
     </html>
   );
 }
-
-    
