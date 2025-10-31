@@ -155,19 +155,19 @@ export function DeckManagerSheet({ characterId }: { characterId: string }) {
 
         const cardName = active.id as string;
         const inDeck = deck.includes(cardName);
+        const overCardName = over.id as string;
 
-        const targetIsDeck = over.id === 'deck-droppable' || deck.includes(over.id as string);
-        const targetIsCollection = over.id === 'collection-droppable' || collectionPool.some(c => c.name === over.id);
+        const targetIsDeck = over.id === 'deck-droppable' || deck.includes(overCardName);
+        const targetIsCollection = over.id === 'collection-droppable' || collectionPool.some(c => c.name === overCardName);
 
 
         if (targetIsDeck) {
              if (inDeck) {
-                 // Reordering within the deck
-                 const oldIndex = deck.indexOf(active.id as string);
-                 const newIndex = deck.indexOf(over.id as string);
-                 if (oldIndex !== -1 && newIndex !== -1) {
+                const oldIndex = deck.findIndex(name => name === cardName);
+                const newIndex = deck.findIndex(name => name === overCardName);
+                if (oldIndex !== -1 && newIndex !== -1) {
                     setDeck((items) => arrayMove(items, oldIndex, newIndex));
-                 }
+                }
              } else {
                  // Moving from collection to deck
                 if (deck.length < DECK_SIZE) {
