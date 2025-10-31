@@ -175,7 +175,7 @@ export function ConfirmationScreen({ character }: ConfirmationScreenProps) {
                         </Button>
                         <Button 
                             size="lg" 
-                            className="w-full sm:w-auto flex-grow animate-pulse disabled:animate-none"
+                            className="w-full sm:w-auto flex-grow animate-pulse-glow disabled:animate-none"
                             onClick={handleConfirm}
                             disabled={isCreating || !user}
                         >
