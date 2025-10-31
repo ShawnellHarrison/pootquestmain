@@ -95,7 +95,7 @@ const PRODUCTS = [
         "price": 19.99,
         "imageUrl": "https://picsum.photos/seed/adventurer-tee/800/800",
         "imageHint": "graphic t-shirt",
-        "stripePaymentLink": "https://buy.stripe.com/8x26oHbXp7Mg3tC76i8bS0g",
+        "stripePaymentLink": "https://buy.stripe.com/test_5kAdSfa21g5v85a7ss",
         "status": "available"
     },
     {
@@ -105,7 +105,7 @@ const PRODUCTS = [
         "price": 14.99,
         "imageUrl": "https://picsum.photos/seed/mana-mug/800/800",
         "imageHint": "ceramic mug",
-        "stripePaymentLink": "https://buy.stripe.com/8x26oHbXp7Mg3tC76i8bS0g",
+        "stripePaymentLink": "https://buy.stripe.com/test_5kAdSfa21g5v85a7ss",
         "status": "limited"
     },
     {
@@ -115,8 +115,18 @@ const PRODUCTS = [
         "price": 24.99,
         "imageUrl": "https://picsum.photos/seed/epic-quest-map/800/800",
         "imageHint": "ancient map",
-        "stripePaymentLink": "https://buy.stripe.com/8x26oHbXp7Mg3tC76i8bS0g",
+        "stripePaymentLink": "https://buy.stripe.com/test_5kAdSfa21g5v85a7ss",
         "status": "available"
+    },
+    {
+        "id": "tome-of-forbidden-farts",
+        "title": "Tome of Forbidden Farts",
+        "description": "Unlock ancient and powerful wind-breaking techniques. (Signed by the author).",
+        "price": 49.99,
+        "imageUrl": "https://picsum.photos/seed/tome-of-farts/800/800",
+        "imageHint": "ancient book",
+        "stripePaymentLink": "https://buy.stripe.com/test_5kAdSfa21g5v85a7ss",
+        "status": "sold_out"
     }
 ];
 ;
