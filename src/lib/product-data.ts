@@ -14,32 +14,32 @@ export const PRODUCTS: Product[] = [
     {
         id: "adventurer-tee",
         title: "Adventurer Tee",
-        description: "A soft, comfortable 100% cotton shirt featuring the iconic Poot Quest logo. Perfect for everyday wear.",
-        price: 24.99,
-        imageUrl: "https://picsum.photos/seed/tee/600/400",
-        imageHint: "t-shirt",
-        stripePaymentLink: "https://buy.stripe.com/test_...your_link_here",
-        status: "available",
+        description: "Soft cotton tee for bold explorers.",
+        price: 19.99,
+        imageUrl: "https://picsum.photos/seed/adventurer-tee/800/800",
+        imageHint: "graphic t-shirt",
+        stripePaymentLink: "https://buy.stripe.com/8x26oHbXp7Mg3tC76i8bS0g",
+        status: "available"
     },
     {
         id: "mana-mug",
         title: "Mana Mug",
-        description: "A sturdy ceramic mug with a mysterious, glowing rune design. Holds your favorite potion (or coffee).",
+        description: "Restores +10 energy every morning.",
         price: 14.99,
-        imageUrl: "https://picsum.photos/seed/mug/600/400",
-        imageHint: "coffee mug",
-        stripePaymentLink: "https://buy.stripe.com/test_...your_link_here",
-        status: "limited",
+        imageUrl: "https://picsum.photos/seed/mana-mug/800/800",
+        imageHint: "ceramic mug",
+        stripePaymentLink: "https://buy.stripe.com/8x26oHbXp7Mg3tC76i8bS0g",
+        status: "limited"
     },
     {
-        id: "boss-hoodie",
-        title: "Boss Hoodie",
-        description: "A premium, dark-mode pullover hoodie with a subtle, high-quality print of the final boss. Stay warm in the darkest dungeons.",
-        price: 39.99,
-        imageUrl: "https://picsum.photos/seed/hoodie/600/400",
-        imageHint: "hoodie sweatshirt",
-        stripePaymentLink: "https://buy.stripe.com/test_...your_link_here",
-        status: "available",
+        id: "epic-quest-map",
+        title: "Epic Quest Map",
+        description: "Unfold your next great adventure.",
+        price: 24.99,
+        imageUrl: "https://picsum.photos/seed/epic-quest-map/800/800",
+        imageHint: "ancient map",
+        stripePaymentLink: "https://buy.stripe.com/8x26oHbXp7Mg3tC76i8bS0g",
+        status: "available"
     }
 ];
 
