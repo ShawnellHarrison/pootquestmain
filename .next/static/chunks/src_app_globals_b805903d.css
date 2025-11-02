@@ -659,6 +659,10 @@ body {
   height: 1rem;
 }
 
+.h-40 {
+  height: 10rem;
+}
+
 .h-48 {
   height: 12rem;
 }
@@ -725,10 +729,6 @@ body {
 
 .h-svh {
   height: 100svh;
-}
-
-.h-40 {
-  height: 10rem;
 }
 
 .max-h-96 {
@@ -1035,6 +1035,17 @@ body {
   transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y));
 }
 
+@keyframes ping {
+  75%, 100% {
+    opacity: 0;
+    transform: scale(2);
+  }
+}
+
+.animate-ping {
+  animation: 1s cubic-bezier(0, 0, .2, 1) infinite ping;
+}
+
 @keyframes pulse {
   50% {
     opacity: .5;
@@ -1053,17 +1064,6 @@ body {
 
 .animate-spin {
   animation: 1s linear infinite spin;
-}
-
-@keyframes ping {
-  75%, 100% {
-    opacity: 0;
-    transform: scale(2);
-  }
-}
-
-.animate-ping {
-  animation: 1s cubic-bezier(0, 0, .2, 1) infinite ping;
 }
 
 .cursor-default {
@@ -1449,6 +1449,10 @@ body {
   background-color: hsl(var(--muted) / .2);
 }
 
+.bg-muted\/30 {
+  background-color: hsl(var(--muted) / .3);
+}
+
 .bg-muted\/50 {
   background-color: hsl(var(--muted) / .5);
 }
@@ -1459,6 +1463,10 @@ body {
 
 .bg-primary {
   background-color: hsl(var(--primary));
+}
+
+.bg-primary\/80 {
+  background-color: hsl(var(--primary) / .8);
 }
 
 .bg-secondary {
@@ -1476,14 +1484,6 @@ body {
 .bg-yellow-500 {
   --tw-bg-opacity: 1;
   background-color: rgb(234 179 8 / var(--tw-bg-opacity, 1));
-}
-
-.bg-muted\/30 {
-  background-color: hsl(var(--muted) / .3);
-}
-
-.bg-primary\/80 {
-  background-color: hsl(var(--primary) / .8);
 }
 
 .bg-gradient-to-t {
@@ -1929,12 +1929,12 @@ body {
   opacity: .7;
 }
 
-.opacity-90 {
-  opacity: .9;
-}
-
 .opacity-75 {
   opacity: .75;
+}
+
+.opacity-90 {
+  opacity: .9;
 }
 
 .shadow-\[0_0_0_1px_hsl\(var\(--sidebar-border\)\)\] {
