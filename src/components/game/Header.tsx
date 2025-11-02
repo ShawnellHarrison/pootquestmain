@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { Swords, Coffee, BookOpen, ShoppingBag } from "lucide-react";
 import { Button } from "../ui/button";
-import { StoreSheet } from "../store/StoreSheet";
+import { StoreModal } from "../store/StoreModal";
 
 export function Header() {
   return (
@@ -27,7 +27,7 @@ export function Header() {
                     <Coffee className="mr-2 h-4 w-4" /> Buy me a Coffee
                 </a>
             </Button>
-            <StoreSheet />
+            <StoreModal />
         </nav>
       </div>
     </header>
