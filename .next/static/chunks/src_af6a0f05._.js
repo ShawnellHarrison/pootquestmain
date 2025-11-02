@@ -836,7 +836,7 @@ var _s = __turbopack_context__.k.signature();
 function useCollection(memoizedTargetRefOrQuery) {
     _s();
     const [data, setData] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useState"])(null);
-    const [isLoading, setIsLoading] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useState"])(false);
+    const [isLoading, setIsLoading] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useState"])(true);
     const [error, setError] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useState"])(null);
     (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useEffect"])({
         "useCollection.useEffect": ()=>{
@@ -848,7 +848,6 @@ function useCollection(memoizedTargetRefOrQuery) {
             }
             setIsLoading(true);
             setError(null);
-            // Directly use memoizedTargetRefOrQuery as it's assumed to be the final query
             const unsubscribe = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$firebase$2f$firestore$2f$dist$2f$index$2e$esm2017$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["onSnapshot"])(memoizedTargetRefOrQuery, {
                 "useCollection.useEffect.unsubscribe": (snapshot)=>{
                     const results = [];
@@ -864,8 +863,16 @@ function useCollection(memoizedTargetRefOrQuery) {
                 }
             }["useCollection.useEffect.unsubscribe"], {
                 "useCollection.useEffect.unsubscribe": (error)=>{
-                    // This logic extracts the path from either a ref or a query
-                    const path = memoizedTargetRefOrQuery.type === 'collection' ? memoizedTargetRefOrQuery.path : memoizedTargetRefOrQuery._query.path.canonicalString();
+                    let path = 'unknown/path';
+                    try {
+                        if (memoizedTargetRefOrQuery.type === 'collection') {
+                            path = memoizedTargetRefOrQuery.path;
+                        } else {
+                            path = memoizedTargetRefOrQuery._query.path.canonicalString();
+                        }
+                    } catch (e) {
+                        console.error("Could not determine path for Firestore error", e);
+                    }
                     const contextualError = new __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$firebase$2f$errors$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["FirestorePermissionError"]({
                         operation: 'list',
                         path
@@ -873,7 +880,6 @@ function useCollection(memoizedTargetRefOrQuery) {
                     setError(contextualError);
                     setData(null);
                     setIsLoading(false);
-                    // trigger global error propagation
                     __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$firebase$2f$error$2d$emitter$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["errorEmitter"].emit('permission-error', contextualError);
                 }
             }["useCollection.useEffect.unsubscribe"]);
@@ -883,7 +889,7 @@ function useCollection(memoizedTargetRefOrQuery) {
         }
     }["useCollection.useEffect"], [
         memoizedTargetRefOrQuery
-    ]); // Re-run if the target query/reference changes.
+    ]);
     if (memoizedTargetRefOrQuery && !memoizedTargetRefOrQuery.__memo) {
         throw new Error(memoizedTargetRefOrQuery + ' was not properly memoized using useMemoFirebase');
     }
@@ -893,7 +899,7 @@ function useCollection(memoizedTargetRefOrQuery) {
         error
     };
 }
-_s(useCollection, "Qxb2xEOOegLE3UwVAsDMiTNANhw=");
+_s(useCollection, "oHNKtHcXBLfWEYHeRSlN5KEv5w0=");
 if (typeof globalThis.$RefreshHelpers$ === 'object' && globalThis.$RefreshHelpers !== null) {
     __turbopack_context__.k.registerExports(module, globalThis.$RefreshHelpers$);
 }
@@ -920,7 +926,7 @@ var _s = __turbopack_context__.k.signature();
 function useDoc(memoizedDocRef) {
     _s();
     const [data, setData] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useState"])(null);
-    const [isLoading, setIsLoading] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useState"])(false);
+    const [isLoading, setIsLoading] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useState"])(true);
     const [error, setError] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useState"])(null);
     (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useEffect"])({
         "useDoc.useEffect": ()=>{
@@ -932,7 +938,6 @@ function useDoc(memoizedDocRef) {
             }
             setIsLoading(true);
             setError(null);
-            // Optional: setData(null); // Clear previous data instantly
             const unsubscribe = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$firebase$2f$firestore$2f$dist$2f$index$2e$esm2017$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["onSnapshot"])(memoizedDocRef, {
                 "useDoc.useEffect.unsubscribe": (snapshot)=>{
                     if (snapshot.exists()) {
@@ -941,10 +946,9 @@ function useDoc(memoizedDocRef) {
                             id: snapshot.id
                         });
                     } else {
-                        // Document does not exist
                         setData(null);
                     }
-                    setError(null); // Clear any previous error on successful snapshot (even if doc doesn't exist)
+                    setError(null);
                     setIsLoading(false);
                 }
             }["useDoc.useEffect.unsubscribe"], {
@@ -956,7 +960,6 @@ function useDoc(memoizedDocRef) {
                     setError(contextualError);
                     setData(null);
                     setIsLoading(false);
-                    // trigger global error propagation
                     __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$firebase$2f$error$2d$emitter$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["errorEmitter"].emit('permission-error', contextualError);
                 }
             }["useDoc.useEffect.unsubscribe"]);
@@ -966,14 +969,14 @@ function useDoc(memoizedDocRef) {
         }
     }["useDoc.useEffect"], [
         memoizedDocRef
-    ]); // Re-run if the memoizedDocRef changes.
+    ]);
     return {
         data,
         isLoading,
         error
     };
 }
-_s(useDoc, "Qxb2xEOOegLE3UwVAsDMiTNANhw=");
+_s(useDoc, "oHNKtHcXBLfWEYHeRSlN5KEv5w0=");
 if (typeof globalThis.$RefreshHelpers$ === 'object' && globalThis.$RefreshHelpers !== null) {
     __turbopack_context__.k.registerExports(module, globalThis.$RefreshHelpers$);
 }
