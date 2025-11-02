@@ -16,6 +16,7 @@ import { Button } from '@/components/ui/button';
 import { PlayerStats } from './PlayerStats';
 import { CARD_DATA, CardData, CharacterClass, getClass } from '@/lib/game-data';
 import { generateEncounter } from '@/ai/flows/generate-encounter-flow';
+import { DefeatModal, type DefeatStats } from './DefeatModal';
 
 // Fisher-Yates shuffle algorithm
 const shuffle = <T,>(array: T[]): T[] => {
@@ -88,6 +89,8 @@ export function BattleClient({ characterId, needsEncounter }: BattleClientProps)
   const [collectionState, setCollectionState] = useState<CardData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [lastDamageToast, setLastDamageToast] = useState<{ title: string; description: string; variant?: "destructive" } | null>(null);
+  const [showDefeatModal, setShowDefeatModal] = useState(false);
+  const [defeatStats, setDefeatStats] = useState<DefeatStats | null>(null);
   
   const characterClass = useMemo(() => character ? getClass(character.class) : null, [character]);
   
@@ -416,6 +419,54 @@ export function BattleClient({ characterId, needsEncounter }: BattleClientProps)
     }
   }, [battleState?.turn, battleState?.enemies, character?.maxMana]);
   
+    const handleCloseDefeatModal = async () => {
+        if (!user || !firestore || !characterClass || !battleState) return;
+
+        setShowDefeatModal(false);
+
+        try {
+            const runChronicleData = {
+                userId: user.uid,
+                characterClass: characterClass.name,
+                moralAlignment: "Chaotic Flatulent",
+                enemiesKilled: battleState.enemiesKilled,
+                enemiesSpared: 0,
+                secretRoomsFound: 0,
+                ending: `Vanquished by ${battleState.enemies[0]?.name || 'a mysterious foe'}.`,
+                uniqueDiscovery: "Learned that hubris smells a lot like sulfur.",
+                createdAt: serverTimestamp(),
+            };
+
+            const runChroniclesRef = collection(firestore, `users/${user.uid}/runChronicles`);
+            await addDoc(runChroniclesRef, runChronicleData);
+
+            if (characterId) {
+                const characterDocRef = doc(firestore, `users/${user.uid}/characters/${characterId}`);
+                const narrativeContextRef = doc(firestore, `users/${user.uid}/characters/${characterId}/narrativeContexts`, "main");
+                const deckRef = doc(firestore, `users/${user.uid}/characters/${characterId}/decks`, "main");
+                const inventoryRef = collection(firestore, `users/${user.uid}/characters/${characterId}/inventory`);
+
+                const inventorySnap = await getDocs(inventoryRef);
+                const deleteBatch = writeBatch(firestore);
+                inventorySnap.docs.forEach(d => deleteBatch.delete(d.ref));
+                
+                deleteBatch.delete(characterDocRef);
+                deleteBatch.delete(narrativeContextRef);
+                deleteBatch.delete(deckRef);
+                await deleteBatch.commit();
+            }
+
+            if (typeof window !== 'undefined') {
+                localStorage.removeItem('characterId');
+            }
+            router.push('/chronicle');
+        } catch (error) {
+            console.error("Failed to process defeat:", error);
+            toast({ title: "Error", description: "Could not finalize your run. Please try again.", variant: "destructive" });
+        }
+    };
+
+
   useEffect(() => {
       const processVictory = async () => {
         if (!battleState || battleState.turn !== 'victory' || !character || !battleState.loot) return;
@@ -459,45 +510,14 @@ export function BattleClient({ characterId, needsEncounter }: BattleClientProps)
       };
 
       const processDefeat = async () => {
-          if (battleState?.turn !== 'defeat' || !user || !firestore || !characterClass || !battleState ) return;
-          toast({ title: "You have been defeated!", variant: "destructive", duration: 5000 });
-
-          const runChronicleData = {
-              userId: user.uid,
+          if (battleState?.turn !== 'defeat' || !characterClass) return;
+          
+          setDefeatStats({
               characterClass: characterClass.name,
-              moralAlignment: "Chaotic Flatulent",
               enemiesKilled: battleState.enemiesKilled,
-              enemiesSpared: 0,
-              secretRoomsFound: 0,
-              ending: `Vanquished by ${battleState.enemies[0]?.name || 'a mysterious foe'}.`,
-              uniqueDiscovery: "Learned that hubris smells a lot like sulfur.",
-              createdAt: serverTimestamp(),
-          };
-
-          const runChroniclesRef = collection(firestore, `users/${user.uid}/runChronicles`);
-          await addDoc(runChroniclesRef, runChronicleData);
-
-          if (characterId) {
-            const characterDocRef = doc(firestore, `users/${user.uid}/characters/${characterId}`);
-            const narrativeContextRef = doc(firestore, `users/${user.uid}/characters/${characterId}/narrativeContexts`, "main");
-            const deckRef = doc(firestore, `users/${user.uid}/characters/${characterId}/decks`, "main");
-            const inventoryRef = collection(firestore, `users/${user.uid}/characters/${characterId}/inventory`);
-
-            // Delete all inventory items
-            const inventorySnap = await getDocs(inventoryRef);
-            const deleteBatch = writeBatch(firestore);
-            inventorySnap.docs.forEach(d => deleteBatch.delete(d.ref));
-            
-            deleteBatch.delete(characterDocRef);
-            deleteBatch.delete(narrativeContextRef);
-            deleteBatch.delete(deckRef);
-            await deleteBatch.commit();
-          }
-
-          if (typeof window !== 'undefined') {
-            localStorage.removeItem('characterId');
-          }
-          router.push('/chronicle');
+              finalWords: `Vanquished by ${battleState.enemies[0]?.name || 'a mysterious foe'}.`
+          });
+          setShowDefeatModal(true);
       };
 
       if (battleState?.turn === 'victory') processVictory();
@@ -513,6 +533,8 @@ export function BattleClient({ characterId, needsEncounter }: BattleClientProps)
   }
   
   return (
+    <>
+    {defeatStats && <DefeatModal isOpen={showDefeatModal} stats={defeatStats} onClose={handleCloseDefeatModal} />}
     <Card className="bg-card/50">
       <CardContent className="p-4 space-y-4">
         <div className="flex justify-around items-end p-4 min-h-48 bg-muted/50 rounded-lg border-b-4 border-b-accent">
@@ -564,5 +586,6 @@ export function BattleClient({ characterId, needsEncounter }: BattleClientProps)
         </div>
       </CardContent>
     </Card>
+    </>
   );
 }
