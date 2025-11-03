@@ -8,8 +8,8 @@ import StatBar from "@/components/ui/StatBar";
 import { ArrowLeft, CheckCircle, Swords, AlertTriangle, FolderOpen, Sparkles } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
-import { useFirebase } from "@/firebase";
-import { collection, doc, writeBatch, serverTimestamp } from "firebase/firestore";
+import { useFirebase, setDocumentNonBlocking } from "@/firebase";
+import { collection, doc, serverTimestamp } from "firebase/firestore";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Loader2 } from "lucide-react";
@@ -33,64 +33,62 @@ export function ConfirmationScreen({ character }: ConfirmationScreenProps) {
     const handleConfirm = async () => {
         if (!firestore || !user) return;
         setIsCreating(true);
-        try {
-            const batch = writeBatch(firestore);
 
-            // 1. Create Character document
-            const newCharacterRef = doc(collection(firestore, `users/${user.uid}/characters`));
-            batch.set(newCharacterRef, {
-                userId: user.uid,
-                class: character.id,
-                imageUrl: character.image,
-                level: 1,
-                experience: 0,
-                health: 60,
-                maxHealth: 60,
-                mana: 10,
-                maxMana: 10,
-                attack: character.stats.attack,
-                defense: character.stats.defense,
-                speed: character.stats.speed,
-                createdAt: serverTimestamp(),
-            });
+        const newCharacterRef = doc(collection(firestore, `users/${user.uid}/characters`));
+        
+        // Character Data
+        const characterData = {
+            userId: user.uid,
+            class: character.id,
+            imageUrl: character.image,
+            level: 1,
+            experience: 0,
+            health: 60,
+            maxHealth: 60,
+            mana: 10,
+            maxMana: 10,
+            attack: character.stats.attack,
+            defense: character.stats.defense,
+            speed: character.stats.speed,
+            createdAt: serverTimestamp(),
+        };
+        setDocumentNonBlocking(newCharacterRef, characterData, {});
 
-            // 2. Create initial NarrativeContext document with placeholder text
-            const narrativeContextRef = doc(firestore, `users/${user.uid}/characters/${newCharacterRef.id}/narrativeContexts`, "main");
-            batch.set(narrativeContextRef, {
-                characterId: newCharacterRef.id,
-                location: "Tavern of Broken Wind",
-                storyArc: "Your legend is about to be written...", // Placeholder
-                playerChoices: [],
-                reputationStealth: 10,
-                reputationCombat: 10,
-                reputationDiplomacy: 10,
-                unlockedPaths: [],
-                questFlags: {},
-                lastNarration: "A new adventure begins! What will your first move be?", // Placeholder
-                currentScenario: null,
-                currentEncounter: null,
-                triggerNextScenario: true, // Trigger narration generation on first load
-            });
+        // Narrative Context Data
+        const narrativeContextRef = doc(firestore, `users/${user.uid}/characters/${newCharacterRef.id}/narrativeContexts`, "main");
+        const narrativeData = {
+            characterId: newCharacterRef.id,
+            location: "Tavern of Broken Wind",
+            storyArc: "Your legend is about to be written...",
+            playerChoices: [],
+            reputationStealth: 10,
+            reputationCombat: 10,
+            reputationDiplomacy: 10,
+            unlockedPaths: [],
+            questFlags: {},
+            lastNarration: "A new adventure begins! What will your first move be?",
+            currentScenario: null,
+            currentEncounter: null,
+            triggerNextScenario: true,
+        };
+        setDocumentNonBlocking(narrativeContextRef, narrativeData, {});
 
-            // 3. Create initial Deck document
-            const deckRef = doc(firestore, `users/${user.uid}/characters/${newCharacterRef.id}/decks`, "main");
-            batch.set(deckRef, {
-                characterId: newCharacterRef.id,
-                cards: character.starterDeck.flatMap(c => Array(c.count).fill(c.name)),
-            });
+        // Deck Data
+        const deckRef = doc(firestore, `users/${user.uid}/characters/${newCharacterRef.id}/decks`, "main");
+        const deckData = {
+            characterId: newCharacterRef.id,
+            cards: character.starterDeck.flatMap(c => Array(c.count).fill(c.name)),
+        };
+        setDocumentNonBlocking(deckRef, deckData, {});
 
-            await batch.commit();
-
-            if (typeof window !== 'undefined') {
-                localStorage.setItem('characterId', newCharacterRef.id);
-            }
-
-            router.push(`/adventure/${newCharacterRef.id}`);
-
-        } catch (error) {
-            console.error("Failed to create character:", error);
-            setIsCreating(false);
+        if (typeof window !== 'undefined') {
+            localStorage.setItem('characterId', newCharacterRef.id);
         }
+
+        // The non-blocking calls above will update the cache immediately,
+        // so we can navigate right away for a snappy user experience.
+        // Any permission errors will be caught and displayed by the global error handler.
+        router.push(`/adventure/${newCharacterRef.id}`);
     };
 
 
