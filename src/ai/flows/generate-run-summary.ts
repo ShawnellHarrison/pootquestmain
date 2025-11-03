@@ -4,28 +4,11 @@
  * @fileOverview Generates a shareable summary of a completed game run.
  *
  * - generateRunSummary - A function that creates a summary for the Fart Journal.
- * - RunSummaryInput - The input type for the generateRunSummary function.
- * - RunSummaryOutput - The return type for the generateRunSummary function.
  */
 
 import {ai} from '@/ai/genkit';
-import {z} from 'genkit';
+import { RunSummaryInputSchema, RunSummaryOutputSchema, type RunSummaryInput, type RunSummaryOutput } from './flow-schemas';
 
-export const RunSummaryInputSchema = z.object({
-  characterClass: z.string().describe("The character's class."),
-  moralAlignment: z.string().describe("The character's moral alignment during the run."),
-  enemiesKilled: z.number().describe('The number of enemies killed.'),
-  enemiesSpared: z.number().describe('The number of enemies spared.'),
-  ending: z.string().describe('The final ending text achieved by the player.'),
-  uniqueDiscovery: z.string().describe('A unique discovery or event during the run.'),
-});
-export type RunSummaryInput = z.infer<typeof RunSummaryInputSchema>;
-
-export const RunSummaryOutputSchema = z.object({
-  title: z.string().describe('A catchy, epic title for the chronicle entry.'),
-  summary: z.string().describe('A humorous, epic, and shareable summary of the entire run, written in the style of a legendary bard.'),
-});
-export type RunSummaryOutput = z.infer<typeof RunSummaryOutputSchema>;
 
 export async function generateRunSummary(input: RunSummaryInput): Promise<RunSummaryOutput> {
   return generateRunSummaryFlow(input);

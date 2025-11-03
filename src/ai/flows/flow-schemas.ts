@@ -1,3 +1,5 @@
+'use server';
+
 import { z } from 'zod';
 
 export const EncounterInputSchema = z.object({
@@ -41,3 +43,20 @@ export const EncounterOutputSchema = z.object({
     introText: z.string().describe('A short, flavorful introductory text for the encounter.'),
 });
 export type EncounterOutput = z.infer<typeof EncounterOutputSchema>;
+
+
+export const RunSummaryInputSchema = z.object({
+    characterClass: z.string().describe("The character's class."),
+    moralAlignment: z.string().describe("The character's moral alignment during the run."),
+    enemiesKilled: z.number().describe('The number of enemies killed.'),
+    enemiesSpared: z.number().describe('The number of enemies spared.'),
+    ending: z.string().describe('The final ending text achieved by the player.'),
+    uniqueDiscovery: z.string().describe('A unique discovery or event during the run.'),
+});
+export type RunSummaryInput = z.infer<typeof RunSummaryInputSchema>;
+
+export const RunSummaryOutputSchema = z.object({
+    title: z.string().describe('A catchy, epic title for the chronicle entry.'),
+    summary: z.string().describe('A humorous, epic, and shareable summary of the entire run, written in the style of a legendary bard.'),
+});
+export type RunSummaryOutput = z.infer<typeof RunSummaryOutputSchema>;

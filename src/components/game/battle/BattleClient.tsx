@@ -9,7 +9,7 @@ import { Loader2, Flag, ArrowRightCircle } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import { Card, CardContent } from '@/components/ui/card';
-import { EncounterOutput } from '@/ai/flows/flow-schemas';
+import { EncounterOutput, EncounterInput } from '@/ai/flows/flow-schemas';
 import { PlayerCard } from './PlayerCard';
 import { Enemy } from './Enemy';
 import { Button } from '@/components/ui/button';
@@ -141,7 +141,7 @@ export function BattleClient({ characterId, needsEncounter }: BattleClientProps)
                 combat: narrativeData.reputationCombat,
                 diplomacy: narrativeData.reputationDiplomacy,
             },
-        });
+        } as EncounterInput);
 
         const allCardsMap = new Map<string, CardData>();
         charClass.starterDeck.forEach(starter => {

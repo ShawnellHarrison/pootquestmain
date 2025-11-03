@@ -43,6 +43,17 @@
       "layer": {
         "app/adventure/[class]/page": "action-browser"
       }
+    },
+    "400bf9d6413225119b53053fe93b4ca88567e788c6": {
+      "workers": {
+        "app/chronicle/page": {
+          "moduleId": "[project]/.next-internal/server/app/chronicle/page/actions.js { ACTIONS_MODULE0 => \"[project]/src/ai/flows/generate-run-summary.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": false
+        }
+      },
+      "layer": {
+        "app/chronicle/page": "action-browser"
+      }
     }
   },
   "edge": {},
