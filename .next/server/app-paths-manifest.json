@@ -1,4 +1,5 @@
 {
+  "/character-creation/[class]/page": "app/character-creation/[class]/page.js",
   "/character-creation/page": "app/character-creation/page.js",
   "/favicon.ico/route": "app/favicon.ico/route.js",
   "/page": "app/page.js"

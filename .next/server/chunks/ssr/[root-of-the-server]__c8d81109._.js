@@ -242,6 +242,7 @@ var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist
 var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$image$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/next/image.js [app-ssr] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$firebase$2f$index$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__$3c$module__evaluation$3e$__ = __turbopack_context__.i("[project]/src/firebase/index.ts [app-ssr] (ecmascript) <module evaluation>");
 var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$firebase$2f$provider$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/firebase/provider.tsx [app-ssr] (ecmascript)");
+var __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$firebase$2f$non$2d$blocking$2d$updates$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/src/firebase/non-blocking-updates.tsx [app-ssr] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$firebase$2f$firestore$2f$dist$2f$index$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__$3c$module__evaluation$3e$__ = __turbopack_context__.i("[project]/node_modules/firebase/firestore/dist/index.mjs [app-ssr] (ecmascript) <module evaluation>");
 var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$firebase$2f$firestore$2f$dist$2f$index$2e$node$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/@firebase/firestore/dist/index.node.mjs [app-ssr] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$navigation$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/next/navigation.js [app-ssr] (ecmascript)");
@@ -291,57 +292,56 @@ function ConfirmationScreen({ character }) {
     const handleConfirm = async ()=>{
         if (!firestore || !user) return;
         setIsCreating(true);
-        try {
-            const batch = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$firebase$2f$firestore$2f$dist$2f$index$2e$node$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["writeBatch"])(firestore);
-            // 1. Create Character document
-            const newCharacterRef = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$firebase$2f$firestore$2f$dist$2f$index$2e$node$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["doc"])((0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$firebase$2f$firestore$2f$dist$2f$index$2e$node$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["collection"])(firestore, `users/${user.uid}/characters`));
-            batch.set(newCharacterRef, {
-                userId: user.uid,
-                class: character.id,
-                imageUrl: character.image,
-                level: 1,
-                experience: 0,
-                health: 60,
-                maxHealth: 60,
-                mana: 10,
-                maxMana: 10,
-                attack: character.stats.attack,
-                defense: character.stats.defense,
-                speed: character.stats.speed,
-                createdAt: (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$firebase$2f$firestore$2f$dist$2f$index$2e$node$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["serverTimestamp"])()
-            });
-            // 2. Create initial NarrativeContext document with placeholder text
-            const narrativeContextRef = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$firebase$2f$firestore$2f$dist$2f$index$2e$node$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["doc"])(firestore, `users/${user.uid}/characters/${newCharacterRef.id}/narrativeContexts`, "main");
-            batch.set(narrativeContextRef, {
-                characterId: newCharacterRef.id,
-                location: "Tavern of Broken Wind",
-                storyArc: "Your legend is about to be written...",
-                playerChoices: [],
-                reputationStealth: 10,
-                reputationCombat: 10,
-                reputationDiplomacy: 10,
-                unlockedPaths: [],
-                questFlags: {},
-                lastNarration: "A new adventure begins! What will your first move be?",
-                currentScenario: null,
-                currentEncounter: null,
-                triggerNextScenario: true
-            });
-            // 3. Create initial Deck document
-            const deckRef = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$firebase$2f$firestore$2f$dist$2f$index$2e$node$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["doc"])(firestore, `users/${user.uid}/characters/${newCharacterRef.id}/decks`, "main");
-            batch.set(deckRef, {
-                characterId: newCharacterRef.id,
-                cards: character.starterDeck.flatMap((c)=>Array(c.count).fill(c.name))
-            });
-            await batch.commit();
-            if ("TURBOPACK compile-time falsy", 0) {
-                "TURBOPACK unreachable";
-            }
-            router.push(`/adventure/${newCharacterRef.id}`);
-        } catch (error) {
-            console.error("Failed to create character:", error);
-            setIsCreating(false);
+        const newCharacterRef = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$firebase$2f$firestore$2f$dist$2f$index$2e$node$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["doc"])((0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$firebase$2f$firestore$2f$dist$2f$index$2e$node$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["collection"])(firestore, `users/${user.uid}/characters`));
+        // Character Data
+        const characterData = {
+            userId: user.uid,
+            class: character.id,
+            imageUrl: character.image,
+            level: 1,
+            experience: 0,
+            health: 60,
+            maxHealth: 60,
+            mana: 10,
+            maxMana: 10,
+            attack: character.stats.attack,
+            defense: character.stats.defense,
+            speed: character.stats.speed,
+            createdAt: (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$firebase$2f$firestore$2f$dist$2f$index$2e$node$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["serverTimestamp"])()
+        };
+        (0, __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$firebase$2f$non$2d$blocking$2d$updates$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["setDocumentNonBlocking"])(newCharacterRef, characterData, {});
+        // Narrative Context Data
+        const narrativeContextRef = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$firebase$2f$firestore$2f$dist$2f$index$2e$node$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["doc"])(firestore, `users/${user.uid}/characters/${newCharacterRef.id}/narrativeContexts`, "main");
+        const narrativeData = {
+            characterId: newCharacterRef.id,
+            location: "Tavern of Broken Wind",
+            storyArc: "Your legend is about to be written...",
+            playerChoices: [],
+            reputationStealth: 10,
+            reputationCombat: 10,
+            reputationDiplomacy: 10,
+            unlockedPaths: [],
+            questFlags: {},
+            lastNarration: "A new adventure begins! What will your first move be?",
+            currentScenario: null,
+            currentEncounter: null,
+            triggerNextScenario: true
+        };
+        (0, __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$firebase$2f$non$2d$blocking$2d$updates$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["setDocumentNonBlocking"])(narrativeContextRef, narrativeData, {});
+        // Deck Data
+        const deckRef = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$firebase$2f$firestore$2f$dist$2f$index$2e$node$2e$mjs__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["doc"])(firestore, `users/${user.uid}/characters/${newCharacterRef.id}/decks`, "main");
+        const deckData = {
+            characterId: newCharacterRef.id,
+            cards: character.starterDeck.flatMap((c)=>Array(c.count).fill(c.name))
+        };
+        (0, __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$firebase$2f$non$2d$blocking$2d$updates$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["setDocumentNonBlocking"])(deckRef, deckData, {});
+        if ("TURBOPACK compile-time falsy", 0) {
+            "TURBOPACK unreachable";
         }
+        // The non-blocking calls above will update the cache immediately,
+        // so we can navigate right away for a snappy user experience.
+        // Any permission errors will be caught and displayed by the global error handler.
+        router.push(`/adventure/${newCharacterRef.id}`);
     };
     return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
         className: "grid grid-cols-1 lg:grid-cols-3 gap-8",
@@ -363,7 +363,7 @@ function ConfirmationScreen({ character }) {
                                     "data-ai-hint": character.imageHint
                                 }, void 0, false, {
                                     fileName: "[project]/src/components/game/ConfirmationScreen.tsx",
-                                    lineNumber: 102,
+                                    lineNumber: 100,
                                     columnNumber: 25
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -376,7 +376,7 @@ function ConfirmationScreen({ character }) {
                                             ]
                                         }, void 0, true, {
                                             fileName: "[project]/src/components/game/ConfirmationScreen.tsx",
-                                            lineNumber: 111,
+                                            lineNumber: 109,
                                             columnNumber: 29
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -384,19 +384,19 @@ function ConfirmationScreen({ character }) {
                                             children: character.playstyle
                                         }, void 0, false, {
                                             fileName: "[project]/src/components/game/ConfirmationScreen.tsx",
-                                            lineNumber: 114,
+                                            lineNumber: 112,
                                             columnNumber: 29
                                         }, this)
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/src/components/game/ConfirmationScreen.tsx",
-                                    lineNumber: 110,
+                                    lineNumber: 108,
                                     columnNumber: 25
                                 }, this)
                             ]
                         }, void 0, true, {
                             fileName: "[project]/src/components/game/ConfirmationScreen.tsx",
-                            lineNumber: 101,
+                            lineNumber: 99,
                             columnNumber: 21
                         }, this),
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$card$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["CardContent"], {
@@ -409,7 +409,7 @@ function ConfirmationScreen({ character }) {
                                             title: "Combat Stats"
                                         }, void 0, false, {
                                             fileName: "[project]/src/components/game/ConfirmationScreen.tsx",
-                                            lineNumber: 119,
+                                            lineNumber: 117,
                                             columnNumber: 29
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -423,20 +423,20 @@ function ConfirmationScreen({ character }) {
                                                             children: "Attack Power:"
                                                         }, void 0, false, {
                                                             fileName: "[project]/src/components/game/ConfirmationScreen.tsx",
-                                                            lineNumber: 122,
+                                                            lineNumber: 120,
                                                             columnNumber: 37
                                                         }, this),
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$StatBar$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["default"], {
                                                             value: character.stats.attack
                                                         }, void 0, false, {
                                                             fileName: "[project]/src/components/game/ConfirmationScreen.tsx",
-                                                            lineNumber: 123,
+                                                            lineNumber: 121,
                                                             columnNumber: 37
                                                         }, this)
                                                     ]
                                                 }, void 0, true, {
                                                     fileName: "[project]/src/components/game/ConfirmationScreen.tsx",
-                                                    lineNumber: 121,
+                                                    lineNumber: 119,
                                                     columnNumber: 33
                                                 }, this),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -447,20 +447,20 @@ function ConfirmationScreen({ character }) {
                                                             children: "Defense:"
                                                         }, void 0, false, {
                                                             fileName: "[project]/src/components/game/ConfirmationScreen.tsx",
-                                                            lineNumber: 126,
+                                                            lineNumber: 124,
                                                             columnNumber: 37
                                                         }, this),
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$StatBar$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["default"], {
                                                             value: character.stats.defense
                                                         }, void 0, false, {
                                                             fileName: "[project]/src/components/game/ConfirmationScreen.tsx",
-                                                            lineNumber: 127,
+                                                            lineNumber: 125,
                                                             columnNumber: 37
                                                         }, this)
                                                     ]
                                                 }, void 0, true, {
                                                     fileName: "[project]/src/components/game/ConfirmationScreen.tsx",
-                                                    lineNumber: 125,
+                                                    lineNumber: 123,
                                                     columnNumber: 33
                                                 }, this),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -471,32 +471,32 @@ function ConfirmationScreen({ character }) {
                                                             children: "Speed:"
                                                         }, void 0, false, {
                                                             fileName: "[project]/src/components/game/ConfirmationScreen.tsx",
-                                                            lineNumber: 130,
+                                                            lineNumber: 128,
                                                             columnNumber: 37
                                                         }, this),
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$StatBar$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["default"], {
                                                             value: character.stats.speed
                                                         }, void 0, false, {
                                                             fileName: "[project]/src/components/game/ConfirmationScreen.tsx",
-                                                            lineNumber: 131,
+                                                            lineNumber: 129,
                                                             columnNumber: 37
                                                         }, this)
                                                     ]
                                                 }, void 0, true, {
                                                     fileName: "[project]/src/components/game/ConfirmationScreen.tsx",
-                                                    lineNumber: 129,
+                                                    lineNumber: 127,
                                                     columnNumber: 33
                                                 }, this)
                                             ]
                                         }, void 0, true, {
                                             fileName: "[project]/src/components/game/ConfirmationScreen.tsx",
-                                            lineNumber: 120,
+                                            lineNumber: 118,
                                             columnNumber: 29
                                         }, this)
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/src/components/game/ConfirmationScreen.tsx",
-                                    lineNumber: 118,
+                                    lineNumber: 116,
                                     columnNumber: 25
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -506,7 +506,7 @@ function ConfirmationScreen({ character }) {
                                             title: "Special Traits"
                                         }, void 0, false, {
                                             fileName: "[project]/src/components/game/ConfirmationScreen.tsx",
-                                            lineNumber: 137,
+                                            lineNumber: 135,
                                             columnNumber: 29
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("ul", {
@@ -519,7 +519,7 @@ function ConfirmationScreen({ character }) {
                                                             children: "◆"
                                                         }, void 0, false, {
                                                             fileName: "[project]/src/components/game/ConfirmationScreen.tsx",
-                                                            lineNumber: 141,
+                                                            lineNumber: 139,
                                                             columnNumber: 41
                                                         }, this),
                                                         " ",
@@ -527,18 +527,18 @@ function ConfirmationScreen({ character }) {
                                                     ]
                                                 }, trait, true, {
                                                     fileName: "[project]/src/components/game/ConfirmationScreen.tsx",
-                                                    lineNumber: 140,
+                                                    lineNumber: 138,
                                                     columnNumber: 37
                                                 }, this))
                                         }, void 0, false, {
                                             fileName: "[project]/src/components/game/ConfirmationScreen.tsx",
-                                            lineNumber: 138,
+                                            lineNumber: 136,
                                             columnNumber: 29
                                         }, this)
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/src/components/game/ConfirmationScreen.tsx",
-                                    lineNumber: 136,
+                                    lineNumber: 134,
                                     columnNumber: 25
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -548,7 +548,7 @@ function ConfirmationScreen({ character }) {
                                             title: "Starter Deck (15 cards)"
                                         }, void 0, false, {
                                             fileName: "[project]/src/components/game/ConfirmationScreen.tsx",
-                                            lineNumber: 148,
+                                            lineNumber: 146,
                                             columnNumber: 29
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("ul", {
@@ -561,7 +561,7 @@ function ConfirmationScreen({ character }) {
                                                             children: "▸"
                                                         }, void 0, false, {
                                                             fileName: "[project]/src/components/game/ConfirmationScreen.tsx",
-                                                            lineNumber: 152,
+                                                            lineNumber: 150,
                                                             columnNumber: 41
                                                         }, this),
                                                         " ",
@@ -571,18 +571,18 @@ function ConfirmationScreen({ character }) {
                                                     ]
                                                 }, card.name, true, {
                                                     fileName: "[project]/src/components/game/ConfirmationScreen.tsx",
-                                                    lineNumber: 151,
+                                                    lineNumber: 149,
                                                     columnNumber: 37
                                                 }, this))
                                         }, void 0, false, {
                                             fileName: "[project]/src/components/game/ConfirmationScreen.tsx",
-                                            lineNumber: 149,
+                                            lineNumber: 147,
                                             columnNumber: 29
                                         }, this)
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/src/components/game/ConfirmationScreen.tsx",
-                                    lineNumber: 147,
+                                    lineNumber: 145,
                                     columnNumber: 25
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -592,7 +592,7 @@ function ConfirmationScreen({ character }) {
                                             title: "Weaknesses to Know"
                                         }, void 0, false, {
                                             fileName: "[project]/src/components/game/ConfirmationScreen.tsx",
-                                            lineNumber: 159,
+                                            lineNumber: 157,
                                             columnNumber: 29
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("ul", {
@@ -605,7 +605,7 @@ function ConfirmationScreen({ character }) {
                                                             children: "⚠️"
                                                         }, void 0, false, {
                                                             fileName: "[project]/src/components/game/ConfirmationScreen.tsx",
-                                                            lineNumber: 163,
+                                                            lineNumber: 161,
                                                             columnNumber: 41
                                                         }, this),
                                                         " ",
@@ -613,24 +613,24 @@ function ConfirmationScreen({ character }) {
                                                     ]
                                                 }, weakness, true, {
                                                     fileName: "[project]/src/components/game/ConfirmationScreen.tsx",
-                                                    lineNumber: 162,
+                                                    lineNumber: 160,
                                                     columnNumber: 37
                                                 }, this))
                                         }, void 0, false, {
                                             fileName: "[project]/src/components/game/ConfirmationScreen.tsx",
-                                            lineNumber: 160,
+                                            lineNumber: 158,
                                             columnNumber: 29
                                         }, this)
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/src/components/game/ConfirmationScreen.tsx",
-                                    lineNumber: 158,
+                                    lineNumber: 156,
                                     columnNumber: 25
                                 }, this)
                             ]
                         }, void 0, true, {
                             fileName: "[project]/src/components/game/ConfirmationScreen.tsx",
-                            lineNumber: 117,
+                            lineNumber: 115,
                             columnNumber: 21
                         }, this),
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$card$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["CardFooter"], {
@@ -649,19 +649,19 @@ function ConfirmationScreen({ character }) {
                                                 className: "mr-2 h-4 w-4"
                                             }, void 0, false, {
                                                 fileName: "[project]/src/components/game/ConfirmationScreen.tsx",
-                                                lineNumber: 173,
+                                                lineNumber: 171,
                                                 columnNumber: 33
                                             }, this),
                                             " Reselect Class"
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/src/components/game/ConfirmationScreen.tsx",
-                                        lineNumber: 172,
+                                        lineNumber: 170,
                                         columnNumber: 29
                                     }, this)
                                 }, void 0, false, {
                                     fileName: "[project]/src/components/game/ConfirmationScreen.tsx",
-                                    lineNumber: 171,
+                                    lineNumber: 169,
                                     columnNumber: 26
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$src$2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Button"], {
@@ -675,7 +675,7 @@ function ConfirmationScreen({ character }) {
                                                 className: "mr-2 h-4 w-4 animate-spin"
                                             }, void 0, false, {
                                                 fileName: "[project]/src/components/game/ConfirmationScreen.tsx",
-                                                lineNumber: 183,
+                                                lineNumber: 181,
                                                 columnNumber: 35
                                             }, this),
                                             " Creating Your Legend..."
@@ -686,7 +686,7 @@ function ConfirmationScreen({ character }) {
                                                 className: "mr-2 h-4 w-4"
                                             }, void 0, false, {
                                                 fileName: "[project]/src/components/game/ConfirmationScreen.tsx",
-                                                lineNumber: 185,
+                                                lineNumber: 183,
                                                 columnNumber: 35
                                             }, this),
                                             " Confirm & Start Adventure"
@@ -694,24 +694,24 @@ function ConfirmationScreen({ character }) {
                                     }, void 0, true)
                                 }, void 0, false, {
                                     fileName: "[project]/src/components/game/ConfirmationScreen.tsx",
-                                    lineNumber: 176,
+                                    lineNumber: 174,
                                     columnNumber: 25
                                 }, this)
                             ]
                         }, void 0, true, {
                             fileName: "[project]/src/components/game/ConfirmationScreen.tsx",
-                            lineNumber: 170,
+                            lineNumber: 168,
                             columnNumber: 21
                         }, this)
                     ]
                 }, void 0, true, {
                     fileName: "[project]/src/components/game/ConfirmationScreen.tsx",
-                    lineNumber: 100,
+                    lineNumber: 98,
                     columnNumber: 17
                 }, this)
             }, void 0, false, {
                 fileName: "[project]/src/components/game/ConfirmationScreen.tsx",
-                lineNumber: 99,
+                lineNumber: 97,
                 columnNumber: 13
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -729,28 +729,28 @@ function ConfirmationScreen({ character }) {
                             "data-ai-hint": character.imageHint
                         }, void 0, false, {
                             fileName: "[project]/src/components/game/ConfirmationScreen.tsx",
-                            lineNumber: 194,
+                            lineNumber: 192,
                             columnNumber: 25
                         }, this)
                     }, void 0, false, {
                         fileName: "[project]/src/components/game/ConfirmationScreen.tsx",
-                        lineNumber: 193,
+                        lineNumber: 191,
                         columnNumber: 21
                     }, this)
                 }, void 0, false, {
                     fileName: "[project]/src/components/game/ConfirmationScreen.tsx",
-                    lineNumber: 192,
+                    lineNumber: 190,
                     columnNumber: 17
                 }, this)
             }, void 0, false, {
                 fileName: "[project]/src/components/game/ConfirmationScreen.tsx",
-                lineNumber: 191,
+                lineNumber: 189,
                 columnNumber: 13
             }, this)
         ]
     }, void 0, true, {
         fileName: "[project]/src/components/game/ConfirmationScreen.tsx",
-        lineNumber: 98,
+        lineNumber: 96,
         columnNumber: 9
     }, this);
 }
