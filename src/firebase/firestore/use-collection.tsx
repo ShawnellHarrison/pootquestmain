@@ -111,8 +111,18 @@ export function useCollection<T = any>(
     return () => unsubscribe();
   }, [memoizedTargetRefOrQuery]);
   
-  if(memoizedTargetRefOrQuery && !memoizedTargetRefOrQuery.__memo) {
-    throw new Error(memoizedTargetRefOrQuery + ' was not properly memoized using useMemoFirebase');
+  if (memoizedTargetRefOrQuery && !memoizedTargetRefOrQuery.__memo) {
+    let path = 'unknown/path';
+    try {
+      if (memoizedTargetRefOrQuery.type === 'collection') {
+        path = (memoizedTargetRefOrQuery as CollectionReference).path;
+      } else {
+        path = (memoizedTargetRefOrQuery as unknown as InternalQuery)._query.path.canonicalString();
+      }
+    } catch (e) {
+      // Ignore if we can't get the path, the default message is better than crashing
+    }
+    throw new Error(`Firestore query/collection for path '${path}' was not properly memoized using useMemoFirebase.`);
   }
 
   return { data, isLoading, error };

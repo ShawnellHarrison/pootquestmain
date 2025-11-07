@@ -891,7 +891,17 @@ function useCollection(memoizedTargetRefOrQuery) {
         memoizedTargetRefOrQuery
     ]);
     if (memoizedTargetRefOrQuery && !memoizedTargetRefOrQuery.__memo) {
-        throw new Error(memoizedTargetRefOrQuery + ' was not properly memoized using useMemoFirebase');
+        let path = 'unknown/path';
+        try {
+            if (memoizedTargetRefOrQuery.type === 'collection') {
+                path = memoizedTargetRefOrQuery.path;
+            } else {
+                path = memoizedTargetRefOrQuery._query.path.canonicalString();
+            }
+        } catch (e) {
+        // Ignore if we can't get the path, the default message is better than crashing
+        }
+        throw new Error(`Firestore query/collection for path '${path}' was not properly memoized using useMemoFirebase.`);
     }
     return {
         data,
@@ -970,6 +980,9 @@ function useDoc(memoizedDocRef) {
     }["useDoc.useEffect"], [
         memoizedDocRef
     ]);
+    if (memoizedDocRef && !memoizedDocRef.__memo) {
+        throw new Error(`Firestore document reference for path '${memoizedDocRef.path}' was not properly memoized using useMemoFirebase.`);
+    }
     return {
         data,
         isLoading,
