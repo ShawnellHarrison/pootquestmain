@@ -808,7 +808,11 @@ function useNarrative(characterId, character, characterClassData, initialBattleS
                     };
                     batch.update(narrativeContextRef, firstTimeUpdates);
                     await batch.commit();
-                    // No need to setNarrativeContext here, the hook will pick it up
+                    // Update local state immediately to avoid race condition
+                    setNarrativeContext((prev)=>({
+                            ...prev,
+                            ...firstTimeUpdates
+                        }));
                     setGameState("awaiting_continue"); // Go back to showing the new narration
                     return; // Stop here, user will click continue again
                 }

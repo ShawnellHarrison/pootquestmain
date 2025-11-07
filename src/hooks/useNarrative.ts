@@ -158,28 +158,21 @@ export function useNarrative(
       const handleChoice = async (choice: Choice) => {
         if (!firestore || !user || !characterClassData || !character || !narrativeContext || !narrativeContextRef) return;
         
-    
-        const choiceData = { id: choice.id, text: choice.text, tags: choice.tags, timestamp: new Date().toISOString() };
-        
-        let newNarrativeContext = { ...narrativeContext };
-        
-        newNarrativeContext.playerChoices = [...newNarrativeContext.playerChoices, choiceData];
-        newNarrativeContext.currentScenario = null; // Clear the current scenario
-    
-        if (choice.tags.includes("STEALTH")) newNarrativeContext.reputationStealth += 5;
-        if (choice.tags.includes("COMBAT")) newNarrativeContext.reputationCombat += 5;
-        if (choice.tags.includes("DIPLOMACY")) newNarrativeContext.reputationDiplomacy += 5;
-        
-        // Optimistically navigate for combat
-        if (choice.tags.includes("COMBAT")) {
-            setGameState("loading"); 
-            router.push(`/battle?characterId=${characterId}&needsEncounter=true`);
-            return; 
-        }
-
         setGameState("generating");
 
         try {
+            const choiceData = { id: choice.id, text: choice.text, tags: choice.tags, timestamp: new Date().toISOString() };
+            
+            let newNarrativeContext = { ...narrativeContext };
+            
+            newNarrativeContext.playerChoices = [...newNarrativeContext.playerChoices, choiceData];
+            newNarrativeContext.currentScenario = null; // Clear the current scenario
+        
+            if (choice.tags.includes("STEALTH")) newNarrativeContext.reputationStealth += 5;
+            if (choice.tags.includes("COMBAT")) newNarrativeContext.reputationCombat += 5;
+            if (choice.tags.includes("DIPLOMACY")) newNarrativeContext.reputationDiplomacy += 5;
+
+            // This is the core logic that will be executed for all choices.
             if (choice.questProgress) {
                 const { questId, nextStep } = choice.questProgress;
                 if (newNarrativeContext.questFlags[questId]) {
@@ -199,7 +192,6 @@ export function useNarrative(
             }
     
             if (choice.tags.includes("NPC_INTERACTION")) {
-                
                 const npcResult: NpcOutput = await generateNpc({
                     location: newNarrativeContext.location,
                     playerClass: characterClassData.name,
@@ -240,14 +232,13 @@ export function useNarrative(
                     }
                 }
                 newNarrativeContext.lastNarration = npcNarration;
-                newNarrativeContext.triggerNextScenario = true;
-    
-            } else {
-              newNarrativeContext.triggerNextScenario = true;
             }
+
+            // Always set trigger for next scenario unless it is combat.
+            newNarrativeContext.triggerNextScenario = !choice.tags.includes("COMBAT");
             
             const batch = writeBatch(firestore);
-            // We only need to write the final state of the context
+            // Save the updated context to Firestore.
             batch.update(narrativeContextRef, {
                 playerChoices: newNarrativeContext.playerChoices,
                 currentScenario: null,
@@ -259,6 +250,11 @@ export function useNarrative(
                 triggerNextScenario: newNarrativeContext.triggerNextScenario,
             });
             await batch.commit();
+
+            // NOW navigate if it's a combat choice.
+            if (choice.tags.includes("COMBAT")) {
+                router.push(`/battle?characterId=${characterId}&needsEncounter=true`);
+            }
     
         } catch (e: any) {
             setError(e.message || "An unknown error occurred while processing your choice.");
