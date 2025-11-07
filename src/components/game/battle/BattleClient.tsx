@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
@@ -131,25 +130,27 @@ export function BattleClient({ characterId, needsEncounter }: BattleClientProps)
         const charClass = getClass(characterData.class);
         if (!charClass) throw new Error("Character class not found");
         
-        const encounter: EncounterOutput = await generateEncounter({
-            playerClass: charClass.name,
-            playerLevel: characterData.level,
-            location: narrativeData.location,
-            questId: Object.keys(narrativeData.questFlags).find(q => narrativeData.questFlags[q].status === 'started'),
-            reputation: {
-                stealth: narrativeData.reputationStealth,
-                combat: narrativeData.reputationCombat,
-                diplomacy: narrativeData.reputationDiplomacy,
-            },
-        } as EncounterInput);
-
         const allCardsMap = new Map<string, CardData>();
-        charClass.starterDeck.forEach(starter => {
-            const cardDetails = Object.values(CARD_DATA).find(c => c.name === starter.name);
-            if (cardDetails) allCardsMap.set(starter.name, { ...cardDetails, id: starter.name, class: charClass.name });
+        
+        // 1. Add all master cards
+        Object.values(CARD_DATA).forEach(cardDetails => {
+            const cardName = cardDetails.name;
+            if(!allCardsMap.has(cardName)) {
+                allCardsMap.set(cardName, { ...cardDetails, id: cardName, class: 'any' });
+            }
         });
+        
+        // 2. Add starter cards to ensure they exist
+        charClass.starterDeck.forEach(starter => {
+            if (allCardsMap.has(starter.name)) {
+                const card = allCardsMap.get(starter.name)!;
+                card.class = charClass.name;
+            }
+        });
+        
+        // 3. Add generated cards from inventory
         inventoryData?.forEach((item: any) => {
-            if (item.name && item.type === 'card') {
+            if (item.name && item.type === 'card' && !allCardsMap.has(item.name)) {
                 allCardsMap.set(item.name, {
                     id: item.id || item.name,
                     name: item.name,
@@ -162,20 +163,21 @@ export function BattleClient({ characterId, needsEncounter }: BattleClientProps)
                 } as CardData);
             }
         });
-        deckData?.cards?.forEach((cardName: string) => {
-            if (!allCardsMap.has(cardName)) {
-                const cardDetails = Object.values(CARD_DATA).find(c => c.name === cardName);
-                if (cardDetails) {
-                    allCardsMap.set(cardName, {
-                        ...cardDetails,
-                        id: cardName,
-                        class: charClass.name,
-                    });
-                }
-            }
-        });
         
         setCollectionState(Array.from(allCardsMap.values()));
+
+        const encounter: EncounterOutput = await generateEncounter({
+            playerClass: charClass.name,
+            playerLevel: characterData.level,
+            location: narrativeData.location,
+            questId: Object.keys(narrativeData.questFlags).find(q => narrativeData.questFlags[q].status === 'started'),
+            reputation: {
+                stealth: narrativeData.reputationStealth,
+                combat: narrativeData.reputationCombat,
+                diplomacy: narrativeData.reputationDiplomacy,
+            },
+        } as EncounterInput);
+
         setCharacter(characterData);
         setDeck(deckData);
 
@@ -222,6 +224,7 @@ export function BattleClient({ characterId, needsEncounter }: BattleClientProps)
         if (card) {
             return card;
         }
+        console.warn(`Card data for "${cardName}" not found in collection state.`);
         return null;
     }
 
@@ -589,3 +592,5 @@ export function BattleClient({ characterId, needsEncounter }: BattleClientProps)
     </>
   );
 }
+
+    
