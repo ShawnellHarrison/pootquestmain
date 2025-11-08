@@ -83,7 +83,6 @@ export function DeckManagerSheet({ characterId }: { characterId: string }) {
         return getClass(characterData.class);
     }, [characterData]);
 
-    // This effect populates the deck state with unique IDs for each card instance
     useEffect(() => {
         if (deckData?.cards) {
             const cardCounts: { [key: string]: number } = {};
@@ -98,25 +97,13 @@ export function DeckManagerSheet({ characterId }: { characterId: string }) {
 
 
     useEffect(() => {
-        if (!characterClass) return;
+        if (!characterClass || !inventoryData || !deckData) return;
     
         const allCardsMap = new Map<string, CardData>();
     
-        // 1. Add starter cards for the character's class
-        characterClass.starterDeck.forEach(starter => {
-            const cardDetails = Object.values(CARD_DATA).find(c => c.name === starter.name);
-            if (cardDetails) {
-                allCardsMap.set(starter.name, {
-                    ...cardDetails,
-                    id: starter.name,
-                    class: characterClass.name,
-                });
-            }
-        });
-    
-        // 2. Add cards from inventory (which are newly generated or transmuted)
-        inventoryData?.forEach(item => {
-            if (item.type === 'card') {
+        // 1. Add cards from inventory first to ensure they take precedence
+        inventoryData.forEach(item => {
+            if (item.type === 'card' && !allCardsMap.has(item.name)) {
                 allCardsMap.set(item.name, {
                     id: item.id || item.name,
                     name: item.name,
@@ -130,23 +117,45 @@ export function DeckManagerSheet({ characterId }: { characterId: string }) {
             }
         });
     
-        // 3. Add cards from the current deck if they aren't already in the map,
-        // this covers cards that were in the deck but not starter or inventory.
-        deckData?.cards?.forEach((cardName: string) => {
-            if (!allCardsMap.has(cardName)) {
-                // Find it in the master card list or assume it's a generated one
-                // This case is less likely with the new inventory logic but acts as a fallback
-                const cardDetails = Object.values(CARD_DATA).find(c => c.name === cardName);
+        // 2. Add all master cards if they don't already exist
+        Object.values(CARD_DATA).forEach(cardDetails => {
+            const cardName = cardDetails.name;
+            if(!allCardsMap.has(cardName)) {
+                allCardsMap.set(cardName, { ...cardDetails, id: cardName, class: 'any' });
+            }
+        });
+        
+        // 3. Add/update starter cards to ensure they exist with the correct class info
+        characterClass.starterDeck.forEach(starter => {
+            if (allCardsMap.has(starter.name)) {
+                const card = allCardsMap.get(starter.name)!;
+                card.class = characterClass.name; 
+            } else {
+                 const cardDetails = Object.values(CARD_DATA).find(c => c.name === starter.name);
                  if (cardDetails) {
-                    allCardsMap.set(cardName, {
+                    allCardsMap.set(starter.name, {
                         ...cardDetails,
-                        id: cardName,
+                        id: starter.name,
                         class: characterClass.name,
                     });
                 }
             }
         });
-    
+        
+        // 4. Ensure any cards in the current deck are also present
+         deckData.cards.forEach((cardName: string) => {
+            if (!allCardsMap.has(cardName)) {
+                const cardDetails = Object.values(CARD_DATA).find(c => c.name === cardName);
+                 if (cardDetails) {
+                    allCardsMap.set(cardName, {
+                        ...cardDetails,
+                        id: cardName,
+                        class: 'any', // Can be generic if not in starter deck
+                    });
+                }
+            }
+        });
+
         setCollectionState(Array.from(allCardsMap.values()));
     
     }, [inventoryData, deckData, characterClass]);
@@ -158,20 +167,23 @@ export function DeckManagerSheet({ characterId }: { characterId: string }) {
         });
 
         const totalCardCounts: { [key: string]: number } = {};
-        collectionState.forEach(c => {
-             // For simplicity, let's assume starter deck indicates base count, then add inventory
-             const starterInfo = characterClass?.starterDeck.find(sc => sc.name === c.name);
-             const inventoryInfo = inventoryData?.filter(i => i.name === c.name && i.type === 'card');
-             totalCardCounts[c.name] = (starterInfo?.count || 0) + (inventoryInfo?.length || 0);
-             if(!totalCardCounts[c.name]) { // If not in starter or inventory must be from original deck data
-                const deckCount = deckData?.cards?.filter((cardName: string) => cardName === c.name).length || 0;
-                if(deckCount > 0) totalCardCounts[c.name] = deckCount;
-             }
-        });
+        
+        if (characterClass && inventoryData && deckData) {
+            collectionState.forEach(c => {
+                 const starterInfo = characterClass.starterDeck.find(sc => sc.name === c.name);
+                 const inventoryInfo = inventoryData.filter(i => i.name === c.name && i.type === 'card');
+                 const baseCount = starterInfo?.count || 0;
+                 const inventoryCount = inventoryInfo.length;
+
+                 const originalDeckCount = deckData.cards.filter((cardName: string) => cardName === c.name).length;
+
+                 totalCardCounts[c.name] = Math.max(baseCount + inventoryCount, originalDeckCount);
+            });
+        }
         
         return collectionState.filter(card => {
             const inDeckCount = deckCardCounts[card.name] || 0;
-            const totalCount = totalCardCounts[card.name] || 1; // Assume at least 1 if it exists
+            const totalCount = totalCardCounts[card.name] || 0;
             return inDeckCount < totalCount;
         });
 
@@ -194,30 +206,36 @@ export function DeckManagerSheet({ characterId }: { characterId: string }) {
     
         if (!active || !over || active.id === over.id) return;
     
-        const activeCard = deck.find(c => c.id === active.id) || { id: active.id as string, name: active.id as string};
-        const isCardInDeck = deck.some(c => c.id === active.id);
-    
-        // Scenario 1: Moving a card within the deck to reorder
-        if (isCardInDeck && over.id && deck.some(c => c.id === over.id)) {
+        const activeIsFromDeck = deck.some(c => c.id === active.id);
+        const overIsDeckArea = over.id === 'deck-droppable' || deck.some(c => c.id === over.id);
+
+        // From Deck to Deck (Reorder)
+        if (activeIsFromDeck && overIsDeckArea) {
             const oldIndex = deck.findIndex(c => c.id === active.id);
             const newIndex = deck.findIndex(c => c.id === over.id);
             if (oldIndex !== -1 && newIndex !== -1) {
                 setDeck(items => arrayMove(items, oldIndex, newIndex));
             }
         }
-        // Scenario 2: Moving a card from collection to deck
-        else if (!isCardInDeck && (over.id === 'deck-droppable' || deck.some(c => c.id === over.id))) {
+        // From Collection to Deck
+        else if (!activeIsFromDeck && overIsDeckArea) {
             if (deck.length < DECK_SIZE) {
                  const cardName = active.id as string;
-                 const count = deck.filter(c => c.name === cardName).length;
-                 const newCard = { id: `${cardName}-${count}`, name: cardName };
-                 setDeck(prev => [...prev, newCard]);
+                 const countInDeck = deck.filter(c => c.name === cardName).length;
+                 const newCard = { id: `${cardName}-${countInDeck}`, name: cardName };
+                 
+                 if (over.id === 'deck-droppable') {
+                     setDeck(prev => [...prev, newCard]); // Add to end
+                 } else {
+                     const overIndex = deck.findIndex(c => c.id === over.id);
+                     setDeck(prev => [...prev.slice(0, overIndex), newCard, ...prev.slice(overIndex)]);
+                 }
             } else {
                 toast({ title: "Deck Full", description: `You can only have ${DECK_SIZE} cards in your deck.`, variant: "destructive" });
             }
         }
-        // Scenario 3: Moving a card from deck to collection
-        else if (isCardInDeck && (over.id === 'collection-droppable' || collectionPool.some(c => c.name === over.id))) {
+        // From Deck to Collection
+        else if (activeIsFromDeck && !overIsDeckArea) {
             setDeck(prev => prev.filter(c => c.id !== active.id));
         }
     };
@@ -302,7 +320,7 @@ export function DeckManagerSheet({ characterId }: { characterId: string }) {
                         <CardContent className="flex flex-wrap gap-4 p-4 bg-background/50 rounded-lg">
                             <SortableContext items={collectionPool.map(c => c.name)} strategy={rectSortingStrategy}>
                                 {collectionPool.map(card => (
-                                <DraggableCard key={card.name} cardId={card.name} card={card} inDeck={false} />
+                                <DraggableCard key={card.id} cardId={card.id} card={card} inDeck={false} />
                                 ))}
                             </SortableContext>
                         </CardContent>
