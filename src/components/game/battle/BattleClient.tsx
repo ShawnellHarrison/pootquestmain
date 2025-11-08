@@ -287,36 +287,52 @@ export function BattleClient({ characterId, needsEncounter }: BattleClientProps)
         let enemiesKilledThisTurn = 0;
         let xpGainedThisTurn = 0;
         let playerDamageTaken = 0;
-        
-        const newEnemies = prev.enemies.map(e => {
-            if (e.id === enemyId) {
-                const damageDealt = Math.max(0, cardData.attack - (e.defense || 0));
-                const newHp = Math.max(0, e.hp - damageDealt);
 
-                if (e.modifier?.type === 'Retaliator') {
-                    playerDamageTaken += e.modifier.value || 0;
-                }
-
-                if (newHp === 0 && e.hp > 0) { // Check if it was alive before
-                    enemiesKilledThisTurn++;
-                    xpGainedThisTurn += e.attack * 5;
-                }
-                return { ...e, hp: newHp, defense: Math.max(0, (e.defense || 0) - cardData.attack) };
-            }
-            return e;
-        }).filter(e => e.hp > 0);
+        let tempEnemies = [...prev.enemies];
         
-        if (newEnemies.length === 0) {
-            isVictory = true;
+        const enemyIndex = tempEnemies.findIndex(e => e.id === enemyId);
+        if (enemyIndex === -1) return prev;
+        
+        const targetEnemy = { ...tempEnemies[enemyIndex] };
+        
+        const damageDealt = Math.max(0, cardData.attack - (targetEnemy.defense || 0));
+        const newHp = Math.max(0, targetEnemy.hp - damageDealt);
+
+        if (targetEnemy.modifier?.type === 'Retaliator') {
+            playerDamageTaken += targetEnemy.modifier.value || 0;
         }
 
+        if (newHp === 0 && targetEnemy.hp > 0) { // Check if it was alive before
+            enemiesKilledThisTurn++;
+            xpGainedThisTurn += targetEnemy.attack * 5;
+        }
+
+        targetEnemy.hp = newHp;
+        targetEnemy.defense = Math.max(0, (targetEnemy.defense || 0) - cardData.attack);
+        
+        tempEnemies[enemyIndex] = targetEnemy;
+
         const newPlayerHealth = Math.max(0, prev.playerHealth - playerDamageTaken);
+        
         if (playerDamageTaken > 0) {
             setLastDamageToast({ title: "Retaliation!", description: `You take ${playerDamageTaken} damage from spikes!`, variant: "destructive" });
         }
-
+        
+        // Check for player defeat before filtering enemies
         if (newPlayerHealth === 0) {
-            return { ...prev, playerHealth: 0, turn: 'defeat', isProcessing: true, introText: prev.introText, loot: prev.loot, enemies: newEnemies };
+             return { 
+                ...prev, 
+                playerHealth: 0, 
+                turn: 'defeat', 
+                isProcessing: true, 
+                enemies: tempEnemies // Pass the list with the just-defeated enemy
+            };
+        }
+        
+        const newEnemies = tempEnemies.filter(e => e.hp > 0);
+        
+        if (newEnemies.length === 0) {
+            isVictory = true;
         }
 
         const newHand = prev.hand.filter(c => c !== prev!.selectedCard);
@@ -435,7 +451,7 @@ export function BattleClient({ characterId, needsEncounter }: BattleClientProps)
                 enemiesKilled: battleState.enemiesKilled,
                 enemiesSpared: 0,
                 secretRoomsFound: 0,
-                ending: `Vanquished by ${battleState.enemies[0]?.name || 'a mysterious foe'}.`,
+                ending: `Vanquished by ${battleState.enemies.find(e => e.hp > 0)?.name || battleState.enemies[0]?.name || 'a mysterious foe'}.`,
                 uniqueDiscovery: "Learned that hubris smells a lot like sulfur.",
                 createdAt: serverTimestamp(),
             };
@@ -518,7 +534,7 @@ export function BattleClient({ characterId, needsEncounter }: BattleClientProps)
           setDefeatStats({
               characterClass: characterClass.name,
               enemiesKilled: battleState.enemiesKilled,
-              finalWords: `Vanquished by ${battleState.enemies[0]?.name || 'a mysterious foe'}.`
+              finalWords: `Vanquished by ${battleState.enemies.find(e => e.hp > 0)?.name || battleState.enemies[0]?.name || 'a mysterious foe'}.`
           });
           setShowDefeatModal(true);
       };
@@ -592,5 +608,3 @@ export function BattleClient({ characterId, needsEncounter }: BattleClientProps)
     </>
   );
 }
-
-    
