@@ -8,8 +8,8 @@ import StatBar from "@/components/ui/StatBar";
 import { ArrowLeft, CheckCircle, Swords, AlertTriangle, FolderOpen, Sparkles } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
-import { useFirebase, setDocumentNonBlocking } from "@/firebase";
-import { collection, doc, serverTimestamp } from "firebase/firestore";
+import { useFirebase, errorEmitter, FirestorePermissionError } from "@/firebase";
+import { collection, doc, serverTimestamp, setDoc } from "firebase/firestore";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Loader2 } from "lucide-react";
@@ -25,6 +25,21 @@ const SectionHeader = ({ icon: Icon, title }: { icon: React.ElementType, title: 
     </div>
 );
 
+// This is a specialized, non-blocking setDoc that includes our new error handling.
+const setDocWithErrorHandling = (docRef: any, data: any) => {
+    setDoc(docRef, data).catch(error => {
+        errorEmitter.emit(
+            'permission-error',
+            new FirestorePermissionError({
+                path: docRef.path,
+                operation: 'create',
+                requestResourceData: data,
+            })
+        );
+    });
+};
+
+
 export function ConfirmationScreen({ character }: ConfirmationScreenProps) {
     const { firestore, user } = useFirebase();
     const router = useRouter();
@@ -36,7 +51,6 @@ export function ConfirmationScreen({ character }: ConfirmationScreenProps) {
 
         const newCharacterRef = doc(collection(firestore, `users/${user.uid}/characters`));
         
-        // Character Data
         const characterData = {
             userId: user.uid,
             class: character.id,
@@ -52,9 +66,8 @@ export function ConfirmationScreen({ character }: ConfirmationScreenProps) {
             speed: character.stats.speed,
             createdAt: serverTimestamp(),
         };
-        setDocumentNonBlocking(newCharacterRef, characterData, {});
+        setDocWithErrorHandling(newCharacterRef, characterData);
 
-        // Narrative Context Data
         const narrativeContextRef = doc(firestore, `users/${user.uid}/characters/${newCharacterRef.id}/narrativeContexts`, "main");
         const narrativeData = {
             characterId: newCharacterRef.id,
@@ -71,23 +84,19 @@ export function ConfirmationScreen({ character }: ConfirmationScreenProps) {
             currentEncounter: null,
             triggerNextScenario: true,
         };
-        setDocumentNonBlocking(narrativeContextRef, narrativeData, {});
+        setDocWithErrorHandling(narrativeContextRef, narrativeData);
 
-        // Deck Data
         const deckRef = doc(firestore, `users/${user.uid}/characters/${newCharacterRef.id}/decks`, "main");
         const deckData = {
             characterId: newCharacterRef.id,
             cards: character.starterDeck.flatMap(c => Array(c.count).fill(c.name)),
         };
-        setDocumentNonBlocking(deckRef, deckData, {});
+        setDocWithErrorHandling(deckRef, deckData);
 
         if (typeof window !== 'undefined') {
             localStorage.setItem('characterId', newCharacterRef.id);
         }
-
-        // The non-blocking calls above will update the cache immediately,
-        // so we can navigate right away for a snappy user experience.
-        // Any permission errors will be caught and displayed by the global error handler.
+        
         router.push(`/adventure/${newCharacterRef.id}`);
     };
 
