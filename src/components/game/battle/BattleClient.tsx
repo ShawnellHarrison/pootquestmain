@@ -132,23 +132,7 @@ export function BattleClient({ characterId, needsEncounter }: BattleClientProps)
         
         const allCardsMap = new Map<string, CardData>();
         
-        // 1. Add all master cards
-        Object.values(CARD_DATA).forEach(cardDetails => {
-            const cardName = cardDetails.name;
-            if(!allCardsMap.has(cardName)) {
-                allCardsMap.set(cardName, { ...cardDetails, id: cardName, class: 'any' });
-            }
-        });
-        
-        // 2. Add starter cards to ensure they exist
-        charClass.starterDeck.forEach(starter => {
-            if (allCardsMap.has(starter.name)) {
-                const card = allCardsMap.get(starter.name)!;
-                card.class = charClass.name;
-            }
-        });
-        
-        // 3. Add generated cards from inventory
+        // 1. Add generated cards from inventory first to ensure they take precedence
         inventoryData?.forEach((item: any) => {
             if (item.name && item.type === 'card' && !allCardsMap.has(item.name)) {
                 allCardsMap.set(item.name, {
@@ -161,6 +145,22 @@ export function BattleClient({ characterId, needsEncounter }: BattleClientProps)
                     healing: item.healing,
                     class: charClass.name,
                 } as CardData);
+            }
+        });
+
+        // 2. Add all master cards if they don't already exist
+        Object.values(CARD_DATA).forEach(cardDetails => {
+            const cardName = cardDetails.name;
+            if(!allCardsMap.has(cardName)) {
+                allCardsMap.set(cardName, { ...cardDetails, id: cardName, class: 'any' });
+            }
+        });
+        
+        // 3. Add/update starter cards to ensure they exist with the correct class
+        charClass.starterDeck.forEach(starter => {
+            if (allCardsMap.has(starter.name)) {
+                const card = allCardsMap.get(starter.name)!;
+                card.class = charClass.name; // Ensure class is set
             }
         });
         
@@ -253,7 +253,7 @@ export function BattleClient({ characterId, needsEncounter }: BattleClientProps)
                 toastMessage = { title: cardData.name, description: `You heal for ${cardData.healing}!` };
             }
             if (cardData.defense > 0) {
-                toastMessage = { title: cardData.name, description: `You gain ${cardData.defense} defense!` };
+                toastMessage = { title: cardData.name, description: `You gain ${cardData.defense}!` };
             }
             if (toastMessage) {
                 setLastDamageToast(toastMessage);
@@ -401,7 +401,7 @@ export function BattleClient({ characterId, needsEncounter }: BattleClientProps)
                 setLastDamageToast({ title: "Enemy attacks!", description: `You take ${damageTaken} damage.` });
 
                 if (newPlayerHealth === 0) {
-                    return { ...prev, playerHealth: 0, turn: 'defeat', isProcessing: true };
+                    return { ...prev, playerHealth: 0, turn: 'defeat', isProcessing: true, enemies: newEnemies };
                 }
 
                 let newDeck = [...prev.deck];
@@ -608,3 +608,5 @@ export function BattleClient({ characterId, needsEncounter }: BattleClientProps)
     </>
   );
 }
+
+    
