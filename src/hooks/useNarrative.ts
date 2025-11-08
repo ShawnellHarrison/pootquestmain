@@ -187,7 +187,6 @@ export function useNarrative(
                 );
                 if (questId && newNarrativeContext.questFlags[questId]) {
                     newNarrativeContext.questFlags[questId].status = "completed";
-                    newNarrativeContext.lastNarration = `Quest Complete: ${questId}!`;
                 }
             }
     
