@@ -908,7 +908,7 @@ function useNarrative(characterId, character, characterClassData, initialBattleS
                 newNarrativeContext.lastNarration = `Quest updated: ${questId}.`;
             }
             if (choice.isQuestCompletion) {
-                const questId = Object.keys(newNarrativeContext.questFlags).find((key)=>newNarrativeContext.questFlags[key]?.status === 'started');
+                const { questId } = choice.questProgress || {};
                 if (questId && newNarrativeContext.questFlags[questId]) {
                     newNarrativeContext.questFlags[questId].status = "completed";
                 }

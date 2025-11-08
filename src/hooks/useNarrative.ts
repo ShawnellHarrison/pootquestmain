@@ -178,7 +178,10 @@ export function useNarrative(
                 if (newNarrativeContext.questFlags[questId]) {
                     newNarrativeContext.questFlags[questId].currentStep = nextStep;
                 }
-                newNarrativeContext.lastNarration = `Quest updated: ${questId}.`;
+                // Only update narration for intermediate steps, not the final completion step
+                if (!choice.isQuestCompletion) {
+                    newNarrativeContext.lastNarration = `Quest updated: ${questId}.`;
+                }
             }
     
             if (choice.isQuestCompletion) {
