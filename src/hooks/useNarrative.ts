@@ -189,6 +189,10 @@ export function useNarrative(
                 if(questId && newNarrativeContext.questFlags[questId]) {
                   newNarrativeContext.questFlags[questId].status = "completed";
                 }
+                // Let the AI generate the final narration
+                newNarrativeContext.triggerNextScenario = true;
+            } else {
+                newNarrativeContext.triggerNextScenario = !choice.tags.includes("COMBAT");
             }
     
             if (choice.tags.includes("NPC_INTERACTION")) {
@@ -225,6 +229,9 @@ export function useNarrative(
                     }
     
                     if (canAccept) {
+                        if (!newNarrativeContext.questFlags) {
+                            newNarrativeContext.questFlags = {};
+                        }
                         newNarrativeContext.questFlags[npcResult.questId] = { status: "started", currentStep: 1 };
                         npcNarration += `\n\n**New Quest:** ${npcResult.quest}`;
                     } else {
@@ -232,10 +239,8 @@ export function useNarrative(
                     }
                 }
                 newNarrativeContext.lastNarration = npcNarration;
+                newNarrativeContext.triggerNextScenario = false; // Don't auto-continue after talking to an NPC
             }
-
-            // Always set trigger for next scenario unless it is combat.
-            newNarrativeContext.triggerNextScenario = !choice.tags.includes("COMBAT");
             
             const batch = writeBatch(firestore);
             // Save the updated context to Firestore.
