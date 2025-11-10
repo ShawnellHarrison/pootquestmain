@@ -65,21 +65,43 @@ export const PRODUCTS: Product[] = [
     }
 ];
 
-export async function seedProducts(db: Firestore) {
-    const productsRef = collection(db, 'products');
-    const snapshot = await getDocs(productsRef);
+let hasSeeded = false;
 
-    if (snapshot.empty) {
-        console.log("No products found, seeding initial data...");
-        const batch = writeBatch(db);
-        PRODUCTS.forEach(product => {
-            const { id, ...data } = product;
-            const docRef = doc(db, 'products', id);
-            batch.set(docRef, data);
-        });
-        await batch.commit();
-        console.log("Seeding complete.");
-    } else {
-        console.log("Products collection already exists. Skipping seed.");
+// This function is now non-blocking and safe to call multiple times.
+export function seedProducts(db: Firestore) {
+    // Prevent multiple seeding attempts during hot reloads or re-renders.
+    if (hasSeeded) {
+        return;
     }
+
+    const productsRef = collection(db, 'products');
+
+    // Get the documents, but do not block on the promise.
+    getDocs(productsRef)
+        .then(snapshot => {
+            if (snapshot.empty) {
+                hasSeeded = true; // Mark as seeded once we confirm it's empty
+                console.log("No products found, seeding initial data...");
+                const batch = writeBatch(db);
+                PRODUCTS.forEach(product => {
+                    const { id, ...data } = product;
+                    const docRef = doc(db, 'products', id);
+                    batch.set(docRef, data);
+                });
+                // Non-blocking write
+                batch.commit().then(() => {
+                    console.log("Seeding complete.");
+                }).catch(err => {
+                    console.error("Error committing seed batch:", err);
+                    hasSeeded = false; // Allow retrying if the commit fails
+                });
+            } else {
+                 hasSeeded = true; // Mark as seeded if collection already exists.
+            }
+        })
+        .catch(err => {
+            // This can happen if rules are not yet ready or user is not authenticated.
+            // This is not a critical error, so we just log it.
+            console.warn("Could not check products collection for seeding:", err.message);
+        });
 }

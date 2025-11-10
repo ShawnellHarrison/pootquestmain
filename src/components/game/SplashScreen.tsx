@@ -47,19 +47,21 @@ export function SplashScreen() {
     setBubbles(Array.from({ length: numBubbles }, (_, i) => i));
   }, []);
 
-  // Seed products on initial load if the collection is empty
-  useEffect(() => {
-    if (firestore) {
-      seedProducts(firestore);
-    }
-  }, [firestore]);
-
   // Automatically sign in anonymously if not logged in
   useEffect(() => {
     if (!isUserLoading && !user && auth) {
       initiateAnonymousSignIn(auth);
     }
   }, [isUserLoading, user, auth]);
+
+  // Once the user is authenticated, seed the products.
+  // This is non-blocking.
+  useEffect(() => {
+    if (firestore && user) {
+        seedProducts(firestore);
+    }
+  }, [firestore, user]);
+
 
   const renderContent = () => {
     // Show loader while checking auth state or while the user object is being populated after sign-in

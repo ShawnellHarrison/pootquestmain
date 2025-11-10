@@ -134,22 +134,39 @@ const PRODUCTS = [
         "status": "sold_out"
     }
 ];
-async function seedProducts(db) {
-    const productsRef = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$firebase$2f$firestore$2f$dist$2f$index$2e$esm2017$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["collection"])(db, 'products');
-    const snapshot = await (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$firebase$2f$firestore$2f$dist$2f$index$2e$esm2017$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["getDocs"])(productsRef);
-    if (snapshot.empty) {
-        console.log("No products found, seeding initial data...");
-        const batch = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$firebase$2f$firestore$2f$dist$2f$index$2e$esm2017$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["writeBatch"])(db);
-        PRODUCTS.forEach((product)=>{
-            const { id, ...data } = product;
-            const docRef = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$firebase$2f$firestore$2f$dist$2f$index$2e$esm2017$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["doc"])(db, 'products', id);
-            batch.set(docRef, data);
-        });
-        await batch.commit();
-        console.log("Seeding complete.");
-    } else {
-        console.log("Products collection already exists. Skipping seed.");
+let hasSeeded = false;
+function seedProducts(db) {
+    // Prevent multiple seeding attempts during hot reloads or re-renders.
+    if (hasSeeded) {
+        return;
     }
+    const productsRef = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$firebase$2f$firestore$2f$dist$2f$index$2e$esm2017$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["collection"])(db, 'products');
+    // Get the documents, but do not block on the promise.
+    (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$firebase$2f$firestore$2f$dist$2f$index$2e$esm2017$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["getDocs"])(productsRef).then((snapshot)=>{
+        if (snapshot.empty) {
+            hasSeeded = true; // Mark as seeded once we confirm it's empty
+            console.log("No products found, seeding initial data...");
+            const batch = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$firebase$2f$firestore$2f$dist$2f$index$2e$esm2017$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["writeBatch"])(db);
+            PRODUCTS.forEach((product)=>{
+                const { id, ...data } = product;
+                const docRef = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f40$firebase$2f$firestore$2f$dist$2f$index$2e$esm2017$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["doc"])(db, 'products', id);
+                batch.set(docRef, data);
+            });
+            // Non-blocking write
+            batch.commit().then(()=>{
+                console.log("Seeding complete.");
+            }).catch((err)=>{
+                console.error("Error committing seed batch:", err);
+                hasSeeded = false; // Allow retrying if the commit fails
+            });
+        } else {
+            hasSeeded = true; // Mark as seeded if collection already exists.
+        }
+    }).catch((err)=>{
+        // This can happen if rules are not yet ready or user is not authenticated.
+        // This is not a critical error, so we just log it.
+        console.warn("Could not check products collection for seeding:", err.message);
+    });
 }
 if (typeof globalThis.$RefreshHelpers$ === 'object' && globalThis.$RefreshHelpers !== null) {
     __turbopack_context__.k.registerExports(module, globalThis.$RefreshHelpers$);
@@ -237,16 +254,6 @@ function SplashScreen() {
             }["SplashScreen.useEffect"]));
         }
     }["SplashScreen.useEffect"], []);
-    // Seed products on initial load if the collection is empty
-    (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useEffect"])({
-        "SplashScreen.useEffect": ()=>{
-            if (firestore) {
-                (0, __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$product$2d$data$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["seedProducts"])(firestore);
-            }
-        }
-    }["SplashScreen.useEffect"], [
-        firestore
-    ]);
     // Automatically sign in anonymously if not logged in
     (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useEffect"])({
         "SplashScreen.useEffect": ()=>{
@@ -259,6 +266,18 @@ function SplashScreen() {
         user,
         auth
     ]);
+    // Once the user is authenticated, seed the products.
+    // This is non-blocking.
+    (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useEffect"])({
+        "SplashScreen.useEffect": ()=>{
+            if (firestore && user) {
+                (0, __TURBOPACK__imported__module__$5b$project$5d2f$src$2f$lib$2f$product$2d$data$2e$ts__$5b$app$2d$client$5d$__$28$ecmascript$29$__["seedProducts"])(firestore);
+            }
+        }
+    }["SplashScreen.useEffect"], [
+        firestore,
+        user
+    ]);
     const renderContent = ()=>{
         // Show loader while checking auth state or while the user object is being populated after sign-in
         if (isUserLoading || !user) {
@@ -266,7 +285,7 @@ function SplashScreen() {
                 className: "h-12 w-12 animate-spin text-primary"
             }, void 0, false, {
                 fileName: "[project]/src/components/game/SplashScreen.tsx",
-                lineNumber: 67,
+                lineNumber: 69,
                 columnNumber: 14
             }, this);
         }
@@ -284,18 +303,18 @@ function SplashScreen() {
                             className: "ml-2"
                         }, void 0, false, {
                             fileName: "[project]/src/components/game/SplashScreen.tsx",
-                            lineNumber: 75,
+                            lineNumber: 77,
                             columnNumber: 32
                         }, this)
                     ]
                 }, void 0, true, {
                     fileName: "[project]/src/components/game/SplashScreen.tsx",
-                    lineNumber: 74,
+                    lineNumber: 76,
                     columnNumber: 11
                 }, this)
             }, void 0, false, {
                 fileName: "[project]/src/components/game/SplashScreen.tsx",
-                lineNumber: 73,
+                lineNumber: 75,
                 columnNumber: 9
             }, this);
         }
@@ -304,7 +323,7 @@ function SplashScreen() {
             className: "h-12 w-12 animate-spin text-primary"
         }, void 0, false, {
             fileName: "[project]/src/components/game/SplashScreen.tsx",
-            lineNumber: 82,
+            lineNumber: 84,
             columnNumber: 12
         }, this);
     };
@@ -315,7 +334,7 @@ function SplashScreen() {
                     id: id
                 }, id, false, {
                     fileName: "[project]/src/components/game/SplashScreen.tsx",
-                    lineNumber: 88,
+                    lineNumber: 90,
                     columnNumber: 9
                 }, this)),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -333,12 +352,12 @@ function SplashScreen() {
                             priority: true
                         }, void 0, false, {
                             fileName: "[project]/src/components/game/SplashScreen.tsx",
-                            lineNumber: 93,
+                            lineNumber: 95,
                             columnNumber: 17
                         }, this)
                     }, void 0, false, {
                         fileName: "[project]/src/components/game/SplashScreen.tsx",
-                        lineNumber: 91,
+                        lineNumber: 93,
                         columnNumber: 9
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("h1", {
@@ -346,7 +365,7 @@ function SplashScreen() {
                         children: "Poot Quest"
                     }, void 0, false, {
                         fileName: "[project]/src/components/game/SplashScreen.tsx",
-                        lineNumber: 104,
+                        lineNumber: 106,
                         columnNumber: 9
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -354,7 +373,7 @@ function SplashScreen() {
                         children: "The Land of Never-Ending Asses"
                     }, void 0, false, {
                         fileName: "[project]/src/components/game/SplashScreen.tsx",
-                        lineNumber: 107,
+                        lineNumber: 109,
                         columnNumber: 9
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -362,19 +381,19 @@ function SplashScreen() {
                         children: renderContent()
                     }, void 0, false, {
                         fileName: "[project]/src/components/game/SplashScreen.tsx",
-                        lineNumber: 110,
+                        lineNumber: 112,
                         columnNumber: 9
                     }, this)
                 ]
             }, void 0, true, {
                 fileName: "[project]/src/components/game/SplashScreen.tsx",
-                lineNumber: 90,
+                lineNumber: 92,
                 columnNumber: 7
             }, this)
         ]
     }, void 0, true, {
         fileName: "[project]/src/components/game/SplashScreen.tsx",
-        lineNumber: 86,
+        lineNumber: 88,
         columnNumber: 5
     }, this);
 }
